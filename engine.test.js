@@ -156,3 +156,32 @@ test('default Paint scene uses macOS traffic lights, menu items, and a two-colum
   expect(r.frames[52].row[38]).toBe(16); // left toolbar button column 2
   expect(r.frames[56].row[33]).toBe(5);  // gap between columns remains sidebar bg
 });
+
+test('each corner has an independent circular radius',()=>{
+  const scene={...demoScene(),shapes:[{id:1,x:40,y:20,w:100,h:60,radius:[12,4,8,0],layer:3}],paletteEvents:[]};
+  const frames=rasterize(scene).frames;
+  const first=frames[20].edges.map(e=>e.x);
+  const middle=frames[50].edges.map(e=>e.x);
+  const last=frames[79].edges.map(e=>e.x);
+  expect(first[0]).toBeGreaterThan(40);
+  expect(first[1]).toBeLessThan(140);
+  expect(first[0]-40).toBeGreaterThan(140-first[1]);
+  expect(middle).toEqual([40,140]);
+  expect(last[0]).toBe(40);
+  expect(last[1]).toBeLessThan(140);
+});
+
+test('CSS radius normalization prevents adjacent corners overlapping',()=>{
+  const make=radius=>({...demoScene(),shapes:[{id:1,x:40,y:20,w:40,h:20,radius,layer:3}],paletteEvents:[]});
+  const oversized=rasterize(make([50,50,50,50]));
+  const clamped=rasterize(make(10));
+  for(let y=20;y<40;y++)expect(oversized.frames[y].edges.map(e=>e.x)).toEqual(clamped.frames[y].edges.map(e=>e.x));
+});
+
+test('the window title has square bottom corners and the status strip fits rounded bottom corners',()=>{
+  const frames=rasterize(demoScene()).frames;
+  expect(frames[27].row[20]).toBe(4); // title bar remains square at bottom-left
+  expect(frames[166].row[20]).toBe(5); // status strip starts square
+  expect(frames[177].row[20]).not.toBe(5); // bottom strip no longer spills past window shell
+  expect(frames[177].row[45]).toBe(5); // middle of status strip remains filled
+});

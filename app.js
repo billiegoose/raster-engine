@@ -33,7 +33,13 @@ function inspect(){
   if(current)current.scrollIntoView({block:'nearest'});
 }
 
-function numberField(s,k){return `<label>${k}<input type="number" data-id="${s.id}" data-key="${k}" value="${s[k]}" step="1"></label>`;}
+function numberField(s,k){
+  if(k==='radius'){
+    const value=Array.isArray(s.radius)?s.radius.join(' '):s.radius??0;
+    return `<label title="CSS order: top-left top-right bottom-right bottom-left">radius<input type="text" data-id="${s.id}" data-key="radius" value="${value}" title="One to four radii in CSS order"></label>`;
+  }
+  return `<label>${k}<input type="number" data-id="${s.id}" data-key="${k}" value="${s[k]}" step="1"></label>`;
+}
 function renderScene(){
   $('shapes').innerHTML=scene.shapes.map(s=>`<div class="shape-row">${['x','y','w','h','radius'].map(k=>numberField(s,k)).join('')}<label>layer<input type="number" min="1" max="63" data-id="${s.id}" data-key="layer" value="${s.layer}"></label><button data-remove="${s.id}" title="Remove shape">×</button></div>`).join('');
   $('paletteEvents').innerHTML=scene.paletteEvents.map((p,i)=>`<div class="palette-row"><label>Y<input type="number" data-event="${i}" data-key="y" value="${p.y}"></label><label>layer<input type="number" data-event="${i}" data-key="layer" value="${p.layer}"></label><label>color<input type="color" data-event="${i}" data-key="color" value="${p.color}"></label><button data-remove-event="${i}">×</button></div>`).join('');
@@ -43,7 +49,7 @@ $('scanline').addEventListener('input',e=>changeY(+e.target.value));$('prev').on
 $('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'❚❚ Pause':'▶ Play';if(timer)clearInterval(timer);if(playing)timer=setInterval(()=>changeY((selectedY+1)%HEIGHT),65);};
 $('reset').onclick=()=>{scene=demoScene();build();};$('add').onclick=()=>{const id=Math.max(0,...scene.shapes.map(s=>s.id))+1;scene.shapes.push({id,x:40,y:40,w:80,h:50,radius:10,layer:Math.min(63,id)});scene.palette[Math.min(63,id)]='#a9c9ee';build();};
 $('addPalette').onclick=()=>{scene.paletteEvents.push({y:80,layer:3,color:'#d64e78'});build();};
-$('shapes').addEventListener('change',e=>{const t=e.target;if(t.dataset.id){const s=scene.shapes.find(s=>s.id===+t.dataset.id);s[t.dataset.key]=+t.value;if(t.dataset.key==='layer')s.layer=Math.max(1,Math.min(63,s.layer));build();}});
+$('shapes').addEventListener('change',e=>{const t=e.target;if(t.dataset.id){const s=scene.shapes.find(s=>s.id===+t.dataset.id);s[t.dataset.key]=t.dataset.key==='radius'?(()=>{const values=t.value.trim().split(/[\s,]+/).filter(Boolean).slice(0,4).map(v=>Math.max(0,Math.round(Number(v)||0)));return values.length===1?values[0]:values.length?values:0;})():+t.value;if(t.dataset.key==='layer')s.layer=Math.max(1,Math.min(63,s.layer));build();}});
 $('shapes').addEventListener('click',e=>{const id=e.target.dataset.remove;if(id){scene.shapes=scene.shapes.filter(s=>s.id!==+id);build();}});
 $('paletteEvents').addEventListener('change',e=>{const t=e.target;if(t.dataset.event!==undefined){scene.paletteEvents[+t.dataset.event][t.dataset.key]=t.dataset.key==='color'?t.value:+t.value;build();}});
 $('paletteEvents').addEventListener('click',e=>{const i=e.target.dataset.removeEvent;if(i!==undefined){scene.paletteEvents.splice(+i,1);build();}});

@@ -19,7 +19,7 @@ The engine represents a scene as two cooperating raster programs:
 - **X-program:** An X-sorted linked list of START_PAINT and STOP_PAINT instructions. Each instruction references one of 64 ordered palette layers. Reference counts allow overlapping shapes to share a layer; the highest active layer determines the pixel color.
 - **Y-program:** A stream of transformations that changes the X-program between scanlines. Geometry may insert, delete, or move X instructions. Y events can also update palette entries.
 
-The only shape primitive is a rectangle with a `radius` parameter. A radius of zero produces square corners; positive radii produce quarter-circle corners, capped at half the smaller rectangle dimension. Rounded edges are sampled per scanline in JavaScript and represented as moving X instructions. The renderer produces an indexed pixel buffer for Canvas visualization.
+The only shape primitive is a rectangle with a `radius` parameter. A radius of zero produces square corners; positive radii produce quarter-circle corners. The radius supports CSS-style one-to-four-value shorthand in top-left, top-right, bottom-right, bottom-left order. Adjacent radii are proportionally scaled down if they would overlap. Rounded edges are sampled per scanline in JavaScript and represented as moving X instructions. The renderer produces an indexed pixel buffer for Canvas visualization.
 
 ## Current implementation versus target hardware
 

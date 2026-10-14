@@ -31,13 +31,13 @@ export const demoScene=()=>({
   shapes:[
     // Desktop, shadow, and Paint-style application window.
     {id:1,x:0,y:0,w:320,h:200,radius:0,layer:1},
-    {id:2,x:22,y:14,w:276,h:170,radius:0,layer:2},
-    {id:3,x:18,y:10,w:276,h:170,radius:0,layer:3},
-    {id:4,x:20,y:12,w:272,h:16,radius:0,layer:4},
+    {id:2,x:22,y:14,w:276,h:170,radius:10,layer:2},
+    {id:3,x:18,y:10,w:276,h:170,radius:10,layer:3},
+    {id:4,x:20,y:12,w:272,h:16,radius:[8,8,0,0],layer:4},
     {id:5,x:20,y:30,w:272,h:10,radius:0,layer:5},
     // Left sidebar and bottom status / palette strip.
     {id:6,x:20,y:42,w:26,h:122,radius:0,layer:5},
-    {id:7,x:20,y:166,w:272,h:12,radius:0,layer:5},
+    {id:7,x:20,y:166,w:272,h:12,radius:[0,0,8,8],layer:5},
     // Paper, sky, grass, sun and clouds.
     {id:8,x:47,y:42,w:245,h:122,radius:0,layer:7},
     {id:9,x:48,y:43,w:243,h:120,radius:0,layer:6},
@@ -92,15 +92,37 @@ const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,n));
 const edgeOrder=(a,b)=>a.x-b.x||a.layer-b.layer||a.delta-b.delta||a.key.localeCompare(b.key);
 const insetCache=new Map([[0,[]]]);
 
+// CSS border-radius shorthand: one value for all corners, or
+// [top-left, top-right, bottom-right, bottom-left]. Two- and
+// three-value forms follow the same expansion rules as CSS.
+function expandRadii(radius){
+  const parts=Array.isArray(radius)?radius:typeof radius==='string'
+    ?radius.trim().split(/[\s,]+/).filter(Boolean):[radius??0];
+  const values=parts.map(v=>Math.max(0,Math.round(Number(v)||0)));
+  if(values.length===0)return [0,0,0,0];
+  if(values.length===1)return [values[0],values[0],values[0],values[0]];
+  if(values.length===2)return [values[0],values[1],values[0],values[1]];
+  if(values.length===3)return [values[0],values[1],values[2],values[1]];
+  return values.slice(0,4);
+}
+
 function normalizeRect(shape){
   const x=Math.round(Number(shape.x)||0);
   const y=Math.round(Number(shape.y)||0);
   const w=Math.max(0,Math.round(Number(shape.w)||0));
   const h=Math.max(0,Math.round(Number(shape.h)||0));
   const layer=clamp(Math.round(Number(shape.layer)||0),1,LAYERS-1);
-  const maxRadius=Math.floor(Math.min(w,h)/2);
-  const radius=clamp(Math.round(Number(shape.radius)||0),0,maxRadius);
-  return {id:shape.id,x,y,w,h,radius,layer};
+  const radius=shape.radius??0;
+  const corners=expandRadii(radius);
+  const [tl,tr,br,bl]=corners;
+  // CSS corner-overlap rule: proportionally reduce radii when adjacent
+  // corners would overlap. Floor to retain integer-only circle stepping.
+  let scale=1;
+  for(const [sum,limit] of [[tl+tr,w],[bl+br,w],[tl+bl,h],[tr+br,h]]){
+    if(sum>0)scale=Math.min(scale,limit/sum);
+  }
+  const radii=corners.map(r=>Math.floor(r*scale));
+  return {id:shape.id,x,y,w,h,radius,radii,layer};
 }
 
 /* Generate the top quarter-circle using an incremental integer error.
@@ -131,13 +153,14 @@ export function circleInsets(radius){
 
 function spanForRect(rect,y){
   if(y<rect.y||y>=rect.y+rect.h||rect.w<=0||rect.h<=0)return null;
-  const r=rect.radius;
-  if(r===0)return [rect.x,rect.x+rect.w];
+  const [tl,tr,br,bl]=rect.radii;
   const localY=y-rect.y;
-  let inset=0;
-  if(localY<r) inset=circleInsets(r)[localY];
-  else if(localY>=rect.h-r) inset=circleInsets(r)[rect.h-1-localY];
-  return [rect.x+inset,rect.x+rect.w-inset];
+  let leftInset=0,rightInset=0;
+  if(localY<tl)leftInset=circleInsets(tl)[localY];
+  else if(localY>=rect.h-bl)leftInset=circleInsets(bl)[rect.h-1-localY];
+  if(localY<tr)rightInset=circleInsets(tr)[localY];
+  else if(localY>=rect.h-br)rightInset=circleInsets(br)[rect.h-1-localY];
+  return [rect.x+leftInset,rect.x+rect.w-rightInset];
 }
 
 function createEdge(rect,kind,x){
