@@ -1,0 +1,10 @@
+{
+  "name": "raster-engine",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch server.ts",
+    "start": "bun server.ts",
+    "test": "bun test"
+  }
+}

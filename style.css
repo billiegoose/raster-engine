@@ -1,0 +1,24 @@
+:root{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e7edf5;background:#0c121c;font-size:13px}*{box-sizing:border-box}body{margin:0}header{display:flex;justify-content:space-between;gap:20px;align-items:end;padding:32px max(24px,calc((100vw - 1440px)/2));border-bottom:1px solid #263244;background:#111b29}.eyebrow{font-size:11px;letter-spacing:.15em;color:#70c8bb}h1{font-size:29px;letter-spacing:-.06em;margin:10px 0}h2{font-size:14px;margin:0;color:#f4f6fa}h3{font-size:12px;color:#9bb2cb}p{line-height:1.7;color:#a8b8cb;max-width:780px}header p{margin-bottom:0}main{max-width:1490px;margin:auto;padding:22px;display:grid;grid-template-columns:minmax(480px,1.4fr) minmax(340px,1fr);gap:16px;align-items:start}.panel{background:#131e2b;border:1px solid #29384b;border-radius:9px;padding:18px;min-width:0}.panel-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.panel-heading span,.timeline span{font-size:11px;color:#8299b0}button{background:#233448;border:1px solid #3a5069;border-radius:5px;color:#dbe8f7;padding:8px 11px;font:inherit;cursor:pointer}button:hover,button.selected{background:#276e79;border-color:#58b9b5;color:white}.header-actions,.transport,.tabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}#screen{display:block;width:100%;image-rendering:pixelated;background:#101827;border:1px solid #405068;aspect-ratio:8/5}.transport{margin:16px 0}.transport label{display:flex;align-items:center;gap:9px;flex:1;min-width:160px}.transport input{flex:1;min-width:80px;accent-color:#64c6ba}output{min-width:25px;text-align:right}.timeline{margin-top:16px}.timeline canvas{display:block;width:100%;height:100px;background:#0b1420;border:1px solid #34465c}.timeline span{display:block;margin-top:7px}.tabs{border-bottom:1px solid #34465c;padding-bottom:12px}.tabs button{font-size:11px}#inspect{height:470px;overflow:auto;margin-top:10px}.event{display:grid;grid-template-columns:72px 1fr;gap:12px;border-bottom:1px solid #27364a;padding:8px 4px}.event code{color:#77c9be}.event small{color:#8b9fb5}.empty{color:#8b9fb5;padding:20px}.shape-row{display:grid;grid-template-columns:76px repeat(4,minmax(0,1fr)) 52px 28px;gap:6px;align-items:end;margin:8px 0;padding:8px;background:#192738;border-radius:5px}.shape-row label,.palette-row label{display:grid;gap:4px;color:#90a7c0;font-size:10px}input,select{min-width:0;width:100%;border:1px solid #40536c;background:#0d1724;color:#e7edf5;border-radius:4px;padding:6px;font:inherit}input[type=color]{height:30px;padding:2px}.shape-row button{padding:5px}.palette-row{display:grid;grid-template-columns:1fr 1fr 1fr 28px;gap:8px;margin:8px 0}.notes p{font-size:12px;margin:10px 0}.notes strong{color:#d4e9f4}@media(max-width:950px){main{grid-template-columns:1fr}.shape-row{grid-template-columns:76px repeat(4,minmax(0,1fr)) 52px 28px}header{padding:22px;flex-wrap:wrap}}
+/* Simultaneous X/Y program inspection */
+.inspector{grid-column:1 / -1}
+.program-columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.program-pane{min-width:0;background:#0e1825;border:1px solid #34465c;border-radius:6px;overflow:hidden}
+.program-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px;border-bottom:1px solid #34465c}
+.program-heading h3{margin:0;color:#d9f1f5;font-size:13px}
+.program-heading span{font-size:11px;color:#8b9fb5}
+.program-list{height:420px;overflow:auto;padding:6px 10px}
+.program-list .event{grid-template-columns:100px minmax(0,1fr);overflow-wrap:anywhere}
+.program-list .event small{display:block;margin-top:4px}
+.y-instruction{cursor:pointer}
+.y-instruction:hover{background:#22354a}
+.y-instruction.current{background:#244b52;border-left:3px solid #78d2c1;padding-left:7px}
+.y-instruction code{color:#efba75}
+@media(max-width:680px){.program-columns{grid-template-columns:1fr}.program-list{height:300px}}
+.y-instruction.executed{opacity:.65}
+.y-instruction.current{opacity:1}
+
+.shape-row{grid-template-columns:repeat(5,minmax(0,1fr)) 52px 28px}
+@media(max-width:950px){.shape-row{grid-template-columns:repeat(5,minmax(0,1fr)) 52px 28px}}
+
+/* Preserve square raster pixels at every responsive canvas width. */
+#screen{width:100%;height:auto;aspect-ratio:320 / 200;object-fit:contain}
