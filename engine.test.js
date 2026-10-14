@@ -1,5 +1,5 @@
 import {test,expect} from 'bun:test';
-import {HEIGHT,demoScene,rasterize,referenceRow,compileY,runYProgram,circleInsets} from './engine.js';
+import {WIDTH,HEIGHT,demoScene,rasterize,referenceRow,compileY,runYProgram,circleInsets} from './engine.js';
 
 test('compiled X programs match direct geometric rasterization on every scanline',()=>{
   const scene=demoScene(),r=rasterize(scene);
@@ -136,25 +136,25 @@ test('incremental integer arcs match exact circle coverage for radii 1–128',()
 
 test('default Paint scene preserves foregrounds, background, and palette',()=>{
   const r=rasterize(demoScene());
-  expect(r.frames[5].row[5]).toBe(1); // desktop
-  expect(r.frames[19].row[76]).toBe(4); // title bar background to the right of traffic lights
-  expect(r.frames[50].row[55]).toBe(8); // sky
-  expect(r.frames[115].row[145]).toBe(11); // house in front of grass
-  expect(r.frames[100].row[215]).toBe(14); // canopy in front of sky
-  expect(r.frames[170].row[73]).toBe(12); // color palette in status strip
+  expect(r.frames[10].row[10]).toBe(1); // desktop
+  expect(r.frames[78].row[152]).toBe(4); // title bar background to the right of traffic lights
+  expect(r.frames[140].row[110]).toBe(8); // sky
+  expect(r.frames[270].row[290]).toBe(11); // house in front of grass
+  expect(r.frames[240].row[430]).toBe(14); // canopy in front of sky
+  expect(r.frames[380].row[146]).toBe(12); // color palette in status strip
 });
 
 test('default Paint scene uses macOS traffic lights, menu items, and a two-column sidebar toolbar',()=>{
   const r=rasterize(demoScene());
-  expect(r.frames[20].row[30]).toBe(19); // red close button flush left
-  expect(r.frames[20].row[46]).toBe(20); // yellow minimize button
-  expect(r.frames[20].row[62]).toBe(21); // green maximize button
-  expect(r.frames[35].row[30]).toBe(7);  // File menu block
-  expect(r.frames[35].row[52]).toBe(7);  // Edit menu block
-  expect(r.frames[35].row[95]).toBe(7);  // Image menu block
-  expect(r.frames[52].row[27]).toBe(16); // left toolbar button column 1
-  expect(r.frames[52].row[38]).toBe(16); // left toolbar button column 2
-  expect(r.frames[56].row[33]).toBe(5);  // gap between columns remains sidebar bg
+  expect(r.frames[80].row[60]).toBe(19); // red close button flush left
+  expect(r.frames[80].row[92]).toBe(20); // yellow minimize button
+  expect(r.frames[80].row[124]).toBe(21); // green maximize button
+  expect(r.frames[110].row[60]).toBe(7);  // File menu block
+  expect(r.frames[110].row[104]).toBe(7);  // Edit menu block
+  expect(r.frames[110].row[190]).toBe(7);  // Image menu block
+  expect(r.frames[144].row[54]).toBe(16); // left toolbar button column 1
+  expect(r.frames[144].row[76]).toBe(16); // left toolbar button column 2
+  expect(r.frames[152].row[66]).toBe(5);  // gap between columns remains sidebar bg
 });
 
 test('each corner has an independent circular radius',()=>{
@@ -180,8 +180,19 @@ test('CSS radius normalization prevents adjacent corners overlapping',()=>{
 
 test('the window title has square bottom corners and the status strip fits rounded bottom corners',()=>{
   const frames=rasterize(demoScene()).frames;
-  expect(frames[27].row[20]).toBe(4); // title bar remains square at bottom-left
-  expect(frames[166].row[20]).toBe(5); // status strip starts square
-  expect(frames[177].row[20]).not.toBe(5); // bottom strip no longer spills past window shell
-  expect(frames[177].row[45]).toBe(5); // middle of status strip remains filled
+  expect(frames[94].row[40]).toBe(4); // title bar remains square at bottom-left
+  expect(frames[372].row[40]).toBe(5); // status strip starts square
+  expect(frames[394].row[40]).not.toBe(5); // bottom strip no longer spills past window shell
+  expect(frames[394].row[90]).toBe(5); // middle of status strip remains filled
+});
+
+test('640x480 demo fills the VGA frame and preserves circular scaled geometry',()=>{
+  const scene=demoScene();
+  expect([WIDTH,HEIGHT]).toEqual([640,480]);
+  const background=scene.shapes.find(s=>s.id===1);
+  expect([background.x,background.y,background.w,background.h]).toEqual([0,0,640,480]);
+  const window=scene.shapes.find(s=>s.id===3);
+  expect([window.x,window.y,window.w,window.h,window.radius]).toEqual([36,60,552,340,20]);
+  const title=scene.shapes.find(s=>s.id===4);
+  expect(title.radius).toEqual([16,16,0,0]);
 });

@@ -1,6 +1,6 @@
 # Raster Engine
 
-An experimental framebuffer-free graphics engine built with Bun, JavaScript, HTML and Canvas.
+An experimental framebuffer-free **640 × 480 VGA** graphics engine built with Bun, JavaScript, HTML and Canvas.
 
 ## Run
 
@@ -10,7 +10,28 @@ bun run dev
 
 Open http://localhost:3000.
 
-Run tests with `bun test`.
+Run tests with `bun test`. The default Paint-style VGA demo scales the original
+artwork uniformly by 2 and centers it vertically; all geometry uses square pixels.
+
+## Browser/server boundary
+
+The browser imports **only `scene.js`** for viewport constants and the editable
+sample scene. The Bun server imports `engine.js` and runs both reference
+interpreters. The browser does not execute either interpreter.
+
+- `GET /api/backends` lists available execution implementations.
+- `POST /api/run` accepts `{ "backend": "javascript", "scene": { ... } }`.
+  The response contains `width`, `height`, `backend`, the compiled Y `program`,
+  scanline `frames` (indexed pixel arrays, X linked-list snapshots, palette,
+  program counter and instruction/mutation trace), and aggregate statistics.
+- The GUI renders the returned pixels and trace and allows Y-program inspection.
+  The API is backend-neutral so a Pypeline simulator can later implement the
+  same contract.
+
+The reference VM still uses an incrementally generated, cached array of circle
+insets. Replacing this with live per-rectangle Bresenham state is deferred until
+we have cycle timing and a Pypeline implementation to measure. A possible
+alternative is to populate an arc cache during vertical blanking.
 
 ## Architecture
 

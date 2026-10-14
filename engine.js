@@ -2,91 +2,8 @@
    A compact Y-program schedules rounded rectangles and palette changes.
    The Y VM executes those instructions, maintains active rounded-rectangle
    generators, and materializes an X linked list for the current scanline. */
-export const WIDTH=320, HEIGHT=200, LAYERS=64;
-export const initialPalette=()=>Array.from({length:LAYERS},(_,i)=>i===0?'#101827':'#ffffff');
-export const demoScene=()=>({
-  palette:Object.assign(initialPalette(),{
-    1:'#0f6b78',  // desktop teal
-    2:'#4b4b4b',  // drop shadow
-    3:'#c3c7cb',  // window chrome
-    4:'#0a5cc8',  // blue title bar
-    5:'#e8e8e8',  // menus and toolbars
-    6:'#ffffff',  // drawing paper
-    7:'#000000',  // outlines / black swatch / menu text
-    8:'#86c9ff',  // sky
-    9:'#64b44e',  // grass
-    10:'#ffd84a', // sun
-    11:'#8c6239', // house walls
-    12:'#d84a3a', // red roof
-    13:'#73512f', // tree trunk
-    14:'#2e8b57', // tree canopy
-    15:'#7f7f7f', // door
-    16:'#b7b7b7', // UI buttons / icons
-    17:'#b9e6ff', // windows
-    18:'#ffffff', // clouds
-    19:'#ff5f57', // macOS close
-    20:'#febc2e', // macOS minimize
-    21:'#28c840'  // macOS maximize
-  }),
-  shapes:[
-    // Desktop, shadow, and Paint-style application window.
-    {id:1,x:0,y:0,w:320,h:200,radius:0,layer:1},
-    {id:2,x:22,y:14,w:276,h:170,radius:10,layer:2},
-    {id:3,x:18,y:10,w:276,h:170,radius:10,layer:3},
-    {id:4,x:20,y:12,w:272,h:16,radius:[8,8,0,0],layer:4},
-    {id:5,x:20,y:30,w:272,h:10,radius:0,layer:5},
-    // Left sidebar and bottom status / palette strip.
-    {id:6,x:20,y:42,w:26,h:122,radius:0,layer:5},
-    {id:7,x:20,y:166,w:272,h:12,radius:[0,0,8,8],layer:5},
-    // Paper, sky, grass, sun and clouds.
-    {id:8,x:47,y:42,w:245,h:122,radius:0,layer:7},
-    {id:9,x:48,y:43,w:243,h:120,radius:0,layer:6},
-    {id:10,x:49,y:44,w:241,h:54,radius:0,layer:8},
-    {id:11,x:49,y:98,w:241,h:64,radius:0,layer:9},
-    {id:12,x:62,y:52,w:20,h:20,radius:10,layer:10},
-    {id:13,x:94,y:59,w:43,h:10,radius:5,layer:18},
-    {id:14,x:104,y:54,w:24,h:16,radius:8,layer:18},
-    // Little house: walls and roof in front of the grass.
-    {id:15,x:132,y:92,w:56,h:34,radius:0,layer:11},
-    {id:16,x:126,y:82,w:68,h:12,radius:2,layer:12},
-    {id:17,x:153,y:106,w:14,h:20,radius:0,layer:15},
-    {id:18,x:140,y:100,w:10,h:10,radius:0,layer:17},
-    {id:19,x:171,y:100,w:10,h:10,radius:0,layer:17},
-    // Tree: canopy in front of the trunk.
-    {id:20,x:214,y:100,w:10,h:24,radius:0,layer:13},
-    {id:21,x:198,y:80,w:42,h:28,radius:14,layer:14},
-    // macOS-style traffic lights flush left in the title bar.
-    {id:22,x:24,y:14,w:12,h:12,radius:6,layer:19},
-    {id:23,x:40,y:14,w:12,h:12,radius:6,layer:20},
-    {id:24,x:56,y:14,w:12,h:12,radius:6,layer:21},
-    // Menu strip: File / Edit / View / Image / Help as tiny dark rectangles.
-    {id:25,x:28,y:33,w:12,h:4,radius:0,layer:7},
-    {id:26,x:48,y:33,w:12,h:4,radius:0,layer:7},
-    {id:27,x:68,y:33,w:12,h:4,radius:0,layer:7},
-    {id:28,x:88,y:33,w:16,h:4,radius:0,layer:7},
-    {id:29,x:112,y:33,w:12,h:4,radius:0,layer:7},
-    // Left sidebar toolbar as a two-column button grid.
-    {id:30,x:24,y:48,w:8,h:8,radius:2,layer:16},
-    {id:31,x:35,y:48,w:8,h:8,radius:2,layer:16},
-    {id:32,x:24,y:61,w:8,h:8,radius:2,layer:16},
-    {id:33,x:35,y:61,w:8,h:8,radius:2,layer:16},
-    {id:34,x:24,y:74,w:8,h:8,radius:2,layer:16},
-    {id:35,x:35,y:74,w:8,h:8,radius:2,layer:16},
-    {id:36,x:24,y:87,w:8,h:8,radius:2,layer:16},
-    {id:37,x:35,y:87,w:8,h:8,radius:2,layer:16},
-    {id:38,x:24,y:100,w:8,h:8,radius:2,layer:16},
-    {id:39,x:35,y:100,w:8,h:8,radius:2,layer:16},
-    {id:40,x:24,y:113,w:8,h:8,radius:2,layer:16},
-    {id:41,x:35,y:113,w:8,h:8,radius:2,layer:16},
-    // Color palette in the bottom strip.
-    {id:42,x:54,y:167,w:12,h:10,radius:0,layer:7},
-    {id:43,x:68,y:167,w:12,h:10,radius:0,layer:12},
-    {id:44,x:82,y:167,w:12,h:10,radius:0,layer:8},
-    {id:45,x:96,y:167,w:12,h:10,radius:0,layer:9},
-    {id:46,x:110,y:167,w:12,h:10,radius:0,layer:10}
-  ],
-  paletteEvents:[]
-});
+import {WIDTH,HEIGHT,LAYERS,initialPalette,demoScene} from './scene.js';
+export {WIDTH,HEIGHT,LAYERS,initialPalette,demoScene} from './scene.js';
 
 const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,n));
 const edgeOrder=(a,b)=>a.x-b.x||a.layer-b.layer||a.delta-b.delta||a.key.localeCompare(b.key);
@@ -369,14 +286,16 @@ export const rasterize=compile;
 
 export function referenceRow(scene,y){
   const row=new Uint8Array(WIDTH);
-  for(let x=0;x<WIDTH;x++){
-    let layer=0;
-    for(const raw of scene.shapes||[]){
-      const rect=normalizeRect(raw);
-      const span=spanForRect(rect,y);
-      if(span&&x>=clamp(Math.round(span[0]),0,WIDTH)&&x<clamp(Math.round(span[1]),0,WIDTH))layer=Math.max(layer,rect.layer);
-    }
-    row[x]=layer;
+  // Normalize geometry once per shape per row, not once per pixel. This is
+  // important for the larger VGA reference image while remaining independent
+  // of the X-list interpreter and its palette reference-count machinery.
+  for(const raw of scene.shapes||[]){
+    const rect=normalizeRect(raw);
+    const span=spanForRect(rect,y);
+    if(!span)continue;
+    const left=clamp(Math.round(span[0]),0,WIDTH);
+    const right=clamp(Math.round(span[1]),0,WIDTH);
+    for(let x=left;x<right;x++)row[x]=Math.max(row[x],rect.layer);
   }
   return row;
 }
