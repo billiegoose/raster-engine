@@ -41,7 +41,7 @@ test('API exposes backends and returns a JSON execution result',async()=>{
   expect(run.backend).toBe('javascript');
   expect(run.frames).toHaveLength(HEIGHT);
   expect(run.program.some(ins=>ins.op==='ROUND_RECT')).toBe(true);
-  expect(run.frames[80].row[60]).toBe(19);
+  expect(run.frames[120].row[250]).toBe(19);
 });
 
 test('API rejects invalid requests and unsupported backends',async()=>{

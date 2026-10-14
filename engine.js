@@ -155,22 +155,30 @@ function syncActiveRects(machine,y){
 
 function renderRow(head){
   const counts=new Int32Array(LAYERS),row=new Uint8Array(WIDTH);
-  let node=head.next,active=0n,events=0;
+  let node=head.next,events=0,top=0;
   for(let x=0;x<WIDTH;x++){
-    while(node&&node.x<=x){
-      const l=node.layer;
-      if(!Number.isInteger(l)||l<1||l>=LAYERS)throw Error(`Invalid paint layer ${l}`);
-      counts[l]+=node.delta;
-      if(counts[l]<0)throw Error(`Unbalanced STOP at x=${x} layer=${l}`);
-      if(counts[l])active|=1n<<BigInt(l);
-      else active&=~(1n<<BigInt(l));
-      node=node.next;events++;
+    // Only X transitions can change the highest active layer. Recompute
+    // compositing priority at those positions instead of 1280 times per row.
+    if(node&&node.x<=x){
+      while(node&&node.x<=x){
+        const l=node.layer;
+        if(!Number.isInteger(l)||l<1||l>=LAYERS)throw Error(`Invalid paint layer ${l}`);
+        counts[l]+=node.delta;
+        if(counts[l]<0)throw Error(`Unbalanced STOP at x=${x} layer=${l}`);
+        node=node.next;events++;
+      }
+      top=0;
+      for(let l=LAYERS-1;l>0;l--)if(counts[l]>0){top=l;break;}
     }
-    let top=0;
-    for(let l=LAYERS-1;l>0;l--)if(active&(1n<<BigInt(l))){top=l;break;}
     row[x]=top;
   }
-  while(node&&node.x===WIDTH){counts[node.layer]+=node.delta;node=node.next;events++;}
+  while(node&&node.x===WIDTH){
+    const l=node.layer;
+    if(!Number.isInteger(l)||l<1||l>=LAYERS)throw Error(`Invalid paint layer ${l}`);
+    counts[l]+=node.delta;
+    if(counts[l]<0)throw Error(`Unbalanced STOP at x=${WIDTH} layer=${l}`);
+    node=node.next;events++;
+  }
   if(node)throw Error('X instruction beyond screen');
   for(let l=1;l<LAYERS;l++)if(counts[l]!==0)throw Error(`Unbalanced layer ${l}`);
   return {row,events};

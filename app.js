@@ -1,6 +1,6 @@
 import {WIDTH,HEIGHT,LAYERS,demoScene} from './scene.js';
 import {paletteView} from './palette-view.js';
-let scene=demoScene(), result, selectedY=220, playing=false,timer=null, runGeneration=0;
+let scene=demoScene(), result, selectedY=330, playing=false,timer=null, runGeneration=0;
 const $=id=>document.getElementById(id);
 const screen=$('screen'),ctx=screen.getContext('2d'),timeline=$('timeline').getContext('2d');
 async function build() {
@@ -135,8 +135,8 @@ function changeY(y){selectedY=Math.max(0,Math.min(HEIGHT-1,y));draw();inspect();
 $('backend').addEventListener('change',build);
 $('scanline').addEventListener('input',e=>changeY(+e.target.value));$('prev').onclick=()=>changeY(selectedY-1);$('next').onclick=()=>changeY(selectedY+1);
 $('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'❚❚ Pause':'▶ Play';if(timer)clearInterval(timer);if(playing)timer=setInterval(()=>changeY((selectedY+1)%HEIGHT),65);};
-$('reset').onclick=()=>{scene=demoScene();build();};$('add').onclick=()=>{const id=Math.max(0,...scene.shapes.map(s=>s.id))+1;scene.shapes.push({id,x:80,y:120,w:160,h:100,radius:20,layer:Math.min(63,id)});scene.palette[Math.min(63,id)]='#a9c9ee';build();};
-$('addPalette').onclick=()=>{scene.paletteEvents.push({y:200,layer:3,color:'#d64e78'});build();};
+$('reset').onclick=()=>{scene=demoScene();build();};$('add').onclick=()=>{const id=Math.max(0,...scene.shapes.map(s=>s.id))+1;scene.shapes.push({id,x:280,y:180,w:240,h:150,radius:30,layer:Math.min(63,id)});scene.palette[Math.min(63,id)]='#a9c9ee';build();};
+$('addPalette').onclick=()=>{scene.paletteEvents.push({y:300,layer:3,color:'#d64e78'});build();};
 $('shapes').addEventListener('change',e=>{const t=e.target;if(t.dataset.id){const s=scene.shapes.find(s=>s.id===+t.dataset.id);s[t.dataset.key]=t.dataset.key==='radius'?(()=>{const values=t.value.trim().split(/[\s,]+/).filter(Boolean).slice(0,4).map(v=>Math.max(0,Math.round(Number(v)||0)));return values.length===1?values[0]:values.length?values:0;})():+t.value;if(t.dataset.key==='layer')s.layer=Math.max(1,Math.min(63,s.layer));build();}});
 $('shapes').addEventListener('click',e=>{const id=e.target.dataset.remove;if(id){scene.shapes=scene.shapes.filter(s=>s.id!==+id);build();}});
 $('paletteEvents').addEventListener('change',e=>{const t=e.target;if(t.dataset.event!==undefined){scene.paletteEvents[+t.dataset.event][t.dataset.key]=t.dataset.key==='color'?t.value:+t.value;build();}});

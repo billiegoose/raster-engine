@@ -1,6 +1,6 @@
 # Raster Engine
 
-An experimental framebuffer-free **640 × 480 VGA** graphics engine built with Bun, JavaScript, HTML and Canvas.
+An experimental framebuffer-free **1280 × 720 HD (720p)** graphics engine built with Bun, JavaScript, HTML and Canvas.
 
 ## Run
 
@@ -10,8 +10,9 @@ bun run dev
 
 Open http://localhost:3000.
 
-Run tests with `bun test`. The default Paint-style VGA demo scales the original
-artwork uniformly by 2 and centers it vertically; all geometry uses square pixels.
+Run tests with `bun test`. The default Paint-style 720p demo scales the earlier
+640 × 480 scene uniformly by 1.5 and centers it horizontally; the desktop fills
+the entire 1280 × 720 frame. All geometry uses square pixels.
 
 ## Browser/server boundary
 
