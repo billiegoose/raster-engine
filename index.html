@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Raster Engine — Scene Editor & Simulator</title>
+  <link rel="stylesheet" href="/fonts/red2-font.css">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -38,10 +39,12 @@
             <h2>Scene canvas</h2>
             <span>Click to select · drag to move · drag corner to resize</span>
           </div>
-          <div id="editor-canvas-shell" class="editor-canvas-shell">
-            <div id="editor-stage" class="editor-stage" role="group" aria-label="Editable 1280 by 720 scene"></div>
+          <div class="editor-canvas-scroll">
+            <div id="editor-canvas-shell" class="editor-canvas-shell">
+              <div id="editor-stage" class="editor-stage" role="group" aria-label="Editable 1280 by 720 scene"></div>
+            </div>
           </div>
-          <div class="editor-help">DOM preview approximates bitmap typography and CSS corner curves; the simulator is authoritative. Arrow keys nudge selected objects (Shift: 10 px).</div>
+          <div class="editor-help">DOM preview approximates bitmap typography and CSS corner curves; the simulator is authoritative. Arrow keys nudge selected objects (Shift: 10 px) · Delete/Backspace removes selection.</div>
         </section>
         <aside class="editor-sidebar">
           <section class="panel object-list-panel" aria-label="Scene objects">

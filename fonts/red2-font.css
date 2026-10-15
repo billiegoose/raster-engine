@@ -1,0 +1,20 @@
+/* 1 artwork pixel = 1 CSS pixel at font-size: 32px. */
+@font-face {
+  font-family: "RED2";
+  src: url("./RED2-Regular.woff2") format("woff2"),
+       url("./RED2-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+.red2 {
+  font-family: "RED2", monospace;
+  font-size: 32px;
+  line-height: 1.125; /* Source height 32px + renderer line gap 4px. */
+  font-kerning: normal;
+  font-variant-ligatures: contextual;
+  font-feature-settings: "kern" 1, "calt" 1;
+  font-synthesis: none;
+  white-space: pre-wrap;
+}

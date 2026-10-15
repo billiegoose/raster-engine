@@ -3,7 +3,7 @@
    Coordinates and object dimensions remain in 1280 x 720 scene units. */
 import {WIDTH,HEIGHT,LAYERS} from './scene.js';
 import {editableScene,sceneObjects,getObject,addRectangle,addText,removeObject,
-        duplicateObject,updateObject,moveObject,resizeObject,radiusCss,paletteColor}
+        duplicateObject,updateObject,moveObject,resizeObject,radiusCss,paletteColor,rectangleThumbnail}
   from './scene-model.js';
 
 const $=id=>document.getElementById(id);
@@ -17,16 +17,9 @@ const numericField=(key,label,value,min,max)=>`<label class="property-field">${l
 export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
   const stage=$('editor-stage'),shell=$('editor-canvas-shell');
   const objectList=$('object-list'),properties=$('object-properties');
-  let selection=null,drag=null,scale=1;
+  let selection=null,drag=null;
   const scene=()=>editableScene(getScene());
   const notify=()=>onChange?.();
-
-  function resizeStage(){
-    const width=shell.clientWidth || WIDTH;
-    scale=Math.min(1,width/WIDTH);
-    stage.style.transform=`scale(${scale})`;
-    shell.style.height=`${Math.ceil(HEIGHT*scale)}px`;
-  }
 
   function updateDomObject(element,type,object,data){
     element.style.left=`${object.x}px`;
@@ -59,7 +52,7 @@ export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
       el.setAttribute('aria-label',objectName(type,object,data));
       if(type==='text'){
         const label=document.createElement('span');
-        label.className='text-content';
+        label.className='text-content red2';
         el.append(label);
       }
       updateDomObject(el,type,object,data);
@@ -82,11 +75,18 @@ export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
     $('editor-stats').textContent=`${data.shapes.length} rectangles · ${data.texts.length} text objects`;
     objectList.innerHTML=items.filter(({type,object})=>
       objectName(type,object,data).toLowerCase().includes(filter))
-      .map(({type,object})=>`<button type="button" class="object-list-item${selection?.type===type&&selection.id===object.id?' is-selected':''}" data-select-type="${type}" data-select-id="${object.id}" aria-pressed="${selection?.type===type&&selection.id===object.id}">
-          <span class="object-swatch" style="background:${html(colorInput(paletteColor(data,object.layer)))}"></span>
-          <span class="object-list-text"><strong>${html(objectName(type,object,data))}</strong><small>${type==='rect'?'Rounded rectangle':'Text buffer '+object.buffer_ptr} · ${object.x}, ${object.y}</small></span>
+      .map(({type,object})=>{
+        const color=html(colorInput(paletteColor(data,object.layer)));
+        const preview=type==='rect'?(()=>{
+          const thumb=rectangleThumbnail(object);
+          return `<span class="object-thumbnail-shape" style="width:${thumb.width}px;height:${thumb.height}px;border-radius:${thumb.borderRadius};background:${color}"></span>`;
+        })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(String(data.textBuffers[String(object.buffer_ptr)]??'').split('\n')[0].slice(0,12)||'TEXT')}</span>`;
+        return `<button type="button" class="object-list-item${selection?.type===type&&selection.id===object.id?' is-selected':''}" data-select-type="${type}" data-select-id="${object.id}" aria-label="${html(objectName(type,object,data))}, layer ${object.layer}" aria-pressed="${selection?.type===type&&selection.id===object.id}">
+          <span class="object-thumbnail">${preview}</span>
+          <span class="object-list-text"><strong>${type==='rect'?'Rectangle':'Text'} ${object.id}</strong></span>
           <span class="object-layer">L${object.layer}</span>
-        </button>`).join('')||'<p class="empty">No matching objects.</p>';
+        </button>`;
+      }).join('')||'<p class="empty">No matching objects.</p>';
   }
 
   function renderProperties(){
@@ -129,7 +129,7 @@ export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
   }
 
   function render(){
-    renderStage();renderObjectList();renderProperties();renderPaletteEvents();resizeStage();
+    renderStage();renderObjectList();renderProperties();renderPaletteEvents();
   }
 
   function select(type,id){
@@ -162,8 +162,8 @@ export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
   });
   stage.addEventListener('pointermove',event=>{
     if(!drag||event.pointerId!==drag.pointerId)return;
-    const dx=Math.round((event.clientX-drag.clientX)/scale);
-    const dy=Math.round((event.clientY-drag.clientY)/scale);
+    const dx=Math.round(event.clientX-drag.clientX);
+    const dy=Math.round(event.clientY-drag.clientY);
     if(!dx&&!dy&&!drag.changed)return;
     if(drag.mode==='resize')resizeObject(scene(),drag.type,drag.id,drag.w,drag.h,dx,dy);
     else moveObject(scene(),drag.type,drag.id,drag.x,drag.y,dx,dy);
@@ -214,6 +214,14 @@ export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
     if(el)updateDomObject(el,'text',obj,scene());
     renderObjectList();notify();
   });
+  function deleteSelection(){
+    if(!selection || !removeObject(scene(),selection.type,selection.id))return false;
+    selection=null;
+    render();
+    notify();
+    return true;
+  }
+
   properties.addEventListener('click',event=>{
     if(!selection)return;
     if(event.target.closest('#duplicate-object')){
@@ -225,9 +233,7 @@ export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
         notify();
       }
     }else if(event.target.closest('#delete-object')){
-      if(removeObject(scene(),selection.type,selection.id)){
-        selection=null;render();notify();
-      }
+      deleteSelection();
     }
   });
   $('add-rect').addEventListener('click',()=>{
@@ -262,7 +268,13 @@ export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
 
   document.addEventListener('keydown',event=>{
     if($('editor-view').hidden || !selection)return;
-    if(event.target.matches('input,textarea,select,[contenteditable="true"]'))return;
+    if(event.target.closest('input,textarea,select,[contenteditable], [role="textbox"]'))return;
+    if(event.ctrlKey||event.metaKey||event.altKey)return;
+    if(event.key==='Delete'||event.key==='Backspace'){
+      event.preventDefault();
+      deleteSelection();
+      return;
+    }
     if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;
     event.preventDefault();
     const object=getObject(scene(),selection.type,selection.id);
@@ -273,8 +285,6 @@ export function createSceneEditor({getScene,onChange,onSimulate,onReset}){
     moveObject(scene(),selection.type,selection.id,object.x,object.y,dx,dy);
     renderStage();renderObjectList();renderProperties();notify();
   });
-  if(typeof ResizeObserver!=='undefined')new ResizeObserver(resizeStage).observe(shell);
-  window.addEventListener('resize',resizeStage);
   render();
   return {render,clearSelection(){selection=null;render();}, getSelection(){return selection;}};
 }

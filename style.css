@@ -76,19 +76,22 @@ main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; 
 .panel-heading { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .panel-heading > span { font-size: 11px; color: var(--muted); }
 
-/* The editor stage is precisely 1280x720 in logical scene pixels. CSS scales
-   the stage as a whole, so native pointer coordinates can be mapped to pixels. */
+/* Both editor and simulator use native 1280x720 CSS pixels. Narrow viewports
+   scroll horizontally instead of scaling glyphs or rounding pixel positions. */
 .editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 348px; align-items: start; gap: 17px; }
 .editor-canvas-panel { min-width: 0; }
+.editor-canvas-scroll {
+  width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden;
+  padding: 2px;
+}
 .editor-canvas-shell {
-  width: 100%; height: 720px; overflow: hidden; position: relative;
-  border: 1px solid #506179; border-radius: 4px;
+  width: 1280px; height: 720px; overflow: hidden; position: relative;
+  outline: 1px solid #506179; border-radius: 4px;
   background: #0c1725;
 }
 .editor-stage {
   position: absolute; top: 0; left: 0;
   width: 1280px; height: 720px;
-  transform-origin: top left;
   overflow: hidden;
   isolation: isolate;
   cursor: crosshair;
@@ -118,7 +121,16 @@ main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; 
   box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset;
   border-radius: inherit;
 }
-.scene-text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: 27px; line-height: 36px; white-space: pre-wrap; overflow: visible; word-break: break-all; }
+.scene-text { font-family: "RED2", monospace; font-weight: 400; font-size: 32px; line-height: 36px; white-space: pre-wrap; overflow: visible; word-break: break-all; }
+/* Keep the scene preview at the RED2 font's native artwork scale. */
+.scene-text .text-content.red2 {
+  font-size: 32px;
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0px;
+  font-feature-settings: "kern" 1, "calt" 1;
+  line-height: 36px;
+}
 .text-content { display: block; width: 100%; height: 100%; white-space: pre-wrap; overflow: hidden; pointer-events: none; }
 .object-resize-handle {
   position: absolute; right: -8px; bottom: -8px;
@@ -132,17 +144,24 @@ main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; 
 .object-filter-row { margin-bottom: 9px; }
 .object-list { display: flex; flex-direction: column; gap: 4px; overflow: auto; max-height: 390px; padding-right: 4px; }
 .object-list-item {
-  display: flex; align-items: center; gap: 9px; width: 100%;
-  text-align: left; background: #172536; border-color: #293e52; padding: 9px;
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  text-align: left; background: #172536; border-color: #293e52; padding: 7px;
 }
 .object-list-item:hover { background: #213b4e; }
 .object-list-item.is-selected { border-color: var(--accent); background: #21515a; }
-.object-swatch { display: block; width: 21px; height: 29px; flex: 0 0 21px; border: 1px solid #7d8c9f; border-radius: 4px; }
-.object-list-text { flex: 1; min-width: 0; display: grid; gap: 4px; }
-.object-list-text strong, .object-list-text small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.object-list-text strong { font-weight: 650; color: #e1effc; }
-.object-list-text small { font-size: 10px; color: #9cb4ce; }
-.object-layer { font-size: 10px; color: #a6c9d9; border: 1px solid #406074; padding: 3px 5px; border-radius: 3px; }
+.object-thumbnail {
+  display: flex; flex: 0 0 140px; justify-content: center; align-items: center;
+  width: 140px; height: 88px; overflow: hidden;
+  background: #0b1724; border: 1px solid #344b61; border-radius: 5px;
+}
+.object-thumbnail-shape { display: block; flex: 0 0 auto; min-width: 1px; min-height: 1px; }
+.object-thumbnail-text.red2 {
+  max-width: 124px; overflow: hidden; text-overflow: clip; white-space: nowrap;
+  font-size: 21px; font-weight: 400; line-height: 1.125; letter-spacing: normal;
+}
+.object-list-text { flex: 1; min-width: 0; }
+.object-list-text strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 650; color: #e1effc; }
+.object-layer { flex: 0 0 auto; font-size: 10px; color: #a6c9d9; border: 1px solid #406074; padding: 3px 5px; border-radius: 3px; }
 .property-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
 .property-field { display: grid; align-items: start; gap: 5px; min-width: 0; color: #a8bbd0; font-size: 11px; }
 .property-full { grid-column: 1 / -1; }
@@ -164,7 +183,7 @@ main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; 
 .backend-picker select { width: auto; min-width: 160px; }
 .preview { min-width: 0; }
 .sim-canvas-scroll { max-width: 100%; overflow-x: auto; padding: 2px; }
-#screen { display: block; width: 1280px; height: 720px; image-rendering: pixelated; background: #101827; border: 1px solid #3b5065; }
+#screen { display: block; width: 1280px; height: 720px; image-rendering: pixelated; background: #101827; outline: 1px solid #3b5065; }
 .transport { margin: 14px 0; }
 .transport label { display: flex; align-items: center; gap: 9px; min-width: 200px; flex: 1; }
 .transport input { flex: 1; }

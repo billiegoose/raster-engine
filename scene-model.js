@@ -114,6 +114,20 @@ export function radiusCss(radius){
   return (Array.isArray(radius)?radius:[radius??0]).map(v=>Math.max(0,integer(v))+'px').join(' ');
 }
 
+/** CSS thumbnail geometry, scaled uniformly from real object dimensions.
+ * Corner radii scale by the same factor as its rectangle, preserving the
+ * visual shape rather than merely displaying an oversized color swatch. */
+export function rectangleThumbnail(rect,maxWidth=124,maxHeight=78){
+  const width=Math.max(1,Number(rect.w)||1);
+  const height=Math.max(1,Number(rect.h)||1);
+  const scale=Math.min(maxWidth/width,maxHeight/height);
+  const px=value=>Math.round(value*1000)/1000;
+  const radius=Array.isArray(rect.radius)?rect.radius:
+    typeof rect.radius==='string'?rect.radius.trim().split(/[\s,]+/).filter(Boolean):[rect.radius??0];
+  const cssRadius=radius.map(value=>`${px(Math.max(0,Number(value)||0)*scale)}px`).join(' ');
+  return {width:px(width*scale),height:px(height*scale),borderRadius:cssRadius};
+}
+
 export function paletteColor(scene,layer){
   return scene.palette[layer]||'#ffffff';
 }

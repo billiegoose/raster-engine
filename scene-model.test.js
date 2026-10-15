@@ -1,6 +1,6 @@
 import {test,expect} from 'bun:test';
 import {demoScene} from './scene.js';
-import {editableScene,sceneObjects,addRectangle,addText,getObject,removeObject,duplicateObject,updateObject,moveObject,resizeObject,radiusCss} from './scene-model.js';
+import {editableScene,sceneObjects,addRectangle,addText,getObject,removeObject,duplicateObject,updateObject,moveObject,resizeObject,radiusCss,rectangleThumbnail} from './scene-model.js';
 
 test('scene editing retains original scene schema and creates independent text buffers',()=>{
   const scene=editableScene(demoScene());
@@ -50,4 +50,16 @@ test('rectangle duplication copies independent radius arrays',()=>{
   const copy=duplicateObject(scene,'rect',original.id);
   copy.radius[0]=20;
   expect(original.radius).toEqual([4,8]);
+});
+
+
+test('object thumbnails preserve rectangle proportions and CSS corner radii',()=>{
+  expect(rectangleThumbnail({w:400,h:200,radius:[40,20,10,30]})).toEqual({
+    width:124,height:62,borderRadius:'12.4px 6.2px 3.1px 9.3px'
+  });
+  expect(rectangleThumbnail({w:80,h:400,radius:20})).toEqual({
+    width:15.6,height:78,borderRadius:'3.9px'
+  });
+  const tiny=rectangleThumbnail({w:1,h:1,radius:0});
+  expect(tiny.width).toBe(tiny.height);
 });

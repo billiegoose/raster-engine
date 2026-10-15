@@ -58,12 +58,16 @@ The original shape primitive is a rectangle with a `radius` parameter; the Pytho
 
 The browser has two distinct workspaces that share one editable JSON scene:
 
-- **Scene editor:** 1280 × 720 visual editor using ordinary DOM `div`
-  elements for rounded rectangles and clipped text regions. Select objects on
+- **Scene editor:** fixed native-size 1280 × 720 visual editor using ordinary DOM `div`
+  elements for rounded rectangles and clipped text regions. The scene scrolls
+  horizontally in a narrower window rather than scaling the DOM or its font. Select objects on
   the canvas or from the searchable layer-sorted object list. Drag to move,
   drag the lower-right selection handle to resize, or edit integer coordinates,
   dimensions, four CSS-order corner radii and palette layer in the properties
-  panel. Arrow keys move the selected object by one pixel (Shift: ten).
+  panel. Arrow keys move the selected object by one pixel (Shift: ten),
+  and Delete or Backspace removes the selected object when no text field is
+  active. The Objects list uses enlarged thumbnails with the actual rectangle
+  proportions and CSS-order radii, rather than flat color swatches.
   Use **+ Rounded rectangle** and **+ Text** to create objects; text objects
   each get an independent editable byte-buffer handle. Duplicate creates a new
   text buffer (not an alias), and delete frees a buffer when no other object
@@ -77,9 +81,19 @@ The browser has two distinct workspaces that share one editable JSON scene:
   selected, because JavaScript currently has no mask-source support.
 
 The DOM canvas is an **editing approximation**: it uses CSS rounded corners
-and the browser's normal font. The simulator renders authoritative palette
-pixels and exact 1-bit RED2 glyphs, with differing corner-pixel details where
-CSS and the rasterizer's integer circles diverge. **No background raster
+and RED2's own OpenType web font (32px artwork scale, 36px line height, with
+OpenType `calt` and `kern` enabled). The Objects-pane text thumbnails also use
+that font at a reduced size. The web-font assets in `fonts/` are copied from
+`../red2-font/dist/` (exported from `red2-font` commit `ddbe095`): regenerate
+with `python export_web_font.py` in that repository and copy the generated
+WOFF2, TTF, and stylesheet here after changing the artwork. Unlike the old
+system-font preview, the RED2 font's glyph shapes and contextual kerning now
+match the font source. Browser anti-aliasing and CSS text wrapping can still
+differ from the pixel-accurate renderer.
+
+The simulator renders authoritative palette pixels and exact 1-bit RED2 glyphs,
+with differing corner-pixel details where CSS and the rasterizer's integer
+circles diverge. **No background raster
 rendering happens while dragging.** Scenes currently live in browser memory;
 reloading the page resets to the demo scene.
 
