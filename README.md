@@ -154,6 +154,74 @@ For rectangle-only scenes, the compiler emits a compact Y-program with WAIT_Y, R
 
 Palette changes apply atomically at scanline boundaries in the simulator. The eventual concurrent implementation will require versioning or staging so the next scanline's palette changes cannot affect the current scanline.
 
+## Future goal: coverage-antialiased rounded rectangles
+
+The current rasterizer uses hard, integer-pixel edges. A future optional
+rendering mode should reproduce the visually appealing rounded corners in
+[`golden-reference-aa-arcs.png`](golden-reference-aa-arcs.png), captured from
+the native-size scene editor in Zen (Firefox/WebRender) on macOS. Preserve
+that PNG as a golden reference for comparisons; it is a reference image,
+not a specification of the browser's internal algorithms.
+
+**Initial hypothesis:** fractional geometric pixel coverage with colors
+interpolated directly in gamma-encoded sRGB channel space, rather than
+converted to linear-light intensities. Preliminary analysis of the
+color-profile-corrected screenshot favored sRGB-channel interpolation;
+confirm this with reproducible tests before treating it as established.
+For foreground RGB `F`, the effective underlying RGB `B`, and coverage
+`alpha` from 0 to 1, blend each channel independently:
+
+```
+C = round((1 - alpha) * B + alpha * F)
+```
+
+Here `F`, `B`, and `C` are the usual 8-bit *encoded* RGB channel values,
+not linear-light intensities. For a 4-bit coverage value `a` in `[0, 15]`,
+start with integer arithmetic:
+
+```
+C = ( (15 - a) * B + a * F + 7 ) // 15
+```
+
+That gives 16 coverage levels including fully transparent and opaque.
+Do not confuse **linear interpolation of encoded sRGB values** with
+**linear-light blending**, which requires decoding sRGB, mixing physical
+light intensities, and re-encoding. The two produce visibly different
+edge brightness.
+
+Suggested progression:
+
+1. Build a software reference that calculates fractional coverage of each
+   quarter-circle edge, initially via supersampling, and compares direct
+   sRGB interpolation against linear-light and perceptual alternatives.
+   Convert the reference PNG through its embedded ICC profile before
+   comparing RGB values. Use the screenshot for visual and numeric
+   regression tests, including nearest-neighbor enlargements.
+2. Quantize the best coverage model to 4 bits, inspect banding and arc
+   symmetry, and measure error against an 8-bit or high-precision reference.
+   Keep the solid interiors and the radius-zero path fully opaque.
+3. Fit the chosen coverage generator into the scanline/X-transition
+   architecture without introducing a full framebuffer. Consider a small
+   per-edge coverage state or table, generated during blanking if useful,
+   instead of multiplying every pixel by expensive geometry calculations.
+4. Work out correct compositing for overlapping shapes. Our existing
+   highest-active-layer palette-index lookup is insufficient at a
+   partially covered edge: a pixel must blend with the *effective color
+   beneath that edge*, which might itself contain another antialiased
+   edge. Respect layer priority, clipping, palette updates, and color
+   changes between scanlines. Avoid assuming the background is simply
+   palette entry zero.
+5. Benchmark FPGA cost and timing (BRAM, LUTs, DSPs, pixel throughput)
+   before deciding between on-the-fly channel blending, precomputed
+   palette mixtures, and other resource-conscious representations.
+   Explore antialiasing RED2 text separately once rounded rectangles work.
+
+**Acceptance criteria:** the 1-bit/hard-edge mode remains available and
+unchanged; the new mode has deterministic software tests for radii,
+clipping, overlaps, and dynamic palettes; reference corners look comparably
+smooth at native 1280x720 resolution; and the hardware design can emit one
+pixel per clock without a full-frame color buffer.
+
 ## Next milestone
 
 Build a cycle-stepped model with separate X and Y program counters, an explicit old-list read frontier, safe linked-list mutation, a bounded FIFO, horizontal blanking, and stall/underrun instrumentation. Compare its pixel output against the reference renderer and test adversarial scenes with dense edges and simultaneous inserts/deletes.
