@@ -1,1 +1,117 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Raster Engine — X/Y Programs</title><link rel="stylesheet" href="/style.css"></head><body><header><div><span class="eyebrow">RASTER ENGINE / EXPERIMENT 001</span><h1>Programs that paint programs.</h1><p>A two-dimensional raster machine: Y transforms an ordered linked-list X-program; X resolves 64 paint layers into pixels.</p></div><div class="header-actions"><label class="backend-picker">Backend <select id="backend"><option value="javascript">JavaScript reference</option></select></label><button id="reset">Reset scene</button><button id="add">+ Add shape</button></div></header><main><section class="preview panel"><div class="panel-heading"><h2>Framebuffer-free output</h2><span id="stats"></span></div><canvas id="screen" width="1280" height="720"></canvas><div class="transport"><button id="play">▶ Play</button><button id="prev">← Row</button><button id="next">Row →</button><label>Scanline <input id="scanline" type="range" min="0" max="719" value="330"><output id="yvalue">330</output></label></div><div class="timeline"><canvas id="timeline" width="1280" height="180"></canvas><span>Horizontal: X position · Vertical: scanline · Gold: Y edits · Cyan: X events</span></div></section><section class="inspector panel"><div class="panel-heading"><h2>Execution inspector</h2><span id="rowstats"></span></div><div class="program-columns"><section class="program-pane"><div class="program-heading"><h3>Y-program <small>(<output id="y-count">0</output> instructions)</small></h3><span>executed instruction stream · PC highlighted</span></div><div id="y-program" class="program-list"></div></section><section class="program-pane"><div class="program-heading"><h3>X-program <small>(<output id="x-count">0</output> instructions)</small></h3><span>linked list · row <output id="xrow">330</output></span></div><div id="x-program" class="program-list"></div></section><section class="program-pane palette-inspector" aria-labelledby="palette-inspector-title"><div class="program-heading"><h3 id="palette-inspector-title">Palette layers <small>(<output id="palette-count">0</output>)</small></h3><span>row <output id="palette-row">330</output></span></div><div id="palette-grid" class="palette-grid"></div></section></div></section><section class="scene panel"><div class="panel-heading"><h2>Scene description</h2><span>Radius: TL TR BR BL (CSS shorthand)</span></div><div id="shapes"></div><h3>Palette updates by Y</h3><div id="paletteEvents"></div><button id="addPalette">+ Palette event</button></section><section class="notes panel"><h2>The execution contract</h2><p><strong>X-program:</strong> a sorted linked list of START/STOP events. Each event changes a layer reference count; the highest active layer wins.</p><p><strong>Y-program:</strong> transforms that list for the next row, reusing stable nodes and applying insertions, deletions and coordinate changes. Palette writes happen at row boundaries.</p><p><strong>Prototype boundary:</strong> the simulator currently computes each complete scanline and its next-row transform in sequence. The moving ownership frontier, BRAM contention, read-ahead FIFO and cycle-accurate concurrent scheduling are not implemented yet.</p></section></main><script type="module" src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raster Engine — Scene Editor & Simulator</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="eyebrow">RASTER ENGINE / 1280 × 720</span>
+      <h1>Scene studio</h1>
+      <p>Compose with DOM elements. Inspect the actual X/Y raster machine.</p>
+    </div>
+    <nav class="mode-switch" aria-label="Workspace">
+      <button id="mode-editor" class="mode-button active" type="button" aria-pressed="true">Scene editor</button>
+      <button id="mode-simulator" class="mode-button" type="button" aria-pressed="false">Raster simulator <span id="simulation-dirty" class="dirty-dot" hidden aria-label="Scene has changed">●</span></button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="editor-view" class="workspace" aria-label="Scene editor">
+      <div class="workspace-toolbar">
+        <div class="header-actions">
+          <button id="add-rect" type="button">+ Rounded rectangle</button>
+          <button id="add-text" type="button">+ Text</button>
+          <button id="reset" type="button" class="secondary">Reset scene</button>
+        </div>
+        <div class="workspace-toolbar-right">
+          <span id="editor-stats" class="muted"></span>
+          <button id="run-simulator" type="button" class="primary">Simulate scene →</button>
+        </div>
+      </div>
+      <div class="editor-layout">
+        <section class="panel editor-canvas-panel" aria-label="Visual scene">
+          <div class="panel-heading">
+            <h2>Scene canvas</h2>
+            <span>Click to select · drag to move · drag corner to resize</span>
+          </div>
+          <div id="editor-canvas-shell" class="editor-canvas-shell">
+            <div id="editor-stage" class="editor-stage" role="group" aria-label="Editable 1280 by 720 scene"></div>
+          </div>
+          <div class="editor-help">DOM preview approximates bitmap typography and CSS corner curves; the simulator is authoritative. Arrow keys nudge selected objects (Shift: 10 px).</div>
+        </section>
+        <aside class="editor-sidebar">
+          <section class="panel object-list-panel" aria-label="Scene objects">
+            <div class="panel-heading">
+              <h2>Objects</h2><span id="object-count"></span>
+            </div>
+            <div class="object-filter-row"><input id="object-filter" type="search" placeholder="Find rectangle or text…" aria-label="Filter scene objects"></div>
+            <div id="object-list" class="object-list"></div>
+          </section>
+          <section class="panel properties-panel" aria-label="Selected object properties">
+            <div class="panel-heading"><h2>Properties</h2><span id="selection-summary" class="muted"></span></div>
+            <div id="object-properties"><p class="empty">Select a rectangle or text object on the canvas or in the object list.</p></div>
+          </section>
+          <section class="panel palette-events-panel" aria-label="Scanline palette changes">
+            <details>
+              <summary>Palette changes by Y <span id="palette-event-count"></span></summary>
+              <p class="muted">Override any layer's color starting at a scanline.</p>
+              <div id="paletteEvents"></div>
+              <button id="addPalette" type="button" class="secondary">+ Palette event</button>
+            </details>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section id="simulator-view" class="workspace" hidden aria-label="Raster simulator">
+      <div class="workspace-toolbar">
+        <div class="header-actions">
+          <button id="back-to-editor" class="secondary" type="button">← Edit scene</button>
+          <label class="backend-picker">Backend
+            <select id="backend"><option value="javascript">JavaScript reference</option><option value="python">Python reference</option></select>
+          </label>
+          <button id="rerun" type="button">Run simulation</button>
+        </div>
+        <span id="stats" class="muted" role="status" aria-live="polite">Select Raster simulator to execute the scene.</span>
+      </div>
+      <section class="panel preview">
+        <div class="panel-heading"><h2>Simulated raster output</h2><span>Pixels and palette indices from the selected backend</span></div>
+        <div class="sim-canvas-scroll"><canvas id="screen" width="1280" height="720" aria-label="Rasterized output"></canvas></div>
+        <div class="transport">
+          <button id="play" type="button">▶ Play</button>
+          <button id="prev" type="button">← Row</button>
+          <button id="next" type="button">Row →</button>
+          <label>Scanline <input id="scanline" type="range" min="0" max="719" value="330"><output id="yvalue">330</output></label>
+        </div>
+        <div class="timeline"><canvas id="timeline" width="1280" height="180"></canvas><span>Horizontal: X · Vertical: Y · Gold: Y edits · Cyan: X instructions</span></div>
+      </section>
+      <section class="panel inspector">
+        <div class="panel-heading"><h2>Execution inspector</h2><span id="rowstats"></span></div>
+        <div class="program-columns">
+          <section class="program-pane">
+            <div class="program-heading"><h3>Y-program <small>(<output id="y-count">0</output> instructions)</small></h3><span>Current PC highlighted</span></div>
+            <div id="y-program" class="program-list"></div>
+          </section>
+          <section class="program-pane">
+            <div class="program-heading"><h3>X-program <small>(<output id="x-count">0</output> instructions)</small></h3><span>Row <output id="xrow">330</output></span></div>
+            <div id="x-program" class="program-list"></div>
+          </section>
+          <section class="program-pane palette-inspector">
+            <div class="program-heading"><h3>Palette layers <small>(<output id="palette-count">0</output>)</small></h3><span>Row <output id="palette-row">330</output></span></div>
+            <div id="palette-grid" class="palette-grid"></div>
+          </section>
+        </div>
+      </section>
+      <section class="panel notes">
+        <h2>Execution model</h2>
+        <p>Y-program instructions manage rounded rectangles, text generators and palette updates. X-program instructions resolve paint spans and one-bit text masks into 64 palette layers. This reference simulator is scanline-based; hardware scheduling and ownership-frontier timing are not yet cycle-accurate.</p>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

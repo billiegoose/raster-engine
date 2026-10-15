@@ -275,7 +275,7 @@ export function advanceY(machine,y){
 }
 
 export function runYProgram(scene,program){
-  const machine=makeMachine(scene,program),frames=[],logs=[];
+  const machine=makeMachine(scene,program),scanlines=[],logs=[];
   let totalEdits=0,totalEvents=0;
   for(let y=0;y<HEIGHT;y++){
     const {executed,changes,pc}=advanceY(machine,y);
@@ -283,10 +283,10 @@ export function runYProgram(scene,program){
     const {row,events}=renderRow(machine.head);
     totalEdits+=changes.length;
     totalEvents+=events;
-    frames.push({y,row,edges,palette:[...machine.palette],events,edits:changes.length,executed,changes,pc});
+    scanlines.push({y,row,edges,palette:[...machine.palette],events,edits:changes.length,executed,changes,pc});
     logs.push({y,events,edits:changes.length});
   }
-  return {program,frames,logs,totalEvents,totalEdits};
+  return {program,scanlines,logs,totalEvents,totalEdits};
 }
 
 export function compile(scene){return runYProgram(scene,compileY(scene));}

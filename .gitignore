@@ -5,3 +5,8 @@
 !.env.example
 node_modules/
 .DS_Store
+
+# Python bytecode and virtual environments
+__pycache__/
+*.pyc
+.venv/

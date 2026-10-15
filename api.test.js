@@ -17,14 +17,14 @@ test('server response preserves program, X trace, palettes, and pixel data',()=>
   expect(result.program).toEqual(expected.program);
   expect(result.totalEvents).toBe(expected.totalEvents);
   expect(result.totalEdits).toBe(expected.totalEdits);
-  expect(result.frames).toHaveLength(HEIGHT);
+  expect(result.scanlines).toHaveLength(HEIGHT);
   for(let y=0;y<HEIGHT;y++){
-    expect(result.frames[y].row).toEqual(Array.from(expected.frames[y].row));
-    expect(result.frames[y].edges).toEqual(expected.frames[y].edges);
-    expect(result.frames[y].palette).toEqual(expected.frames[y].palette);
-    expect(result.frames[y].pc).toBe(expected.frames[y].pc);
+    expect(result.scanlines[y].row).toEqual(Array.from(expected.scanlines[y].row));
+    expect(result.scanlines[y].edges).toEqual(expected.scanlines[y].edges);
+    expect(result.scanlines[y].palette).toEqual(expected.scanlines[y].palette);
+    expect(result.scanlines[y].pc).toBe(expected.scanlines[y].pc);
   }
-  expect(JSON.parse(JSON.stringify(result)).frames[0].row).toHaveLength(WIDTH);
+  expect(JSON.parse(JSON.stringify(result)).scanlines[0].row).toHaveLength(WIDTH);
 });
 
 test('API exposes backends and returns a JSON execution result',async()=>{
@@ -39,9 +39,9 @@ test('API exposes backends and returns a JSON execution result',async()=>{
   expect(runResponse.status).toBe(200);
   const run=await runResponse.json();
   expect(run.backend).toBe('javascript');
-  expect(run.frames).toHaveLength(HEIGHT);
+  expect(run.scanlines).toHaveLength(HEIGHT);
   expect(run.program.some(ins=>ins.op==='ROUND_RECT')).toBe(true);
-  expect(run.frames[120].row[250]).toBe(19);
+  expect(run.scanlines[111].row[250]).toBe(19);
 });
 
 test('API rejects invalid requests and unsupported backends',async()=>{
@@ -56,4 +56,16 @@ test('API rejects invalid requests and unsupported backends',async()=>{
   expect(invalidScene.status).toBe(400);
   const wrongMethod=await handleApiRequest(new Request('http://localhost/api/run'),'/api/run');
   expect(wrongMethod.status).toBe(405);
+});
+
+
+test('JavaScript backend rejects TEXT explicitly; Python resolves its buffer pointer',()=>{
+  const scene=demoScene();
+  scene.texts=[{id:94,x:350,y:220,w:300,h:36,layer:30,buffer_ptr:8192}];
+  scene.textBuffers={'8192':'HELLO'};
+  expect(()=>runBackend({backend:'javascript',scene})).toThrow('TEXT requires the Python backend');
+  const result=runBackend({backend:'python',scene});
+  expect(result.program.some(ins=>ins.op==='TEXT')).toBe(true);
+  expect(result.scanlines[225].edges.some(e=>e.op==='START_MASK'&&e.buffer_ptr===8192)).toBe(true);
+  expect(result.scanlines.some(row=>row.row.includes(30))).toBe(true);
 });

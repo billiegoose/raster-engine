@@ -4,7 +4,29 @@ import {WIDTH, HEIGHT, rasterize} from './engine.js';
 const backends = new Map([
   ['javascript', {
     label: 'JavaScript reference',
-    run(scene) { return rasterize(scene); }
+    run(scene) {
+      if (scene.texts?.length) {
+        throw new Error('TEXT requires the Python backend; JavaScript does not implement masked paint sources yet');
+      }
+      return rasterize(scene);
+    }
+  }],
+  ['python', {
+    label: 'Python reference',
+    run(scene) {
+      const command = process.env.RASTER_PYTHON || 'python3';
+      const subprocess = Bun.spawnSync([command, 'python_backend.py'], {
+        cwd: import.meta.dir,
+        stdin: Buffer.from(JSON.stringify({scene})),
+        stdout: 'pipe',
+        stderr: 'pipe'
+      });
+      if (subprocess.exitCode !== 0) {
+        const stderr = subprocess.stderr?.toString().trim();
+        throw new Error(stderr || `Python backend failed with exit code ${subprocess.exitCode}`);
+      }
+      return JSON.parse(subprocess.stdout.toString());
+    }
   }]
 ]);
 
@@ -25,7 +47,7 @@ export function runBackend({backend = 'javascript', scene} = {}) {
     backend,
     width: WIDTH,
     height: HEIGHT,
-    frames: result.frames.map(({row, ...frame}) => ({...frame, row: Array.from(row)}))
+    scanlines: result.scanlines.map(({row, ...scanline}) => ({...scanline, row: Array.from(row)}))
   };
 }
 
