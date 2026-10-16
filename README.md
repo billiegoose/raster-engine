@@ -61,18 +61,35 @@ The browser has two distinct workspaces that share one editable JSON scene:
 - **Scene editor:** fixed native-size 1280 × 720 visual editor using ordinary DOM `div`
   elements for rounded rectangles and clipped text regions. The scene scrolls
   horizontally in a narrower window rather than scaling the DOM or its font. Select objects on
-  the canvas or from the searchable layer-sorted object list. Drag to move,
+  the canvas or from the searchable, collapsible Layers inspector, which shows
+  preview tiles in three columns and a palette color input per layer. Drag a
+  preview onto another layer to reassign it (including an entire selected group),
+  or enable **Show empty layers** to expose unused destinations. Layer 0 is the
+  background color. Drag on the canvas to move,
   drag the lower-right selection handle to resize, or edit integer coordinates,
-  dimensions, four CSS-order corner radii and palette layer in the properties
-  panel. Arrow keys move the selected object by one pixel (Shift: ten),
+  dimensions and four CSS-order corner radii in the properties panel;
+  layers and their shared palette colors live exclusively in the Layers inspector. Arrow keys move the selected object by one pixel (Shift: ten),
   and Delete or Backspace removes the selected object when no text field is
   active. The Objects list uses enlarged thumbnails with the actual rectangle
   proportions and CSS-order radii, rather than flat color swatches.
-  Use **+ Rounded rectangle** and **+ Text** to create objects; text objects
+  Use **+ Rectangle** and **+ Text** to create objects; text objects
   each get an independent editable byte-buffer handle. Duplicate creates a new
   text buffer (not an alias), and delete frees a buffer when no other object
   references it. Palette updates remain editable under the collapsible
   **Palette changes by Y** section.
+  Presentation-style editing adds Shift-click and drag-marquee selection (Alt-drag
+  starts a marquee even over an object), group-aware dragging, Align and Distribute
+  tools, grouping and ungrouping, plus scene-wide Undo/Redo. Groups are saved as
+  `group_id` metadata on ordinary scene objects; rendering remains flat. The
+  toolbar supports Copy/Cut/Paste/Duplicate inside the editor (independent text
+  buffers), while Ctrl/Cmd+A selects all, Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z
+  redoes, Ctrl/Cmd+C/X/V copies/cuts/pastes, Ctrl/Cmd+D duplicates, and
+  Ctrl/Cmd+G / Ctrl/Cmd+Shift+G groups/ungroups. Clipboard content stays within
+  the current editor tab rather than the operating-system clipboard. The
+  scanline palette editor now lives under Advanced controls.
+  The canvas has square, unclipped edges, layer previews use flat rows instead
+  of nested cards, and a drag-selection marquee requires full containment of
+  each object (or the complete bounding box of an existing group).
 - **Raster simulator:** backend-executed pixels, Y-program, persistent X-list,
   palette inspector and scanline timeline. Simulation runs on entering this
   workspace or when **Run simulation** is pressed, not during visual dragging.
@@ -96,6 +113,24 @@ with differing corner-pixel details where CSS and the rasterizer's integer
 circles diverge. **No background raster
 rendering happens while dragging.** Scenes currently live in browser memory;
 reloading the page resets to the demo scene.
+
+## Local scene files
+
+The Scene editor has a **Scene name** input, **Save scene**, a **Saved scenes**
+picker, and **Load**. Scenes are saved as pretty-printed JSON directly in
+`./scenes/<name>.json` alongside the running Bun server; no browser download,
+upload, database, or cloud service is involved. Enter a name to create or
+update a file, or choose an existing scene to load it. Refresh the picker to
+pick up JSON files created externally. Loading replaces the current scene,
+refreshes the editor, and invalidates the simulator's cached output; the editor
+asks before discarding unsaved changes. Saving is explicit, not automatic.
+
+The local API is `GET /api/scenes` (names), `GET /api/scenes/:name` (one scene),
+and `PUT /api/scenes/:name` (replace/create from the scene JSON body). Only
+simple filenames are permitted; writes are atomic and limited to 1 MiB.
+`scenes/.gitkeep` retains the folder in Git; saved JSON files are ordinary
+local files that can be versioned intentionally if desired. Initial startup
+still opens the built-in demo scene.
 
 ## 1-bit RED2 text (Python backend prototype)
 

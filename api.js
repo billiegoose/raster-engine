@@ -1,4 +1,5 @@
 import {WIDTH, HEIGHT, rasterize} from './engine.js';
+import {createSceneStore, SceneStoreError, MAX_SCENE_BYTES} from './scene-store.js';
 
 // Register future Pypeline or FPGA adapters here. The browser never imports a VM.
 const backends = new Map([
@@ -56,7 +57,38 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
   headers: {'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store'}
 });
 
-export async function handleApiRequest(request, pathname) {
+const defaultSceneStore = createSceneStore();
+
+export async function handleApiRequest(request, pathname, sceneStore = defaultSceneStore) {
+  if (pathname === '/api/scenes' || pathname.startsWith('/api/scenes/')) {
+    try {
+      if (pathname === '/api/scenes') {
+        if (request.method !== 'GET') return json({error: 'Method not allowed'}, 405);
+        return json({scenes: await sceneStore.list()});
+      }
+      let name;
+      try { name = decodeURIComponent(pathname.slice('/api/scenes/'.length)); }
+      catch { return json({error: 'Invalid scene name encoding'}, 400); }
+      if (request.method === 'GET') return json({name, scene: await sceneStore.load(name)});
+      if (request.method === 'PUT') {
+        if (Number(request.headers.get('content-length')) > MAX_SCENE_BYTES)
+          return json({error: 'Scene too large'}, 413);
+        const body = await request.text();
+        if (Buffer.byteLength(body) > MAX_SCENE_BYTES)
+          return json({error: 'Scene too large'}, 413);
+        let scene;
+        try { scene = JSON.parse(body); }
+        catch { return json({error: 'Invalid JSON'}, 400); }
+        const savedName = await sceneStore.save(name, scene);
+        return json({name: savedName});
+      }
+      return json({error: 'Method not allowed'}, 405);
+    } catch (error) {
+      if (error instanceof SceneStoreError) return json({error: error.message}, error.status);
+      console.error('Scene storage error:', error);
+      return json({error: 'Unable to access scene files'}, 500);
+    }
+  }
   if (pathname === '/api/backends') {
     if (request.method !== 'GET') return json({error: 'Method not allowed'}, 405);
     return json({backends: listBackends()});

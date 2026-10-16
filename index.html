@@ -8,6 +8,24 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;overflow:hidden"><defs>
+    <symbol id="tool-icon-add-rectangle" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M12 8v8M8 12h8"/></symbol>
+    <symbol id="tool-icon-add-text" viewBox="0 0 24 24"><path d="M4 7V4h16v3M12 4v16M7 20h10"/></symbol>
+    <symbol id="tool-icon-undo" viewBox="0 0 24 24"><path d="m9 14-5-5 5-5M4 9h9a7 7 0 0 1 0 14h-2"/></symbol>
+    <symbol id="tool-icon-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5m5 5h-9a7 7 0 0 0 0 14h2"/></symbol>
+    <symbol id="tool-icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+    <symbol id="tool-icon-cut" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8.2 8.2 11.8 11.8M14 10l6-6M8 16l4-4"/></symbol>
+    <symbol id="tool-icon-paste" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 5V3h6v2M9 12h6M9 16h6"/></symbol>
+    <symbol id="tool-icon-duplicate" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2M14 11v6m-3-3h6"/></symbol>
+    <symbol id="tool-icon-delete" viewBox="0 0 24 24"><path d="M3 6h18m-2 0-1 14H6L5 6M9 6V4h6v2M10 10v7m4-7v7"/></symbol>
+    <symbol id="tool-icon-group" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M4 8V4h4M16 4h4v4M4 16v4h4m8 0h4v-4"/></symbol>
+    <symbol id="tool-icon-ungroup" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M4 8V4h4M16 4h4v4M4 16v4h4m8 0h4v-4M3 21 21 3"/></symbol>
+    <symbol id="tool-icon-align" viewBox="0 0 24 24"><path d="M4 4v16M8 7h13M8 12h8M8 17h11"/></symbol>
+    <symbol id="tool-icon-distribute" viewBox="0 0 24 24"><path d="M4 4v16M20 4v16M8 8h8M8 12h8M8 16h8"/></symbol>
+    <symbol id="tool-icon-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6M3 4v6h6"/></symbol>
+    <symbol id="tool-icon-simulate" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></symbol>
+  </defs></svg>
+
   <header class="app-header">
     <div class="brand">
       <span class="eyebrow">RASTER ENGINE / 1280 × 720</span>
@@ -22,37 +40,73 @@
 
   <main>
     <section id="editor-view" class="workspace" aria-label="Scene editor">
-      <div class="workspace-toolbar">
-        <div class="header-actions">
-          <button id="add-rect" type="button">+ Rounded rectangle</button>
-          <button id="add-text" type="button">+ Text</button>
-          <button id="reset" type="button" class="secondary">Reset scene</button>
+      <div class="scene-file-toolbar" aria-label="Local scene files">
+        <label class="scene-file-name">Scene name
+          <input id="scene-file-name" type="text" maxlength="69" placeholder="my-scene" spellcheck="false" autocomplete="off" aria-label="Scene filename">
+        </label>
+        <button id="scene-save" type="button" class="primary">Save scene</button>
+        <label class="scene-file-select">Saved scenes
+          <select id="saved-scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select>
+        </label>
+        <button id="scene-load" type="button">Load</button>
+        <button id="scene-refresh" type="button" class="secondary" title="Refresh saved scenes" aria-label="Refresh saved scenes">↻</button>
+        <span id="scene-file-status" class="scene-file-status" role="status" aria-live="polite">Demo scene · not saved</span>
+      </div>
+      <div class="workspace-toolbar editor-tools" role="toolbar" aria-label="Scene editing tools">
+        <div class="tool-cluster">
+          <button id="add-rect" type="button"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-add-rectangle"></use></svg> Rectangle</button>
+          <button id="add-text" type="button"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-add-text"></use></svg> Text</button>
         </div>
-        <div class="workspace-toolbar-right">
+        <div class="tool-cluster">
+          <button id="undo-edit" type="button" title="Undo (Ctrl/Cmd+Z)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-undo"></use></svg> Undo</button>
+          <button id="redo-edit" type="button" title="Redo (Ctrl/Cmd+Shift+Z)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-redo"></use></svg> Redo</button>
+        </div>
+        <div class="tool-cluster">
+          <button id="copy-objects" type="button" title="Copy objects (Ctrl/Cmd+C)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-copy"></use></svg> Copy</button>
+          <button id="cut-objects" type="button" title="Cut objects (Ctrl/Cmd+X)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-cut"></use></svg> Cut</button>
+          <button id="paste-objects" type="button" title="Paste objects (Ctrl/Cmd+V)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-paste"></use></svg> Paste</button>
+          <button id="duplicate-objects" type="button" title="Duplicate objects (Ctrl/Cmd+D)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-duplicate"></use></svg> Duplicate</button>
+          <button id="delete-objects" type="button" title="Delete selection" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-delete"></use></svg> Delete</button>
+        </div>
+        <div class="tool-cluster">
+          <button id="group-objects" type="button" title="Group (Ctrl/Cmd+G)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-group"></use></svg> Group</button>
+          <button id="ungroup-objects" type="button" title="Ungroup (Ctrl/Cmd+Shift+G)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-ungroup"></use></svg> Ungroup</button>
+          <label class="tool-select"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-align"></use></svg><select id="align-objects" aria-label="Align selected objects" disabled>
+            <option value="">Align…</option><option value="left">Left</option>
+            <option value="center">Center</option><option value="right">Right</option>
+            <option value="top">Top</option><option value="middle">Middle</option><option value="bottom">Bottom</option>
+          </select></label>
+          <label class="tool-select"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-distribute"></use></svg><select id="distribute-objects" aria-label="Distribute selected objects" disabled>
+            <option value="">Distribute…</option><option value="horizontal">Horizontally</option>
+            <option value="vertical">Vertically</option>
+          </select></label>
+        </div>
+        <div class="tool-cluster editor-tool-end">
           <span id="editor-stats" class="muted"></span>
-          <button id="run-simulator" type="button" class="primary">Simulate scene →</button>
+          <button id="reset" type="button" class="secondary"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-reset"></use></svg> Reset</button>
+          <button id="run-simulator" type="button" class="primary"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-simulate"></use></svg> Simulate →</button>
         </div>
       </div>
       <div class="editor-layout">
         <section class="panel editor-canvas-panel" aria-label="Visual scene">
           <div class="panel-heading">
             <h2>Scene canvas</h2>
-            <span>Click to select · drag to move · drag corner to resize</span>
+            <span>Shift-click: multi-select · Drag: move · Alt-drag: marquee · Arrow keys: nudge</span>
           </div>
           <div class="editor-canvas-scroll">
             <div id="editor-canvas-shell" class="editor-canvas-shell">
               <div id="editor-stage" class="editor-stage" role="group" aria-label="Editable 1280 by 720 scene"></div>
             </div>
           </div>
-          <div class="editor-help">DOM preview approximates bitmap typography and CSS corner curves; the simulator is authoritative. Arrow keys nudge selected objects (Shift: 10 px) · Delete/Backspace removes selection.</div>
         </section>
         <aside class="editor-sidebar">
           <section class="panel object-list-panel" aria-label="Scene objects">
             <div class="panel-heading">
               <h2>Objects</h2><span id="object-count"></span>
             </div>
-            <div class="object-filter-row"><input id="object-filter" type="search" placeholder="Find rectangle or text…" aria-label="Filter scene objects"></div>
-            <div id="object-list" class="object-list"></div>
+            <div class="object-filter-row"><input id="object-filter" type="search" placeholder="Find text, type, or layer…" aria-label="Filter scene objects"></div>
+            <label class="layer-show-empty"><input id="show-empty-layers" type="checkbox"> Show empty layers</label>
+            <div id="object-list" class="object-list" aria-label="Collapsible scene layers"></div>
           </section>
           <section class="panel properties-panel" aria-label="Selected object properties">
             <div class="panel-heading"><h2>Properties</h2><span id="selection-summary" class="muted"></span></div>
@@ -60,7 +114,7 @@
           </section>
           <section class="panel palette-events-panel" aria-label="Scanline palette changes">
             <details>
-              <summary>Palette changes by Y <span id="palette-event-count"></span></summary>
+              <summary>Advanced · Scanline palette overrides (<span id="palette-event-count"></span>)</summary>
               <p class="muted">Override any layer's color starting at a scanline.</p>
               <div id="paletteEvents"></div>
               <button id="addPalette" type="button" class="secondary">+ Palette event</button>

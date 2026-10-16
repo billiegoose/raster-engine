@@ -68,10 +68,25 @@ p { line-height: 1.65; color: #a7bad0; }
 .mode-button.active:hover { background: #a1e9d8; }
 .dirty-dot { color: #f3bb73; font-size: 10px; }
 
-main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; }
+main { width: 100%; max-width: 1800px; margin: 0 auto; padding: 20px 24px 48px; }
 .workspace { min-width: 0; }
 .workspace-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 2px 0 17px; flex-wrap: wrap; }
 .workspace-toolbar-right, .header-actions, .transport { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+/* Local JSON scene library: keep file operations independent of simulation. */
+.scene-file-toolbar {
+  display: flex; align-items: end; gap: 9px; flex-wrap: wrap;
+  padding: 0 0 17px;
+}
+.scene-file-toolbar label {
+  display: flex; flex-direction: column; gap: 5px;
+  color: var(--muted); font-size: 11px;
+}
+.scene-file-name { flex: 1 1 175px; max-width: 260px; }
+.scene-file-select { flex: 1 1 190px; max-width: 270px; }
+.scene-file-toolbar button { white-space: nowrap; min-height: 35px; }
+.scene-file-status { flex: 1 1 200px; color: var(--muted); font-size: 11px; align-self: center; }
+.scene-file-status[data-kind="error"] { color: #ffb6aa; }
+.scene-file-status[data-kind="dirty"] { color: var(--gold); }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 17px; min-width: 0; }
 .panel-heading { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .panel-heading > span { font-size: 11px; color: var(--muted); }
@@ -79,6 +94,14 @@ main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; 
 /* Both editor and simulator use native 1280x720 CSS pixels. Narrow viewports
    scroll horizontally instead of scaling glyphs or rounding pixel positions. */
 .editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 348px; align-items: start; gap: 17px; }
+/* Preserve all 1280 scene pixels: stack the sidebar before the canvas gets squeezed. */
+@media (max-width: 1780px) {
+  .editor-layout { grid-template-columns: minmax(0, 1fr); }
+  .editor-sidebar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 850px) {
+  .editor-sidebar { grid-template-columns: minmax(0, 1fr); }
+}
 .editor-canvas-panel { min-width: 0; }
 .editor-canvas-scroll {
   width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden;
@@ -86,7 +109,8 @@ main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; 
 }
 .editor-canvas-shell {
   width: 1280px; height: 720px; overflow: hidden; position: relative;
-  outline: 1px solid #506179; border-radius: 4px;
+  margin-inline: auto;
+  outline: 1px solid #506179; border-radius: 0;
   background: #0c1725;
 }
 .editor-stage {
@@ -142,26 +166,51 @@ main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; 
 .editor-help { color: #899eb4; font-size: 10px; line-height: 1.7; padding-top: 12px; }
 .editor-sidebar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
 .object-filter-row { margin-bottom: 9px; }
-.object-list { display: flex; flex-direction: column; gap: 4px; overflow: auto; max-height: 390px; padding-right: 4px; }
-.object-list-item {
-  display: flex; align-items: center; gap: 11px; width: 100%;
-  text-align: left; background: #172536; border-color: #293e52; padding: 7px;
-}
-.object-list-item:hover { background: #213b4e; }
-.object-list-item.is-selected { border-color: var(--accent); background: #21515a; }
-.object-thumbnail {
-  display: flex; flex: 0 0 140px; justify-content: center; align-items: center;
-  width: 140px; height: 88px; overflow: hidden;
-  background: #0b1724; border: 1px solid #344b61; border-radius: 5px;
-}
+/* Flat, compact layers: only horizontal rules separate layers. The panel
+   supplies the outer border; tiles do not each require another box. */
+.layer-show-empty { display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
+  font-size: 11px; color: var(--muted); cursor: pointer; }
+.layer-show-empty input { width: auto; margin: 0; accent-color: var(--accent); }
+.object-list { display: flex; flex-direction: column; gap: 0; overflow: auto;
+  max-height: 520px; padding: 0 3px 0 0; }
+.layer-section { border: 0; border-bottom: 1px solid #304255;
+  border-radius: 0; background: transparent; min-width: 0; }
+.layer-section:first-child { border-top: 1px solid #304255; }
+.layer-section.layer-drop-target { background: #23414a;
+  box-shadow: inset 3px 0 0 #f9ce7f; }
+.layer-header { display: flex; align-items: center; gap: 7px; padding: 5px 3px; }
+.layer-toggle { display: flex; flex: 1; align-items: center; gap: 7px; min-width: 0;
+  text-align: left; padding: 5px 3px; border: 0; background: transparent; }
+.layer-toggle:hover { background: #243b4d; }
+.layer-chevron { color: var(--accent); font-size: 14px; flex: 0 0 10px; }
+.layer-toggle strong { color: #e7f0fa; white-space: nowrap; font-size: 12px; }
+.layer-count { font-size: 10px; color: var(--muted); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.layer-color { flex: 0 0 29px; width: 29px; min-width: 29px; height: 26px;
+  min-height: 26px !important; padding: 0 !important; border: 0;
+  border-radius: 2px; background: transparent; cursor: pointer; }
+.layer-color::-webkit-color-swatch-wrapper { padding: 0; }
+.layer-color::-webkit-color-swatch { border: 1px solid #627589; border-radius: 2px; }
+.layer-object-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px; padding: 2px 5px 10px 18px; border: 0; }
+.object-tile { position: relative; min-width: 0; aspect-ratio: 1.2;
+  display: flex; align-items: center; justify-content: center;
+  padding: 5px; background: transparent; border: 1px solid transparent;
+  border-radius: 3px; cursor: grab; overflow: hidden; }
+.object-tile:hover { border-color: #587a90; background: #1c3444; }
+.object-tile:active { cursor: grabbing; }
+.object-tile.is-selected { background: #21515a; border-color: #f9ce7f; }
+.object-tile.is-dragging { opacity: .45; }
+.object-tile-preview { display: flex; justify-content: center; align-items: center;
+  width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
 .object-thumbnail-shape { display: block; flex: 0 0 auto; min-width: 1px; min-height: 1px; }
-.object-thumbnail-text.red2 {
-  max-width: 124px; overflow: hidden; text-overflow: clip; white-space: nowrap;
-  font-size: 21px; font-weight: 400; line-height: 1.125; letter-spacing: normal;
-}
-.object-list-text { flex: 1; min-width: 0; }
-.object-list-text strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 650; color: #e1effc; }
-.object-layer { flex: 0 0 auto; font-size: 10px; color: #a6c9d9; border: 1px solid #406074; padding: 3px 5px; border-radius: 3px; }
+.object-thumbnail-text.red2 { max-width: 100%; white-space: nowrap; overflow: hidden;
+  font-size: 13px; font-weight: 400; line-height: 1.2; }
+.object-tile-group { position: absolute; bottom: 2px; right: 3px;
+  padding: 1px 3px; border-radius: 3px; font-size: 9px;
+  background: #293c4d; color: #b4e9cc; pointer-events: none; }
+.layer-empty { margin: 1px 0; grid-column: 1 / -1; padding: 6px 1px;
+  color: #7790a8; font-size: 10px; text-align: center; }
 .property-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
 .property-field { display: grid; align-items: start; gap: 5px; min-width: 0; color: #a8bbd0; font-size: 11px; }
 .property-full { grid-column: 1 / -1; }
@@ -237,3 +286,27 @@ main { width: 100%; max-width: 1620px; margin: 0 auto; padding: 20px 24px 48px; 
 @media(prefers-reduced-motion: reduce) {
   button { transition: none; }
 }
+
+/* Compact presentation-style editing ribbon; file controls come first. */
+.editor-tools { justify-content: flex-start; gap: 8px 12px; padding: 3px 0 15px; }
+.tool-cluster { display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  border-right: 1px solid var(--line); padding-right: 12px; }
+.tool-cluster:last-child { border-right: 0; padding-right: 0; }
+.tool-cluster button { padding: 7px 9px; white-space: nowrap; }
+.tool-cluster select { width: auto; min-width: 104px; padding: 7px; }
+.editor-tool-end { margin-left: auto; }
+button:disabled, select:disabled { opacity: .42; cursor: not-allowed; }
+button:disabled:hover { background: #22354a; border-color: #3c526d; }
+.group-marker { font-size: 10px; color: #9cdebc; font-weight: normal; }
+.multi-selection-description { padding: 10px 4px; font-size: 12px; }
+.selection-marquee { position: absolute; z-index: 1000; pointer-events: none;
+  border: 1px dashed #f9ce7f; background: rgba(249,206,127,.13); }
+
+/* Consistent inline SVG icons throughout the editing ribbon. */
+.tool-icon { width: 15px; height: 15px; flex: 0 0 15px;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round; }
+.tool-cluster button { display: inline-flex; align-items: center; gap: 6px; }
+.tool-select { display: inline-flex; align-items: center; gap: 5px;
+  padding-left: 6px; color: #a8c4d5; }
+.tool-select select { min-width: 99px; }
