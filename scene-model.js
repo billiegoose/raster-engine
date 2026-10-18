@@ -5,16 +5,219 @@ import {WIDTH,HEIGHT,LAYERS} from './scene.js';
 const integer=value=>Math.round(Number(value)||0);
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 
+// Editor layers have stable, non-numeric identifiers and an explicit order.
+// Only compileScene assigns physical palette indices for the raster machine.
+export function sceneObjects(scene){
+  return [...(scene.shapes||[]).map(object=>({type:'rect',object})),
+          ...(scene.texts||[]).map(object=>({type:'text',object}))];
+}
+
 export function editableScene(scene){
   scene.texts??=[];
   scene.textBuffers??={};
   scene.paletteEvents??=[];
+  if(!Array.isArray(scene.layers)){
+    // Import the old numbered format without changing saved legacy examples.
+    const base=Array.from({length:LAYERS},(_,i)=>i===0?'#101827':'#ffffff');
+    const used=new Set([0]);
+    for(const {object} of sceneObjects(scene))used.add(object.layer===0?1:object.layer);
+    for(const event of scene.paletteEvents)used.add(event.layer);
+    for(let i=1;i<LAYERS;i++){
+      if(scene.palette?.[i]!==base[i]||scene.layerNames?.[String(i)])used.add(i);
+    }
+    scene.layers=[...used].sort((a,b)=>a-b).map(number=>({
+      id:number===0?'background':`layer-${number}`,
+      name:scene.layerNames?.[String(number)]??'',
+      color:scene.palette?.[number]??base[number]
+    }));
+    for(const {object} of sceneObjects(scene)){
+      // The old rasterizer clamped layer-0 objects to drawing slot 1.
+      object.layerId=`layer-${object.layer===0?1:object.layer}`;
+      delete object.layer;
+    }
+    for(const event of scene.paletteEvents){
+      event.layerId=event.layer===0?'background':`layer-${event.layer}`;
+      delete event.layer;
+    }
+    delete scene.palette;
+    delete scene.layerNames;
+  }
   return scene;
 }
 
-export function sceneObjects(scene){
-  return [...(scene.shapes||[]).map(object=>({type:'rect',object})),
-          ...(scene.texts||[]).map(object=>({type:'text',object}))];
+// The persisted `layers` array is a preorder forest of nodes, ordered
+// bottom-to-top. A folder is {id:'group-N',kind:'group',name,parentId?}; a
+// drawable leaf is {id:'layer-N',name,color,parentId?}. Children follow their
+// parent contiguously. An absent parentId means root level. Background stays
+// the first, root-level leaf. Folders do not occupy raster palette slots.
+const isFolder=node=>node?.kind==='group';
+export function getLayerNode(scene,id){
+  return editableScene(scene).layers.find(node=>node.id===id)??null;
+}
+export function getLayer(scene,id){
+  const node=getLayerNode(scene,id);
+  return node&&!isFolder(node)?node:null;
+}
+export function drawingLayers(scene){return editableScene(scene).layers.filter(node=>!isFolder(node));}
+export function layerIndex(scene,id){return drawingLayers(scene).findIndex(layer=>layer.id===id);}
+export function getLayerName(scene,id){return getLayerNode(scene,id)?.name??'';}
+export function setLayerName(scene,id,value){
+  const layer=getLayerNode(scene,id);
+  if(!layer)return false;
+  layer.name=String(value??'').replace(/[\x00-\x1f\x7f]/g,' ').trim().slice(0,64);
+  return true;
+}
+export function paletteColor(scene,id){return getLayer(scene,id)?.color??'#ffffff';}
+export function setLayerColor(scene,id,color){
+  const layer=getLayer(scene,id);
+  if(!layer||!/^#[0-9a-f]{6}$/i.test(color))return false;
+  layer.color=color;
+  return true;
+}
+
+// Locate an entire contiguous subtree in the preorder array.
+export function layerSubtree(scene,id){
+  const nodes=editableScene(scene).layers;
+  const index=nodes.findIndex(node=>node.id===id);
+  if(index<0)return [];
+  const descendants=new Set([id]);
+  const result=[nodes[index]];
+  for(let i=index+1;i<nodes.length;i++){
+    const node=nodes[i];
+    if(!descendants.has(node.parentId))break;
+    descendants.add(node.id);
+    result.push(node);
+  }
+  return result;
+}
+export function layerTree(scene){
+  const roots=[],active=[],seen=new Set();
+  for(const node of editableScene(scene).layers){
+    if(seen.has(node.id))throw Error(`Duplicate layer node: ${node.id}`);
+    seen.add(node.id);
+    if(node.parentId===undefined)active.length=0;
+    else{
+      while(active.length&&active.at(-1).node.id!==node.parentId)active.pop();
+      if(!active.length)throw Error(`Non-contiguous or missing parent: ${node.id}`);
+    }
+    const branch={node,children:[]};
+    (active.length?active.at(-1).children:roots).push(branch);
+    if(isFolder(node))active.push(branch);
+  }
+  return roots;
+}
+const nextNodeId=(scene,prefix)=>{
+  const ids=new Set(scene.layers.map(node=>node.id));
+  let number=1;
+  for(const id of ids){
+    const match=new RegExp(`^${prefix}-(\\d+)$`).exec(id);
+    if(match)number=Math.max(number,Number(match[1])+1);
+  }
+  while(ids.has(`${prefix}-${number}`))number++;
+  return `${prefix}-${number}`;
+};
+// Return the insertion point immediately after the target and all descendants.
+const subtreeEnd=(scene,id)=>{
+  const index=scene.layers.findIndex(node=>node.id===id);
+  return index+layerSubtree(scene,id).length;
+};
+
+export function addLayer(scene,{name='',color='#ffffff',aboveId=null,parentId=null}={}){
+  editableScene(scene);
+  if(drawingLayers(scene).length>=LAYERS||scene.layers.length>=256)return null;
+  if(parentId!=null&&!isFolder(getLayerNode(scene,parentId)))return null;
+  const node={id:nextNodeId(scene,'layer'),name:String(name).trim().slice(0,64),color};
+  if(parentId!=null)node.parentId=parentId;
+  const target=aboveId??parentId;
+  const index=target==null?scene.layers.length:subtreeEnd(scene,target);
+  if(aboveId!=null){
+    const sibling=getLayerNode(scene,aboveId);
+    if(!sibling||(sibling.parentId??null)!==parentId)return null;
+  }
+  scene.layers.splice(index,0,node);
+  return node;
+}
+
+export function addLayerGroup(scene,{name='New group',aboveId=null,parentId=null}={}){
+  editableScene(scene);
+  if(scene.layers.length>=256)return null;
+  if(parentId!=null&&!isFolder(getLayerNode(scene,parentId)))return null;
+  const node={id:nextNodeId(scene,'group'),kind:'group',name:String(name).trim().slice(0,64)};
+  if(parentId!=null)node.parentId=parentId;
+  if(aboveId!=null){
+    const sibling=getLayerNode(scene,aboveId);
+    if(!sibling||(sibling.parentId??null)!==parentId)return null;
+  }
+  const index=aboveId!=null?subtreeEnd(scene,aboveId):
+    parentId!=null?subtreeEnd(scene,parentId):scene.layers.length;
+  scene.layers.splice(index,0,node);
+  return node;
+}
+
+/** Delete one layer or folder subtree, including shapes, text and palette
+ * events belonging to its leaves. Background is permanent. */
+export function deleteLayer(scene,id){
+  editableScene(scene);
+  if(id==='background')return false;
+  const branch=layerSubtree(scene,id);
+  if(!branch.length)return false;
+  const leafIds=new Set(branch.filter(node=>!isFolder(node)).map(node=>node.id));
+  const objects=sceneObjects(scene).filter(({object})=>leafIds.has(object.layerId));
+  const events=scene.paletteEvents.filter(event=>leafIds.has(event.layerId)).length;
+  for(const {type,object} of objects)removeObject(scene,type,object.id);
+  scene.paletteEvents=scene.paletteEvents.filter(event=>!leafIds.has(event.layerId));
+  const index=scene.layers.findIndex(node=>node.id===id);
+  scene.layers.splice(index,branch.length);
+  return {objects:objects.length,events};
+}
+
+/** Move an entire subtree before, after or into another node. Preorder
+ * remains contiguous and folders cannot be moved into their own descendants. */
+export function reorderLayer(scene,id,targetId,side='above'){
+  editableScene(scene);
+  if(id==='background'||id===targetId||!['above','below','inside'].includes(side))return false;
+  const moving=layerSubtree(scene,id),target=getLayerNode(scene,targetId);
+  if(!moving.length||!target)return false;
+  if(moving.some(node=>node.id===targetId))return false;
+  if(side==='inside'&&!isFolder(target))return false;
+  if(targetId==='background'&&side==='below')return false;
+  const from=scene.layers.findIndex(node=>node.id===id);
+  const previous=scene.layers.map(node=>({...node}));
+  scene.layers.splice(from,moving.length);
+  const newParent=side==='inside'?target.id:(target.parentId??null);
+  if(newParent==null)delete moving[0].parentId;
+  else moving[0].parentId=newParent;
+  const at=scene.layers.findIndex(node=>node.id===targetId);
+  const index=side==='below'?at:subtreeEnd(scene,targetId);
+  scene.layers.splice(index,0,...moving);
+  if(scene.layers.length===previous.length&&scene.layers.every((node,i)=>
+    node.id===previous[i].id&&(node.parentId??null)===(previous[i].parentId??null)))return false;
+  return true;
+}
+
+/** Pack only drawable leaves into physical palette slots 0..63; groups are
+ * organizational and never change an object's ID, geometry or color. */
+export function compileScene(source){
+  if(!Array.isArray(source.layers))return structuredClone(source);
+  const leaves=source.layers.filter(node=>!isFolder(node));
+  if(!leaves.length||leaves.length>LAYERS||leaves[0].id!=='background')
+    throw Error('Scene must have a background and at most 64 drawable layers');
+  // Also verifies parentage, ordering and contiguity of the source tree.
+  layerTree(source);
+  const slots=new Map(leaves.map((node,index)=>[node.id,index]));
+  if(slots.size!==leaves.length)throw Error('Duplicate layer IDs');
+  const physical=id=>{
+    if(!slots.has(id))throw Error(`Unknown drawable layer: ${id}`);
+    return slots.get(id);
+  };
+  const palette=Array.from({length:LAYERS},(_,i)=>leaves[i]?.color??'#ffffff');
+  return {
+    palette,
+    shapes:(source.shapes??[]).map(({layerId,...object})=>({...object,layer:physical(layerId)})),
+    texts:(source.texts??[]).map(({layerId,...object})=>({...object,layer:physical(layerId)})),
+    textBuffers:structuredClone(source.textBuffers??{}),
+    paletteEvents:(source.paletteEvents??[]).map(({layerId,...event})=>({...event,layer:physical(layerId)}))
+  };
 }
 
 export function getObject(scene,type,id){
@@ -31,23 +234,24 @@ export function nextBufferPtr(scene){
   return Math.max(0,...pointers)+4096;
 }
 
-export function addRectangle(scene){
+export function addRectangle(scene,requestedLayer=null){
   editableScene(scene);
   const id=nextObjectId(scene);
-  const object={id,x:340,y:210,w:240,h:150,radius:18,layer:Math.min(LAYERS-1,Math.max(22,id))};
+  let layerId=getLayer(scene,requestedLayer)?.id??drawingLayers(scene).at(-1)?.id;
+  if(!layerId||layerId==='background')layerId=addLayer(scene,{color:'#92d0e1'}).id;
+  const object={id,x:340,y:210,w:240,h:150,radius:18,layerId};
   scene.shapes.push(object);
-  scene.palette[object.layer]??='#92d0e1';
-  if(scene.palette[object.layer]==='#ffffff')scene.palette[object.layer]='#92d0e1';
   return object;
 }
 
-export function addText(scene){
+export function addText(scene,requestedLayer=null){
   editableScene(scene);
   const id=nextObjectId(scene),ptr=nextBufferPtr(scene);
-  const object={id,x:352,y:225,w:380,h:72,layer:Math.min(LAYERS-1,Math.max(25,id)),buffer_ptr:ptr};
+  let layerId=getLayer(scene,requestedLayer)?.id??drawingLayers(scene).at(-1)?.id;
+  if(!layerId||layerId==='background')layerId=addLayer(scene,{color:'#17212e'}).id;
+  const object={id,x:352,y:225,w:380,h:72,layerId,buffer_ptr:ptr};
   scene.texts.push(object);
   scene.textBuffers[String(ptr)]='HELLO, WORLD!';
-  if(scene.palette[object.layer]==='#ffffff')scene.palette[object.layer]='#17212e';
   return object;
 }
 
@@ -83,11 +287,13 @@ export function duplicateObject(scene,type,id){
 export function updateObject(scene,type,id,key,value){
   const object=getObject(scene,type,id);
   if(!object)return false;
-  if(['x','y','w','h','layer'].includes(key)){
+  if(['x','y','w','h'].includes(key)){
     const n=integer(value);
-    if(key==='layer')object[key]=clamp(n,1,LAYERS-1);
-    else if(key==='w'||key==='h')object[key]=Math.max(1,n);
+    if(key==='w'||key==='h')object[key]=Math.max(1,n);
     else object[key]=clamp(n,key==='x'?-WIDTH:-HEIGHT,key==='x'?WIDTH:HEIGHT);
+  }else if(key==='layerId'){
+    if(value==='background'||!getLayer(scene,value))return false;
+    object.layerId=value;
   }else if(key==='radius'&&type==='rect'){
     const nums=String(value).trim().split(/[\s,]+/).filter(Boolean).slice(0,4)
       .map(v=>Math.max(0,integer(v)));
@@ -126,10 +332,6 @@ export function rectangleThumbnail(rect,maxWidth=124,maxHeight=78){
     typeof rect.radius==='string'?rect.radius.trim().split(/[\s,]+/).filter(Boolean):[rect.radius??0];
   const cssRadius=radius.map(value=>`${px(Math.max(0,Number(value)||0)*scale)}px`).join(' ');
   return {width:px(width*scale),height:px(height*scale),borderRadius:cssRadius};
-}
-
-export function paletteColor(scene,layer){
-  return scene.palette[layer]||'#ffffff';
 }
 
 // Presentation-style editing is metadata layered over the same flat scene:
@@ -218,14 +420,13 @@ export function distributeSelection(scene,refs,axis){
   }
   return true;
 }
-/** Reassign selected objects (including complete groups) to a palette layer.
- * Layer zero is reserved for the canvas background, not drawable objects. */
-export function moveSelectionToLayer(scene,refs,layer){
-  if(!Number.isInteger(layer)||layer<1||layer>=LAYERS)return 0;
+/** Reassign selected objects (including complete groups) to a stable layer ID. */
+export function moveSelectionToLayer(scene,refs,layerId){
+  if(layerId==='background'||!getLayer(scene,layerId))return 0;
   let moved=0;
   for(const ref of resolveSelection(scene,refs)){
     const object=getObject(scene,ref.type,ref.id);
-    if(object&&object.layer!==layer){object.layer=layer;moved++;}
+    if(object&&object.layerId!==layerId){object.layerId=layerId;moved++;}
   }
   return moved;
 }
@@ -268,12 +469,14 @@ export function copySelection(scene,refs){
 export function pasteSelection(scene,clipboard,offset=20){
   editableScene(scene);
   if(!Array.isArray(clipboard)||!clipboard.length)return [];
+  if(drawingLayers(scene).length===1)addLayer(scene,{color:'#92d0e1'});
   const groupIds=new Map(),result=[];
   let nextId=nextObjectId(scene),nextPtr=nextBufferPtr(scene),groupId=nextGroupId(scene);
   for(const entry of clipboard){
     if(!['rect','text'].includes(entry.type)||!entry.object)continue;
     const original=entry.object;
     const obj={...structuredClone(original),id:nextId++,x:original.x+offset,y:original.y+offset};
+    if(!getLayer(scene,obj.layerId))obj.layerId=drawingLayers(scene).at(-1).id;
     if(original.group_id!=null){
       if(!groupIds.has(original.group_id))groupIds.set(original.group_id,groupId++);
       obj.group_id=groupIds.get(original.group_id);

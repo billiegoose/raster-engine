@@ -1,7 +1,7 @@
 /* Visual scene editor. Selection, grouping, and clipboard operations work on
    the flat shape/text model; only the raster simulator generates pixels. */
 import {WIDTH,HEIGHT,LAYERS} from './scene.js';
-import {editableScene,sceneObjects,getObject,addRectangle,addText,updateObject,
+import {editableScene,sceneObjects,getObject,getLayerName,setLayerName,getLayer,getLayerNode,drawingLayers,layerTree,layerSubtree,layerIndex,addLayer,addLayerGroup,deleteLayer,reorderLayer,setLayerColor,addRectangle,addText,updateObject,
   moveObject,resizeObject,radiusCss,paletteColor,rectangleThumbnail,
   resolveSelection,selectionUnits,objectsFullyInsideRect,moveSelectionToLayer,alignSelection,distributeSelection,
   groupSelection,ungroupSelection,copySelection,pasteSelection,
@@ -17,11 +17,12 @@ const objectName=(type,obj,data)=>type==='rect'?`Rectangle ${obj.id}`:
   `Text ${obj.id} · ${String(data.textBuffers[String(obj.buffer_ptr)]??'').split('\n')[0].slice(0,22)}`;
 const isEditingTarget=target=>Boolean(target.closest('input,textarea,select,[contenteditable], [role="textbox"]'));
 
-export function createSceneEditor({getScene,history,onSimulate,onReset}){
+export function createSceneEditor({getScene,history,onSimulate}){
   const stage=$('editor-stage'),list=$('object-list'),properties=$('object-properties');
   let selection=[],drag=null,clipboard=[],pasteCount=0;
+  let mostRecentLayer=null;
   const collapsedLayers=new Set();
-  let draggedObjects=null;
+  let draggedObjects=null,draggedLayer=null;
 
   const scene=()=>editableScene(getScene());
   const selected=()=>new Set(selection.map(key));
@@ -32,9 +33,9 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
     element.style.top=`${obj.y}px`;
     element.style.width=`${Math.max(1,obj.w)}px`;
     element.style.height=`${Math.max(1,obj.h)}px`;
-    element.style.zIndex=String(obj.layer);
-    element.style.backgroundColor=type==='rect'?paletteColor(data,obj.layer):'transparent';
-    element.style.color=type==='text'?paletteColor(data,obj.layer):'';
+    element.style.zIndex=String(layerIndex(data,obj.layerId));
+    element.style.backgroundColor=type==='rect'?paletteColor(data,obj.layerId):'transparent';
+    element.style.color=type==='text'?paletteColor(data,obj.layerId):'';
     if(type==='rect')element.style.borderRadius=radiusCss(obj.radius);
     if(type==='text'){
       const raw=data.textBuffers[String(obj.buffer_ptr)];
@@ -46,7 +47,7 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
 
   function renderStage(){
     const data=scene(),active=selected();
-    stage.style.backgroundColor=validColor(data.palette[0]||'#101827');
+    stage.style.backgroundColor=validColor(data.layers[0].color);
     stage.replaceChildren();
     const allowResize=selection.length===1;
     for(const {type,object} of sceneObjects(data)){
@@ -79,55 +80,69 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
   function renderList(){
     const data=scene(),active=selected();
     const filter=$('object-filter').value.trim().toLowerCase();
-    const showEmpty=$('show-empty-layers').checked&&!filter;
-    const objects=sceneObjects(data).sort((a,b)=>b.object.layer-a.object.layer||b.object.id-a.object.id);
-    $('object-count').textContent=`${objects.length} objects`;
+    const objects=sceneObjects(data).sort((a,b)=>
+      layerIndex(data,b.object.layerId)-layerIndex(data,a.object.layerId)||b.object.id-a.object.id);
+    const leaves=drawingLayers(data);
+    $('object-count').textContent=`${objects.length} objects · ${leaves.length}/64 layers`;
     $('editor-stats').textContent=`${data.shapes.length} rectangles · ${data.texts.length} text`;
-
-    // Layer 0 is the canvas background. The remaining 63 slots can each
-    // contain rectangles and text, all sharing one palette color.
+    $('add-layer').disabled=leaves.length>=LAYERS||data.layers.length>=256;
+    $('add-group').disabled=data.layers.length>=256;
     const buckets=new Map();
     for(const item of objects){
-      const layer=item.object.layer;
-      if(!buckets.has(layer))buckets.set(layer,[]);
-      if(!filter||objectName(item.type,item.object,data).toLowerCase().includes(filter)||
-         `layer ${layer}`.includes(filter))buckets.get(layer).push(item);
+      const id=item.object.layerId;
+      if(!buckets.has(id))buckets.set(id,[]);
+      buckets.get(id).push(item);
     }
-    const layers=Array.from({length:LAYERS},(_,index)=>LAYERS-1-index).filter(layer=>
-      filter?(buckets.get(layer)?.length>0):showEmpty||layer===0||(buckets.get(layer)?.length>0));
-    const scrollTop=list.scrollTop;
-    list.innerHTML=layers.map(layer=>{
-      const items=buckets.get(layer)||[];
-      const color=html(validColor(paletteColor(data,layer)));
-      const collapsed=collapsedLayers.has(layer)&&!filter;
-      const thumbnails=items.map(({type,object})=>{
-        const ref={type,id:object.id};
-        const chosen=active.has(key(ref));
-        const description=`${objectName(type,object,data)}, layer ${layer}`;
-        const preview=type==='rect'?(()=>{
-          const thumb=rectangleThumbnail(object,72,54);
-          return `<span class="object-thumbnail-shape" style="width:${thumb.width}px;height:${thumb.height}px;border-radius:${thumb.borderRadius};background:${color}"></span>`;
-        })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(String(data.textBuffers[String(object.buffer_ptr)]??'').split('\n')[0].slice(0,10)||'TEXT')}</span>`;
-        return `<button type="button" draggable="true" class="object-tile${chosen?' is-selected':''}" data-select-type="${type}" data-select-id="${object.id}" aria-label="${html(description)}" title="${html(description)}" aria-pressed="${chosen}">
-          <span class="object-tile-preview">${preview}</span>
-          ${object.group_id!=null?`<span class="object-tile-group" title="Group ${object.group_id}">G${object.group_id}</span>`:''}
-        </button>`;
-      }).join('');
-      const background=layer===0;
-      const count=background?'Background':`${items.length} ${items.length===1?'object':'objects'}`;
-      return `<section class="layer-section" data-layer-index="${layer}"${background?'':` data-layer-drop="${layer}"`}>
+    const renderNodes=(nodes,depth=1,showAll=false)=>[...nodes].reverse().map(({node,children})=>{
+      const id=html(node.id),background=node.id==='background',folder=node.kind==='group';
+      const contents=buckets.get(node.id)||[];
+      const localMatch=filter&&(
+        node.name.toLowerCase().includes(filter)||
+        (folder?'group':'layer').includes(filter)||
+        contents.some(({type,object})=>objectName(type,object,data).toLowerCase().includes(filter)));
+      const includeChildren=showAll||Boolean(localMatch);
+      const childMarkup=folder?renderNodes(children,depth+1,includeChildren):'';
+      if(filter&&!showAll&&!localMatch&&!childMarkup)return '';
+      const color=html(validColor(node.color)),name=html(node.name);
+      const collapsed=collapsedLayers.has(node.id)&&!filter;
+      const thumbnails=contents.filter(({type,object})=>
+        !filter||includeChildren||objectName(type,object,data).toLowerCase().includes(filter))
+        .map(({type,object})=>{
+          const ref={type,id:object.id},chosen=active.has(key(ref));
+          const description=`${objectName(type,object,data)}, ${node.name||'Unnamed layer'}`;
+          const preview=type==='rect'?(()=>{
+            const thumb=rectangleThumbnail(object,72,54);
+            return `<span class="object-thumbnail-shape" style="width:${thumb.width}px;height:${thumb.height}px;border-radius:${thumb.borderRadius};background:${color}"></span>`;
+          })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(String(data.textBuffers[String(object.buffer_ptr)]??'').split('\n')[0].slice(0,10)||'TEXT')}</span>`;
+          return `<button type="button" draggable="true" class="object-tile${chosen?' is-selected':''}" data-select-type="${type}" data-select-id="${object.id}" aria-label="${html(description)}" title="${html(description)}" aria-pressed="${chosen}">
+            <span class="object-tile-preview">${preview}</span>
+            ${object.group_id!=null?`<span class="object-tile-group" title="Group ${object.group_id}">G${object.group_id}</span>`:''}
+          </button>`;
+        }).join('');
+      const title=node.name||(background?'Background':folder?'New group':'Unnamed layer');
+      return `<section class="layer-section${folder?' layer-folder':''}" role="treeitem" aria-level="${depth}"${folder?` aria-expanded="${!collapsed}"`:''}
+        data-layer-id="${id}" data-layer-reorder="${id}"${folder?` data-layer-group="${id}"`:background?'':` data-layer-drop="${id}"`}>
         <div class="layer-header">
-          <button type="button" class="layer-toggle" data-layer-toggle="${layer}" aria-expanded="${!collapsed}" aria-controls="layer-content-${layer}" title="${collapsed?'Expand':'Collapse'} layer ${layer}">
+          ${background?'<span class="layer-grip layer-grip-fixed" title="Background stays at the bottom">▦</span>':
+            `<button class="layer-grip" type="button" draggable="true" data-layer-drag="${id}" title="Drag ${html(title)} to reorder" aria-label="Drag to reorder ${html(title)}">⠿</button>`}
+          <button type="button" class="layer-toggle" data-layer-toggle="${id}" aria-expanded="${!collapsed}" aria-controls="layer-content-${id}" title="${collapsed?'Expand':'Collapse'} ${html(title)}" aria-label="${collapsed?'Expand':'Collapse'} ${html(title)}">
             <span class="layer-chevron" aria-hidden="true">${collapsed?'▸':'▾'}</span>
-            <strong>Layer ${layer}</strong><span class="layer-count">${count}</span>
+            ${folder?'<span class="layer-folder-icon" aria-hidden="true">▣</span>':''}
           </button>
-          <input class="layer-color" type="color" data-layer-color="${layer}" value="${color}" title="Palette color for layer ${layer}" aria-label="Palette color for layer ${layer}">
+          <input class="layer-name" type="text" data-layer-name="${id}" maxlength="64" value="${name}" placeholder="${background?'Name background…':folder?'Group name…':'Name layer…'}" title="${html(title)}" aria-label="Name ${background?'background':folder?'group':'layer'}" autocomplete="off" spellcheck="false">
+          ${folder?`<button type="button" class="layer-child-add" data-add-child-layer="${id}" title="Add layer inside ${html(title)}" aria-label="Add layer inside ${html(title)}">+L</button>
+            <button type="button" class="layer-child-add" data-add-child-group="${id}" title="Add group inside ${html(title)}" aria-label="Add group inside ${html(title)}">+G</button>`:
+            `<input class="layer-color" type="color" data-layer-color="${id}" value="${color}" title="Color for ${html(title)}" aria-label="Layer color">`}
+          ${background?'':`<button type="button" class="layer-delete" data-layer-delete="${id}" title="Delete ${html(title)}" aria-label="Delete ${html(title)}">×</button>`}
         </div>
-        <div id="layer-content-${layer}" class="layer-object-grid"${collapsed?' hidden':''}>
-          ${background?'<p class="layer-empty">Canvas background color</p>':thumbnails||'<p class="layer-empty">Drop objects here</p>'}
-        </div>
+        ${folder?`<div id="layer-content-${id}" class="layer-children" role="group"${collapsed?' hidden':''}>${childMarkup||'<p class="layer-empty">Drop layers or groups here</p>'}</div>`:
+          `<div id="layer-content-${id}" class="layer-object-grid"${collapsed?' hidden':''}>
+            ${background?'<p class="layer-empty">Canvas background color</p>':thumbnails||'<p class="layer-empty">Drop objects here</p>'}
+          </div>`}
       </section>`;
-    }).join('')||'<p class="empty">No matching objects.</p>';
+    }).join('');
+    const scrollTop=list.scrollTop;
+    list.innerHTML=renderNodes(layerTree(data))||'<p class="empty">No matching layers or objects.</p>';
     list.scrollTop=scrollTop;
   }
 
@@ -167,7 +182,8 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
     $('palette-event-count').textContent=`${data.paletteEvents.length}`;
     $('paletteEvents').innerHTML=data.paletteEvents.map((event,i)=>`<div class="palette-row">
       <label>Y<input data-event="${i}" data-event-key="y" type="number" min="0" max="719" value="${html(event.y)}"></label>
-      <label>Layer<input data-event="${i}" data-event-key="layer" type="number" min="0" max="63" value="${html(event.layer)}"></label>
+      <label>Layer<select data-event="${i}" data-event-key="layerId">${drawingLayers(data).map((layer,index)=>
+        `<option value="${html(layer.id)}"${event.layerId===layer.id?' selected':''}>${html(layer.name|| (index===0?'Background':'Unnamed layer'))}</option>`).join('')}</select></label>
       <label>Color<input data-event="${i}" data-event-key="color" type="color" value="${html(validColor(event.color))}"></label>
       <button type="button" data-remove-event="${i}" aria-label="Remove palette event">×</button>
     </div>`).join('');
@@ -190,10 +206,16 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
   }
   function render(){
     selection=resolveSelection(scene(),selection);
+    if(mostRecentLayer&&!getLayer(scene(),mostRecentLayer))mostRecentLayer=null;
     renderStage();renderList();renderProperties();renderPaletteEvents();updateControls();
   }
   function setSelection(refs){
     selection=resolveSelection(scene(),refs);
+    if(refs.length){
+      const ref=refs.at(-1);
+      const obj=getObject(scene(),ref.type,ref.id);
+      if(obj&&obj.layerId!=='background')mostRecentLayer=obj.layerId;
+    }
     renderStage();renderList();renderProperties();updateControls();
   }
   function select(ref,additive=false){
@@ -205,6 +227,10 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
       const changed=already?selection.filter(member=>!members.some(item=>key(item)===key(member))):[...selection,...members];
       setSelection(changed);
     }else setSelection(members);
+    // A group click expands to its members, but the specifically clicked
+    // object (rather than the last expanded member) controls new insertions.
+    const obj=getObject(scene(),ref.type,ref.id);
+    if(obj&&obj.layerId!=='background')mostRecentLayer=obj.layerId;
   }
   const elementFor=ref=>[...stage.querySelectorAll('.scene-object')].find(el=>
     el.dataset.objectType===ref.type&&Number(el.dataset.objectId)===ref.id);
@@ -298,28 +324,82 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
       event.shiftKey||event.ctrlKey||event.metaKey);
   });
   $('object-filter').addEventListener('input',renderList);
-  $('show-empty-layers').addEventListener('change',renderList);
+  $('add-layer').addEventListener('click',()=>edit(()=>addLayer(scene(),{color:'#92d0e1'})));
+  $('add-group').addEventListener('click',()=>edit(()=>addLayerGroup(scene())));
+  list.addEventListener('click',event=>{
+    const addChildLayer=event.target.closest('[data-add-child-layer]');
+    if(addChildLayer){edit(()=>addLayer(scene(),{parentId:addChildLayer.dataset.addChildLayer,color:'#92d0e1'}));return;}
+    const addChildGroup=event.target.closest('[data-add-child-group]');
+    if(addChildGroup)edit(()=>addLayerGroup(scene(),{parentId:addChildGroup.dataset.addChildGroup}));
+  });
+  list.addEventListener('click',event=>{
+    const button=event.target.closest('[data-layer-delete]');
+    if(!button)return;
+    const id=button.dataset.layerDelete,data=scene(),layer=getLayerNode(data,id);
+    if(!layer||id==='background')return;
+    const leafIds=new Set(layerSubtree(data,id).filter(node=>node.kind!=='group').map(node=>node.id));
+    const objects=sceneObjects(data).filter(({object})=>leafIds.has(object.layerId)).length;
+    const events=data.paletteEvents.filter(item=>leafIds.has(item.layerId)).length;
+    if((objects||events)&&!window.confirm(
+      `Delete ${layer.name|| (layer.kind==='group'?'this group':'this layer')} and its ${objects} ${objects===1?'object':'objects'}${events?` and ${events} palette ${events===1?'event':'events'}`:''}? ${layer.kind==='group'?'All nested layers and groups will also be deleted. ':''}You can undo this action.`))return;
+    const removedIds=new Set(layerSubtree(data,id).map(node=>node.id));
+    if(edit(()=>deleteLayer(scene(),id))){
+      for(const deletedId of removedIds)collapsedLayers.delete(deletedId);
+      if(removedIds.has(mostRecentLayer))mostRecentLayer=null;
+    }
+  });
   list.addEventListener('click',event=>{
     const toggle=event.target.closest('[data-layer-toggle]');
     if(!toggle)return;
-    const layer=Number(toggle.dataset.layerToggle);
-    if(collapsedLayers.has(layer))collapsedLayers.delete(layer);
-    else collapsedLayers.add(layer);
+    const id=toggle.dataset.layerToggle;
+    if(collapsedLayers.has(id))collapsedLayers.delete(id);
+    else collapsedLayers.add(id);
     renderList();
   });
   list.addEventListener('change',event=>{
-    const input=event.target.closest('[data-layer-color]');
+    const color=event.target.closest('[data-layer-color]');
+    if(color){edit(()=>setLayerColor(scene(),color.dataset.layerColor,color.value));return;}
+    const name=event.target.closest('[data-layer-name]');
+    if(name)edit(()=>setLayerName(scene(),name.dataset.layerName,name.value));
+  });
+  list.addEventListener('keydown',event=>{
+    const input=event.target.closest('[data-layer-name]');
     if(!input)return;
-    const layer=Number(input.dataset.layerColor);
-    if(!Number.isInteger(layer)||layer<0||layer>=LAYERS)return;
-    edit(()=>{scene().palette[layer]=input.value;});
+    if(event.key==='Enter'){event.preventDefault();input.blur();}
+    if(event.key==='Escape'){
+      event.preventDefault();
+      input.value=getLayerName(scene(),input.dataset.layerName);
+      input.blur();
+    }
   });
 
-  // Native HTML drag/drop moves a selected set into one layer. Dragging a
-  // member of a group moves the entire group, even across source layers.
+  // Grip drag reorders a complete layer; tile drag transfers objects.
+  const clearDropHighlights=()=>{
+    list.querySelectorAll('.layer-drop-target,.is-dragging').forEach(el=>
+      el.classList.remove('layer-drop-target','is-dragging'));
+    list.querySelectorAll('[data-layer-insert]').forEach(el=>el.removeAttribute('data-layer-insert'));
+  };
+  const dropSide=(event,section)=>{
+    const rect=section.querySelector('.layer-header').getBoundingClientRect();
+    if(section.hasAttribute('data-layer-group')){
+      if(event.target.closest('.layer-children')===section.querySelector('.layer-children'))return 'inside';
+      if(event.clientY>=rect.top+rect.height*.25&&event.clientY<=rect.bottom-rect.height*.25)return 'inside';
+    }
+    return event.clientY<rect.top+rect.height/2?'above':'below';
+  };
   list.addEventListener('dragstart',event=>{
+    const grip=event.target.closest('[data-layer-drag]');
+    if(grip&&event.dataTransfer){
+      draggedObjects=null;draggedLayer=grip.dataset.layerDrag;
+      event.dataTransfer.effectAllowed='move';
+      event.dataTransfer.setData('application/x-raster-layer',draggedLayer);
+      event.dataTransfer.setData('text/plain',`Reorder scene layer ${draggedLayer}`);
+      grip.closest('.layer-section').classList.add('is-dragging');
+      return;
+    }
     const tile=event.target.closest('[data-select-type]');
     if(!tile||!event.dataTransfer)return;
+    draggedLayer=null;
     const ref={type:tile.dataset.selectType,id:Number(tile.dataset.selectId)};
     const refs=selected().has(key(ref))?selection:resolveSelection(scene(),[ref]);
     draggedObjects=refs.map(item=>({...item}));
@@ -329,34 +409,47 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
     tile.classList.add('is-dragging');
   });
   list.addEventListener('dragover',event=>{
-    const layer=event.target.closest('[data-layer-drop]');
-    if(!layer||!draggedObjects)return;
+    if(draggedLayer){
+      const target=event.target.closest('[data-layer-reorder]');
+      if(!target)return;
+      const side=dropSide(event,target);
+      if(target.dataset.layerReorder==='background'&&side==='below')return;
+      event.preventDefault();
+      if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+      clearDropHighlights();target.setAttribute('data-layer-insert',side);
+      return;
+    }
+    const target=event.target.closest('[data-layer-drop]');
+    if(!target||!draggedObjects)return;
     event.preventDefault();
     if(event.dataTransfer)event.dataTransfer.dropEffect='move';
-    list.querySelectorAll('.layer-drop-target').forEach(el=>el.classList.remove('layer-drop-target'));
-    layer.classList.add('layer-drop-target');
+    clearDropHighlights();target.classList.add('layer-drop-target');
   });
   list.addEventListener('dragleave',event=>{
-    const layer=event.target.closest('[data-layer-drop]');
-    if(layer&&!layer.contains(event.relatedTarget))layer.classList.remove('layer-drop-target');
+    const section=event.target.closest('[data-layer-reorder]');
+    if(section&&!section.contains(event.relatedTarget)){
+      section.classList.remove('layer-drop-target');
+      section.removeAttribute('data-layer-insert');
+    }
   });
   list.addEventListener('drop',event=>{
-    const layer=event.target.closest('[data-layer-drop]');
-    if(!layer||!draggedObjects)return;
+    const section=event.target.closest('[data-layer-reorder]');
+    if(!section)return;
+    if(draggedLayer){
+      const source=draggedLayer,target=section.dataset.layerReorder,side=dropSide(event,section);
+      event.preventDefault();draggedLayer=null;clearDropHighlights();
+      edit(()=>reorderLayer(scene(),source,target,side));
+      return;
+    }
+    if(!draggedObjects||!section.dataset.layerDrop)return;
     event.preventDefault();
-    const target=Number(layer.dataset.layerDrop);
-    const refs=draggedObjects;
-    draggedObjects=null;
-    edit(()=>moveSelectionToLayer(scene(),refs,target));
+    const refs=draggedObjects;draggedObjects=null;clearDropHighlights();
+    edit(()=>moveSelectionToLayer(scene(),refs,section.dataset.layerDrop));
     setSelection(refs);
-    list.querySelectorAll('.layer-drop-target').forEach(el=>el.classList.remove('layer-drop-target'));
   });
   list.addEventListener('dragend',()=>{
-    draggedObjects=null;
-    list.querySelectorAll('.layer-drop-target,.is-dragging').forEach(el=>
-      el.classList.remove('layer-drop-target','is-dragging'));
+    draggedObjects=null;draggedLayer=null;clearDropHighlights();
   });
-
 
   properties.addEventListener('change',event=>{
     const target=event.target;
@@ -412,12 +505,11 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
   }
   function duplicateSelected(){if(copySelected())pasteCopied(18);}
   $('add-rect').addEventListener('click',()=>{
-    let obj;edit(()=>{obj=addRectangle(scene());});setSelection([{type:'rect',id:obj.id}]);
+    let obj;edit(()=>{obj=addRectangle(scene(),mostRecentLayer);});setSelection([{type:'rect',id:obj.id}]);
   });
   $('add-text').addEventListener('click',()=>{
-    let obj;edit(()=>{obj=addText(scene());});setSelection([{type:'text',id:obj.id}]);
+    let obj;edit(()=>{obj=addText(scene(),mostRecentLayer);});setSelection([{type:'text',id:obj.id}]);
   });
-  $('reset').addEventListener('click',()=>onReset?.());
   $('run-simulator').addEventListener('click',()=>onSimulate?.());
   $('undo-edit').addEventListener('click',()=>{if(history.undo())render();});
   $('redo-edit').addEventListener('click',()=>{if(history.redo())render();});
@@ -438,7 +530,7 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
   });
 
   $('addPalette').addEventListener('click',()=>edit(()=>{
-    scene().paletteEvents.push({y:300,layer:3,color:'#d64e78'});
+    scene().paletteEvents.push({y:300,layerId:getLayer(scene(),mostRecentLayer)?.id??drawingLayers(scene()).at(-1).id,color:'#d64e78'});
   }));
   $('paletteEvents').addEventListener('change',event=>{
     const target=event.target;
@@ -447,7 +539,7 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
       const item=scene().paletteEvents[Number(target.dataset.event)];
       if(!item)return;
       const name=target.dataset.eventKey;
-      item[name]=name==='color'?target.value:clamp(Math.round(Number(target.value)||0),0,name==='y'?HEIGHT-1:LAYERS-1);
+      item[name]=name==='color'||name==='layerId'?target.value:clamp(Math.round(Number(target.value)||0),0,HEIGHT-1);
     });
   });
   $('paletteEvents').addEventListener('click',event=>{
@@ -491,7 +583,7 @@ export function createSceneEditor({getScene,history,onSimulate,onReset}){
   return {
     render,
     updateHistoryControls:updateControls,
-    clearSelection(){selection=[];render();},
+    clearSelection(){selection=[];mostRecentLayer=null;render();},
     getSelection(){return selection.map(ref=>({...ref}));},
     setSelection(refs){setSelection(refs);},
     setOnTextInput(callback){onTextInput=callback;}

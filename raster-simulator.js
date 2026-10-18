@@ -2,6 +2,7 @@
    Y/X execution trace. Does not mutate scene objects or implement editing. */
 import {WIDTH,HEIGHT,LAYERS} from './scene.js';
 import {paletteView} from './palette-view.js';
+import {compileScene} from './scene-model.js';
 
 const $=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -111,7 +112,7 @@ export function createRasterSimulator({getScene,onEditor}){
     $('y-count').textContent=result.program.length;
     $('x-count').textContent=scanline.edges.length;
     $('palette-row').textContent=selectedY;
-    const layers=paletteView(scanline,getScene().palette,LAYERS);
+    const layers=paletteView(scanline,compileScene(getScene()).palette,LAYERS);
     $('palette-count').textContent=layers.length;
     $('palette-grid').innerHTML=layers.map(entry=>
       `<div class="palette-entry ${entry.visible?'palette-visible':''} ${entry.overridden?'palette-overridden':''}" title="Layer ${entry.layer}: ${escape(entry.color)}${entry.visible?' · visible':' · occluded'}${entry.overridden?' · Y palette override':''}">

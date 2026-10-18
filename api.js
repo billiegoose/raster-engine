@@ -1,5 +1,6 @@
 import {WIDTH, HEIGHT, rasterize} from './engine.js';
 import {createSceneStore, SceneStoreError, MAX_SCENE_BYTES} from './scene-store.js';
+import {compileScene} from './scene-model.js';
 
 // Register future Pypeline or FPGA adapters here. The browser never imports a VM.
 const backends = new Map([
@@ -38,10 +39,10 @@ export function listBackends() {
 export function runBackend({backend = 'javascript', scene} = {}) {
   const implementation = backends.get(backend);
   if (!implementation) throw new Error(`Unknown backend: ${backend}`);
-  if (!scene || !Array.isArray(scene.shapes) || !Array.isArray(scene.palette) || !Array.isArray(scene.paletteEvents)) {
+  if (!scene || !Array.isArray(scene.shapes) || !Array.isArray(scene.paletteEvents) || (!Array.isArray(scene.palette) && !Array.isArray(scene.layers))) {
     throw new Error('Scene must contain shapes, palette, and paletteEvents arrays');
   }
-  const result = implementation.run(scene);
+  const result = implementation.run(compileScene(scene));
   // Preserve the inspector's existing trace contract; JSON has no Uint8Array.
   return {
     ...result,

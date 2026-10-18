@@ -1,6 +1,6 @@
 import {test,expect} from 'bun:test';
 import {demoScene} from './scene.js';
-import {editableScene,addRectangle,addText,getObject,resolveSelection,selectionUnits,
+import {editableScene,addRectangle,addText,getObject,getLayer,resolveSelection,selectionUnits,
   moveSelection,moveSelectionToLayer,objectsFullyInsideRect,alignSelection,distributeSelection,groupSelection,ungroupSelection,
   copySelection,pasteSelection,deleteSelection} from './scene-model.js';
 import {createSceneHistory} from './scene-history.js';
@@ -67,7 +67,7 @@ test('scene history round-trips groups, deletes, palettes, and text; new edits c
   const refs=[{type:'rect',id:scene.shapes[0].id},{type:'rect',id:scene.shapes[1].id}];
   history.transaction(()=>groupSelection(scene,refs));
   expect(history.state()).toMatchObject({canUndo:true,canRedo:false});
-  history.transaction(()=>{scene.palette[1]='#aabbcc';deleteSelection(scene,refs);});
+  history.transaction(()=>{getLayer(scene,'layer-1').color='#aabbcc';deleteSelection(scene,refs);});
   expect(scene.shapes).toHaveLength(1);
   expect(history.undo()).toBe(true);
   expect(scene.shapes).toHaveLength(3);
@@ -76,11 +76,11 @@ test('scene history round-trips groups, deletes, palettes, and text; new edits c
   expect(scene.shapes[0].group_id).toBeUndefined();
   expect(history.redo()).toBe(true);
   expect(scene.shapes[0].group_id).toBeTruthy();
-  history.transaction(()=>{scene.palette[2]='#112233';});
+  history.transaction(()=>{getLayer(scene,'layer-2').color='#112233';});
   expect(history.state().canRedo).toBe(false);
-  history.begin();scene.palette[2]='#445566';history.commit({notify:false});
+  history.begin();getLayer(scene,'layer-2').color='#445566';history.commit({notify:false});
   expect(history.undo()).toBe(true);
-  expect(scene.palette[2]).toBe('#112233');
+  expect(getLayer(scene,'layer-2').color).toBe('#112233');
   history.reset();expect(history.state().canUndo).toBe(false);
   expect(changed.length).toBeGreaterThan(4);
 });
@@ -116,31 +116,31 @@ test('moving a tile between layers moves its complete group and is undoable',()=
   const refs=scene.shapes.slice(0,2).map(object=>({type:'rect',id:object.id}));
   const groupId=groupSelection(scene,refs);
   const third=scene.shapes[2];
-  const thirdLayer=third.layer;
-  const originalLayers=refs.map(ref=>getObject(scene,ref.type,ref.id).layer);
+  const thirdLayer=third.layerId;
+  const originalLayers=refs.map(ref=>getObject(scene,ref.type,ref.id).layerId);
   const history=createSceneHistory({getScene:()=>scene,replaceScene:value=>{scene=value;}});
-  expect(history.transaction(()=>moveSelectionToLayer(scene,[refs[0]],10))).toBe(true);
-  expect(refs.map(ref=>getObject(scene,ref.type,ref.id).layer)).toEqual([10,10]);
-  expect(third.layer).toBe(thirdLayer);
+  expect(history.transaction(()=>moveSelectionToLayer(scene,[refs[0]],'layer-10'))).toBe(true);
+  expect(refs.map(ref=>getObject(scene,ref.type,ref.id).layerId)).toEqual(['layer-10','layer-10']);
+  expect(third.layerId).toBe(thirdLayer);
   expect(getObject(scene,refs[0].type,refs[0].id).group_id).toBe(groupId);
   expect(history.undo()).toBe(true);
-  expect(refs.map(ref=>getObject(scene,ref.type,ref.id).layer)).toEqual(originalLayers);
+  expect(refs.map(ref=>getObject(scene,ref.type,ref.id).layerId)).toEqual(originalLayers);
   expect(history.redo()).toBe(true);
-  expect(refs.map(ref=>getObject(scene,ref.type,ref.id).layer)).toEqual([10,10]);
-  expect(moveSelectionToLayer(scene,refs,0)).toBe(0);
-  expect(moveSelectionToLayer(scene,refs,64)).toBe(0);
-  expect(moveSelectionToLayer(scene,refs,10)).toBe(0);
+  expect(refs.map(ref=>getObject(scene,ref.type,ref.id).layerId)).toEqual(['layer-10','layer-10']);
+  expect(moveSelectionToLayer(scene,refs,'background')).toBe(0);
+  expect(moveSelectionToLayer(scene,refs,'layer-64')).toBe(0);
+  expect(moveSelectionToLayer(scene,refs,'layer-10')).toBe(0);
 });
 
 test('layer palette changes are shared and undoable without editing geometry',()=>{
   let scene=sample().scene;
-  const original=scene.palette[12];
+  const original=getLayer(scene,'layer-12').color;
   const originalX=scene.shapes[0].x;
   const history=createSceneHistory({getScene:()=>scene,replaceScene:value=>{scene=value;}});
-  expect(history.transaction(()=>{scene.palette[12]='#123456';})).toBe(true);
-  expect(scene.palette[12]).toBe('#123456');
+  expect(history.transaction(()=>{getLayer(scene,'layer-12').color='#123456';})).toBe(true);
+  expect(getLayer(scene,'layer-12').color).toBe('#123456');
   expect(history.undo()).toBe(true);
-  expect(scene.palette[12]).toBe(original);
+  expect(getLayer(scene,'layer-12').color).toBe(original);
   expect(scene.shapes[0].x).toBe(originalX);
 });
 

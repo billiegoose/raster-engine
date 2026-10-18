@@ -1,9 +1,10 @@
+import {validateScene} from './scene-store.js';
 import {test, expect} from 'bun:test';
 import {mkdtemp, rm, readdir, readFile, writeFile, symlink, mkdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {demoScene} from './scene.js';
-import {addText, editableScene} from './scene-model.js';
+import {addText, editableScene, getLayer, setLayerName} from './scene-model.js';
 import {createSceneStore, sceneName, SceneStoreError, MAX_SCENE_BYTES} from './scene-store.js';
 import {handleApiRequest} from './api.js';
 
@@ -24,8 +25,8 @@ test('scene store creates ./scenes and round-trips rectangles, text, palette and
   await withStore(async (store, directory) => {
     expect(await store.list()).toEqual([]);
     const original = editableScene(demoScene());
-    original.palette[30] = '#a1b2c3';
-    original.paletteEvents.push({y: 233, layer: 30, color: '#123abc'});
+    getLayer(original,'layer-20').color = '#a1b2c3';
+    original.paletteEvents.push({y: 233, layerId: 'layer-20', color: '#123abc'});
     const text = addText(original);
     original.textBuffers[String(text.buffer_ptr)] = 'P.O.\nHELLO, WORLD!';
     const result = await api(store, '/api/scenes/my%20first%20scene', 'PUT', original);
@@ -38,7 +39,7 @@ test('scene store creates ./scenes and round-trips rectangles, text, palette and
     expect(loaded.status).toBe(200);
     expect(await loaded.json()).toEqual({name: 'my first scene', scene: original});
     expect((await readdir(directory)).filter(name => name.endsWith('.tmp'))).toEqual([]);
-    original.palette[30] = '#003344';
+    getLayer(original,'layer-20').color = '#003344';
     original.shapes.pop();
     expect((await api(store, '/api/scenes/my%20first%20scene.json', 'PUT', original)).status).toBe(200);
     expect(await store.load('my first scene')).toEqual(original);
@@ -96,4 +97,15 @@ test('scene listing excludes temporary, unrelated and symlink files', async () =
     const brokenRequest = await api(store, '/api/scenes/broken');
     expect(brokenRequest.status).toBe(400);
   });
+});
+
+
+test('scene validator accepts named layers and rejects invalid metadata',()=>{
+  const scene=demoScene();
+  scene.layerNames={'0':'Background','12':'Bricks','63':'HUD'};
+  expect(validateScene(scene).layerNames['12']).toBe('Bricks');
+  for(const invalid of [{'64':'Bad'}, {'abc':'Bad'}, {'1':''}, {'2':'a'.repeat(65)}, {'3':42}]){
+    expect(()=>validateScene({...scene,layerNames:invalid})).toThrow();
+  }
+  expect(validateScene(demoScene()).layerNames).toBeUndefined();
 });

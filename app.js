@@ -1,34 +1,41 @@
-/* Workspace controller. The editor owns direct manipulation of one scene;
-   the simulator is a separate read-only, backend-driven view of that scene. */
-import {demoScene} from './scene.js';
+/* Workspace controller: native local scene files and an independent simulator. */
+import {blankScene} from './scene.js';
 import {editableScene} from './scene-model.js';
 import {createSceneEditor} from './scene-editor.js';
 import {createSceneHistory} from './scene-history.js';
 import {createRasterSimulator} from './raster-simulator.js';
 
 const $=id=>document.getElementById(id);
-let scene=editableScene(demoScene());
+let scene=editableScene(blankScene());
 const getScene=()=>scene;
+const snapshot=()=>JSON.stringify(scene);
 let editor;
-let mode='editor';
-let savedName=null,sceneDirty=false,sceneRevision=0,sceneFileBusy=false;
+let savedName=null,sceneRevision=0,sceneFileBusy=false;
+let savedSnapshot=snapshot(),sceneDirty=false;
 let availableScenes=[];
-const filename=$('scene-file-name'),picker=$('saved-scenes');
-const saveButton=$('scene-save'),loadButton=$('scene-load'),refreshButton=$('scene-refresh');
+const picker=$('saved-scenes');
+const newButton=$('scene-new'),saveButton=$('scene-save');
+const saveAsButton=$('scene-save-as'),refreshButton=$('scene-refresh');
+const saveAsDialog=$('scene-save-as-dialog'),saveAsName=$('scene-save-as-name');
+const saveAsConfirm=$('scene-save-as-confirm');
 
 function sceneStatus(message,kind='info'){
   $('scene-file-status').textContent=message;
   $('scene-file-status').dataset.kind=kind;
 }
-function setSceneFileBusy(busy){
-  sceneFileBusy=busy;
-  for(const button of [saveButton,loadButton,refreshButton])button.disabled=busy;
+function syncFileUI(){
+  picker.value=savedName&&availableScenes.includes(savedName)?savedName:'';
+  for(const control of [picker,newButton,saveButton,saveAsButton,refreshButton,saveAsConfirm]){
+    control.disabled=sceneFileBusy;
+  }
 }
+function setSceneFileBusy(busy){sceneFileBusy=busy;syncFileUI();}
 function sceneChanged(){
   sceneRevision++;
-  sceneDirty=true;
+  sceneDirty=snapshot()!==savedSnapshot;
   simulator.markDirty();
-  sceneStatus(`Unsaved changes${savedName?' · '+savedName+'.json':''}`,'dirty');
+  sceneStatus(sceneDirty?`Unsaved changes · ${savedName?savedName+'.json':'Untitled'}`:
+    (savedName?`${savedName}.json · saved`:'Untitled · not saved'),sceneDirty?'dirty':'info');
 }
 async function sceneRequest(path,options){
   const response=await fetch(path,options);
@@ -36,64 +43,92 @@ async function sceneRequest(path,options){
   if(!response.ok)throw new Error(data.error||`Request failed (${response.status})`);
   return data;
 }
-async function refreshScenes(preferred=picker.value){
+async function refreshScenes(){
   const {scenes}=await sceneRequest('/api/scenes');
   availableScenes=scenes;
-  picker.replaceChildren(new Option('Choose a scene…',''));
+  picker.replaceChildren(new Option('Untitled',''));
+  picker.options[0].disabled=true;
   for(const name of scenes)picker.add(new Option(name+'.json',name));
-  picker.value=scenes.includes(preferred)?preferred:'';
+  syncFileUI();
 }
-async function saveScene(){
-  if(sceneFileBusy)return;
-  const name=filename.value.trim();
-  if(!name){sceneStatus('Enter a scene name before saving','error');filename.focus();return;}
-  const canonical=name.replace(/\.json$/i,'');
-  if(availableScenes.includes(canonical)&&savedName!==canonical&&
-     !window.confirm(`Overwrite ${canonical}.json?`))return;
-  const revision=sceneRevision;
-  setSceneFileBusy(true);
-  try{
-    const {name:saved}=await sceneRequest('/api/scenes/'+encodeURIComponent(name),{
-      method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(getScene())
-    });
-    savedName=saved;
-    filename.value=saved;
-    await refreshScenes(saved);
-    sceneDirty=sceneRevision!==revision;
-    sceneStatus(sceneDirty?`Saved ${saved}.json · newer changes are unsaved`:`Saved ${saved}.json`,sceneDirty?'dirty':'info');
-  }catch(error){sceneStatus('Save failed: '+error.message,'error');}
-  finally{setSceneFileBusy(false);}
+function newScene(){
+  if(sceneFileBusy)return false;
+  if(sceneDirty&&!window.confirm('Discard unsaved changes and create a new blank scene?'))return false;
+  scene=editableScene(blankScene());
+  savedName=null;
+  savedSnapshot=snapshot();
+  sceneDirty=false;
+  sceneRevision++;
+  history.reset();
+  editor.clearSelection();
+  simulator.markDirty();
+  syncFileUI();
+  sceneStatus('Untitled · not saved');
+  return true;
 }
-async function loadScene(){
-  if(sceneFileBusy)return;
-  const name=picker.value||filename.value.trim().replace(/\.json$/i,'');
-  if(!name){sceneStatus('Choose a saved scene to load','error');return;}
-  if(sceneDirty&&!window.confirm('Discard unsaved scene changes and load '+name+'.json?'))return;
+async function loadScene(name){
+  if(sceneFileBusy||!name)return;
+  if(name===savedName){syncFileUI();return;}
+  if(sceneDirty&&!window.confirm(`Discard unsaved changes and open ${name}.json?`)){
+    syncFileUI();return;
+  }
   const revision=sceneRevision;
   setSceneFileBusy(true);
   try{
     const result=await sceneRequest('/api/scenes/'+encodeURIComponent(name));
     if(sceneRevision!==revision){
-      sceneStatus('Scene changed while loading; load again to avoid losing edits','dirty');
+      sceneStatus('Scene changed during loading; open it again to avoid losing edits','dirty');
       return;
     }
     scene=editableScene(result.scene);
     savedName=result.name;
+    savedSnapshot=snapshot();
     sceneDirty=false;
     sceneRevision++;
-    filename.value=savedName;
-    picker.value=savedName;
     history.reset();
     editor.clearSelection();
     simulator.markDirty();
-    sceneStatus(`Loaded ${savedName}.json`);
-  }catch(error){sceneStatus('Load failed: '+error.message,'error');}
+    sceneStatus(`Opened ${savedName}.json`);
+  }catch(error){sceneStatus('Open failed: '+error.message,'error');}
   finally{setSceneFileBusy(false);}
 }
-
+async function writeScene(name){
+  if(sceneFileBusy)return false;
+  const source=snapshot();
+  setSceneFileBusy(true);
+  try{
+    const {name:canonical}=await sceneRequest('/api/scenes/'+encodeURIComponent(name),{
+      method:'PUT',headers:{'Content-Type':'application/json'},body:source
+    });
+    savedName=canonical;
+    savedSnapshot=source;
+    sceneDirty=snapshot()!==savedSnapshot;
+    try{await refreshScenes();}
+    catch(error){sceneStatus(`Saved ${canonical}.json, but refreshing the list failed: ${error.message}`,'error');return true;}
+    sceneStatus(sceneDirty?`Saved ${canonical}.json · newer edits are unsaved`:`Saved ${canonical}.json`,
+      sceneDirty?'dirty':'info');
+    return true;
+  }catch(error){
+    sceneStatus('Save failed: '+error.message,'error');
+    if(saveAsDialog.open){$('scene-save-as-error').hidden=false;$('scene-save-as-error').textContent=error.message;}
+    return false;
+  }finally{setSceneFileBusy(false);}
+}
+function openSaveAs(){
+  if(sceneFileBusy)return;
+  saveAsName.value=savedName??'';
+  $('scene-save-as-error').hidden=true;
+  $('scene-save-as-error').textContent='';
+  saveAsDialog.showModal();
+  saveAsName.focus();
+  saveAsName.select();
+}
+function saveScene(){
+  if(sceneFileBusy)return;
+  if(savedName)void writeScene(savedName);
+  else openSaveAs();
+}
 function setMode(target){
-  mode=target;
   $('editor-view').hidden=target!=='editor';
   $('simulator-view').hidden=target!=='simulator';
   for(const key of ['editor','simulator']){
@@ -113,37 +148,41 @@ const history=createSceneHistory({
   onChange(){sceneChanged();},
   onStateChange(){editor?.updateHistoryControls();}
 });
-editor=createSceneEditor({
-  getScene,
-  history,
-  onSimulate(){setMode('simulator');},
-  onReset(){
-    scene=editableScene(demoScene());
-    history.reset();
-    editor.clearSelection();
-    sceneRevision++;
-    sceneDirty=false;
-    savedName=null;
-    filename.value='';
-    picker.value='';
-    simulator.markDirty();
-    sceneStatus('Demo scene · not saved');
-  }
-});
+editor=createSceneEditor({getScene,history,onSimulate(){setMode('simulator');}});
 const simulator=createRasterSimulator({getScene,onEditor:()=>setMode('editor')});
 editor.setOnTextInput(sceneChanged);
-saveButton.addEventListener('click',()=>void saveScene());
-loadButton.addEventListener('click',()=>void loadScene());
+
+newButton.addEventListener('click',newScene);
+saveButton.addEventListener('click',saveScene);
+saveAsButton.addEventListener('click',openSaveAs);
+$('scene-save-as-cancel').addEventListener('click',()=>saveAsDialog.close());
+$('scene-save-as-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  if(sceneFileBusy)return;
+  const name=saveAsName.value.trim();
+  const canonical=name.replace(/\.json$/i,'');
+  const error=$('scene-save-as-error');
+  if(!/^[A-Za-z0-9][A-Za-z0-9 _-]{0,63}$/.test(canonical)){
+    error.textContent='Use 1–64 letters, numbers, spaces, underscores, or hyphens.';
+    error.hidden=false;
+    return;
+  }
+  if(availableScenes.includes(canonical)&&canonical!==savedName&&
+     !window.confirm(`Overwrite existing ${canonical}.json?`))return;
+  error.hidden=true;
+  if(await writeScene(name))saveAsDialog.close();
+});
+picker.addEventListener('change',()=>{
+  const name=picker.value;
+  if(name)void loadScene(name);
+  else syncFileUI();
+});
 refreshButton.addEventListener('click',async()=>{
   if(sceneFileBusy)return;
   setSceneFileBusy(true);
-  try {await refreshScenes();sceneStatus('Saved scenes refreshed');}
+  try{await refreshScenes();sceneStatus('Scene list refreshed');}
   catch(error){sceneStatus('Refresh failed: '+error.message,'error');}
   finally{setSceneFileBusy(false);}
-});
-picker.addEventListener('change',()=>{if(picker.value)filename.value=picker.value;});
-filename.addEventListener('keydown',event=>{
-  if(event.key==='Enter'){event.preventDefault();void saveScene();}
 });
 void refreshScenes().catch(error=>sceneStatus('Unable to list scenes: '+error.message,'error'));
 $('mode-editor').addEventListener('click',()=>setMode('editor'));

@@ -22,7 +22,6 @@
     <symbol id="tool-icon-ungroup" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M4 8V4h4M16 4h4v4M4 16v4h4m8 0h4v-4M3 21 21 3"/></symbol>
     <symbol id="tool-icon-align" viewBox="0 0 24 24"><path d="M4 4v16M8 7h13M8 12h8M8 17h11"/></symbol>
     <symbol id="tool-icon-distribute" viewBox="0 0 24 24"><path d="M4 4v16M20 4v16M8 8h8M8 12h8M8 16h8"/></symbol>
-    <symbol id="tool-icon-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6M3 4v6h6"/></symbol>
     <symbol id="tool-icon-simulate" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></symbol>
   </defs></svg>
 
@@ -40,18 +39,29 @@
 
   <main>
     <section id="editor-view" class="workspace" aria-label="Scene editor">
-      <div class="scene-file-toolbar" aria-label="Local scene files">
-        <label class="scene-file-name">Scene name
-          <input id="scene-file-name" type="text" maxlength="69" placeholder="my-scene" spellcheck="false" autocomplete="off" aria-label="Scene filename">
+      <div class="scene-file-toolbar" aria-label="Scene files">
+        <label class="scene-file-select">Scene
+          <select id="saved-scenes" aria-label="Scene selector"><option value="">Untitled</option></select>
         </label>
-        <button id="scene-save" type="button" class="primary">Save scene</button>
-        <label class="scene-file-select">Saved scenes
-          <select id="saved-scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select>
-        </label>
-        <button id="scene-load" type="button">Load</button>
-        <button id="scene-refresh" type="button" class="secondary" title="Refresh saved scenes" aria-label="Refresh saved scenes">↻</button>
-        <span id="scene-file-status" class="scene-file-status" role="status" aria-live="polite">Demo scene · not saved</span>
+        <button id="scene-new" type="button">New</button>
+        <button id="scene-save" type="button" class="primary">Save</button>
+        <button id="scene-save-as" type="button">Save As…</button>
+        <button id="scene-refresh" type="button" class="secondary" title="Refresh scene list" aria-label="Refresh scene list">↻</button>
+        <span id="scene-file-status" class="scene-file-status" role="status" aria-live="polite">Untitled · not saved</span>
       </div>
+      <dialog id="scene-save-as-dialog" class="scene-save-as-dialog" aria-labelledby="scene-save-as-title">
+        <form id="scene-save-as-form">
+          <h2 id="scene-save-as-title">Save scene as</h2>
+          <label for="scene-save-as-name">Scene filename</label>
+          <input id="scene-save-as-name" type="text" maxlength="69" placeholder="my-scene" spellcheck="false" autocomplete="off" required>
+          <p class="muted">Saved directly to ./scenes as a JSON file.</p>
+          <p id="scene-save-as-error" class="scene-save-as-error" role="alert" hidden></p>
+          <div class="scene-dialog-actions">
+            <button id="scene-save-as-cancel" type="button" class="secondary">Cancel</button>
+            <button id="scene-save-as-confirm" type="submit" class="primary">Save</button>
+          </div>
+        </form>
+      </dialog>
       <div class="workspace-toolbar editor-tools" role="toolbar" aria-label="Scene editing tools">
         <div class="tool-cluster">
           <button id="add-rect" type="button"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-add-rectangle"></use></svg> Rectangle</button>
@@ -83,7 +93,6 @@
         </div>
         <div class="tool-cluster editor-tool-end">
           <span id="editor-stats" class="muted"></span>
-          <button id="reset" type="button" class="secondary"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-reset"></use></svg> Reset</button>
           <button id="run-simulator" type="button" class="primary"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-simulate"></use></svg> Simulate →</button>
         </div>
       </div>
@@ -102,11 +111,10 @@
         <aside class="editor-sidebar">
           <section class="panel object-list-panel" aria-label="Scene objects">
             <div class="panel-heading">
-              <h2>Objects</h2><span id="object-count"></span>
+              <h2>Objects</h2><button id="add-layer" type="button" class="secondary" title="Add drawing layer (64 maximum)">+ Layer</button><button id="add-group" type="button" class="secondary" title="Add group of layers">+ Group</button><span id="object-count"></span>
             </div>
             <div class="object-filter-row"><input id="object-filter" type="search" placeholder="Find text, type, or layer…" aria-label="Filter scene objects"></div>
-            <label class="layer-show-empty"><input id="show-empty-layers" type="checkbox"> Show empty layers</label>
-            <div id="object-list" class="object-list" aria-label="Collapsible scene layers"></div>
+            <div id="object-list" class="object-list" role="tree" aria-label="Layer and folder tree"></div>
           </section>
           <section class="panel properties-panel" aria-label="Selected object properties">
             <div class="panel-heading"><h2>Properties</h2><span id="selection-summary" class="muted"></span></div>

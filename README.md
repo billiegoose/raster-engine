@@ -58,44 +58,31 @@ The original shape primitive is a rectangle with a `radius` parameter; the Pytho
 
 The browser has two distinct workspaces that share one editable JSON scene:
 
-- **Scene editor:** fixed native-size 1280 × 720 visual editor using ordinary DOM `div`
-  elements for rounded rectangles and clipped text regions. The scene scrolls
-  horizontally in a narrower window rather than scaling the DOM or its font. Select objects on
-  the canvas or from the searchable, collapsible Layers inspector, which shows
-  preview tiles in three columns and a palette color input per layer. Drag a
-  preview onto another layer to reassign it (including an entire selected group),
-  or enable **Show empty layers** to expose unused destinations. Layer 0 is the
-  background color. Drag on the canvas to move,
-  drag the lower-right selection handle to resize, or edit integer coordinates,
-  dimensions and four CSS-order corner radii in the properties panel;
-  layers and their shared palette colors live exclusively in the Layers inspector. Arrow keys move the selected object by one pixel (Shift: ten),
-  and Delete or Backspace removes the selected object when no text field is
-  active. The Objects list uses enlarged thumbnails with the actual rectangle
-  proportions and CSS-order radii, rather than flat color swatches.
-  Use **+ Rectangle** and **+ Text** to create objects; text objects
-  each get an independent editable byte-buffer handle. Duplicate creates a new
-  text buffer (not an alias), and delete frees a buffer when no other object
-  references it. Palette updates remain editable under the collapsible
-  **Palette changes by Y** section.
-  Presentation-style editing adds Shift-click and drag-marquee selection (Alt-drag
-  starts a marquee even over an object), group-aware dragging, Align and Distribute
-  tools, grouping and ungrouping, plus scene-wide Undo/Redo. Groups are saved as
-  `group_id` metadata on ordinary scene objects; rendering remains flat. The
-  toolbar supports Copy/Cut/Paste/Duplicate inside the editor (independent text
-  buffers), while Ctrl/Cmd+A selects all, Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z
-  redoes, Ctrl/Cmd+C/X/V copies/cuts/pastes, Ctrl/Cmd+D duplicates, and
-  Ctrl/Cmd+G / Ctrl/Cmd+Shift+G groups/ungroups. Clipboard content stays within
-  the current editor tab rather than the operating-system clipboard. The
-  scanline palette editor now lives under Advanced controls.
-  The canvas has square, unclipped edges, layer previews use flat rows instead
-  of nested cards, and a drag-selection marquee requires full containment of
-  each object (or the complete bounding box of an existing group).
-- **Raster simulator:** backend-executed pixels, Y-program, persistent X-list,
-  palette inspector and scanline timeline. Simulation runs on entering this
-  workspace or when **Run simulation** is pressed, not during visual dragging.
-  Return to editing without losing any scene edits. With text objects present,
-  simulation automatically selects the Python backend if JavaScript was
-  selected, because JavaScript currently has no mask-source support.
+- **Scene editor:** A native-size 1280 × 720 visual editor built from DOM
+  rectangles and clipped text. The canvas scrolls in narrower windows rather
+  than scaling the artwork or font. Select objects on the canvas or from
+  preview tiles in the searchable layer tree. Each drawing layer has a persistent
+  name, color, and stable ID; an unnamed layer has a placeholder rather than a
+  numeric heading or an object-count label. Use **+ Layer** to add a drawing
+  layer and **+ Group** to add a folder. Groups can contain drawing layers and
+  nested groups, and have inline **+L** and **+G** controls for adding children.
+  Expand or collapse folders and layers with their chevrons. Drag a layer or
+  group by its grip: drop before or after another node to reorder, or onto a
+  folder to move a whole subtree into it. Drag object tiles onto drawing layers
+  to move objects without changing their geometry. The × button deletes a
+  layer or an entire folder subtree, including its objects and scanline palette
+  events; deletion of nonempty content requires confirmation. The background
+  cannot be moved or deleted. Tree changes support undo and redo.
+
+  Scenes store their tree as a bottom-to-top preorder `layers` array. Folders
+  have `kind: "group"` and optional `parentId` references; drawing layers retain
+  `id`, `name`, `color` and optional `parentId`. Objects and palette events
+  refer to stable drawing-layer IDs. Folders are organizational only: at most
+  64 drawing layers, including the background, receive physical palette slots
+  when the scene is compiled for simulation. Up to 256 total tree nodes are
+  supported. Existing numbered-layer scenes are migrated when opened. Newly
+  inserted rectangles and text use the most recently selected drawing layer,
+  even after deselection, or the topmost drawing layer if it no longer exists.
 
 The DOM canvas is an **editing approximation**: it uses CSS rounded corners
 and RED2's own OpenType web font (32px artwork scale, 36px line height, with
@@ -110,27 +97,36 @@ differ from the pixel-accurate renderer.
 
 The simulator renders authoritative palette pixels and exact 1-bit RED2 glyphs,
 with differing corner-pixel details where CSS and the rasterizer's integer
-circles diverge. **No background raster
-rendering happens while dragging.** Scenes currently live in browser memory;
-reloading the page resets to the demo scene.
+circles diverge. **No background raster rendering happens while dragging.**
+Scenes can be saved and reopened as JSON files in the local `scenes/` folder
+through the editor's native scene-file toolbar.
 
 ## Local scene files
 
-The Scene editor has a **Scene name** input, **Save scene**, a **Saved scenes**
-picker, and **Load**. Scenes are saved as pretty-printed JSON directly in
-`./scenes/<name>.json` alongside the running Bun server; no browser download,
-upload, database, or cloud service is involved. Enter a name to create or
-update a file, or choose an existing scene to load it. Refresh the picker to
-pick up JSON files created externally. Loading replaces the current scene,
-refreshes the editor, and invalidates the simulator's cached output; the editor
-asks before discarding unsaved changes. Saving is explicit, not automatic.
+The editor starts with a **blank, untitled 1280 × 720 scene** (no rectangles or
+text). Its conventional file toolbar provides:
+
+- **Scene selector:** choosing a saved scene opens it directly; changing scenes
+  prompts before discarding unsaved edits.
+- **New:** starts another blank, untitled canvas; asks before discarding edits.
+- **Save:** updates the currently open JSON file, or opens Save As for an untitled scene.
+- **Save As…:** opens a filename dialog, creates a new scene file, and asks before
+  replacing an existing file with a different name. The current scene then
+  becomes the newly saved file.
+- **Refresh:** discovers scene files added outside the browser.
+
+Scenes are stored as pretty-printed JSON under `./scenes/<name>.json` in the Bun
+server's repository. There is no browser download/upload, cloud storage,
+autosave, or database. The selector shows the current scene; unsaved changes
+are indicated in the status text. Loading or creating a scene resets its undo
+history and invalidates the simulator's output.
 
 The local API is `GET /api/scenes` (names), `GET /api/scenes/:name` (one scene),
 and `PUT /api/scenes/:name` (replace/create from the scene JSON body). Only
 simple filenames are permitted; writes are atomic and limited to 1 MiB.
-`scenes/.gitkeep` retains the folder in Git; saved JSON files are ordinary
-local files that can be versioned intentionally if desired. Initial startup
-still opens the built-in demo scene.
+The repository includes editable example scenes, including `breakout.json`
+and `paint.json`.
+
 
 ## 1-bit RED2 text (Python backend prototype)
 

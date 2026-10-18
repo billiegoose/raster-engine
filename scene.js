@@ -3,6 +3,8 @@
    horizontally (+160 px), preserving square pixels and circular corners. */
 export const WIDTH=1280, HEIGHT=720, LAYERS=64;
 export const initialPalette=()=>Array.from({length:LAYERS},(_,i)=>i===0?'#101827':'#ffffff');
+export const blankScene=()=>({layers:[{id:'background',name:'',color:'#101827'},{id:'layer-1',name:'',color:'#92d0e1'}],shapes:[],texts:[],textBuffers:{},paletteEvents:[]});
+
 export const demoScene=()=>({
   palette:Object.assign(initialPalette(),{
     1:'#0f6b78',  // desktop teal
