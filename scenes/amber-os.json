@@ -1,0 +1,254 @@
+{
+  "shapes": [
+    {
+      "id": 1,
+      "x": 0,
+      "y": 32,
+      "w": 1280,
+      "h": 1,
+      "radius": 0,
+      "layerId": "layer-1"
+    },
+    {
+      "id": 2,
+      "x": 21,
+      "y": 51,
+      "w": 608,
+      "h": 648,
+      "radius": 18,
+      "layerId": "layer-2",
+      "group_id": 4
+    },
+    {
+      "id": 4,
+      "x": 37,
+      "y": 109,
+      "w": 400,
+      "h": 100,
+      "radius": 18,
+      "layerId": "layer-3",
+      "group_id": 2
+    },
+    {
+      "id": 5,
+      "x": 38,
+      "y": 110,
+      "w": 398,
+      "h": 98,
+      "radius": 18,
+      "layerId": "layer-4",
+      "group_id": 2
+    },
+    {
+      "id": 8,
+      "x": 442,
+      "y": 298,
+      "w": 400,
+      "h": 100,
+      "radius": 18,
+      "layerId": "layer-27"
+    },
+    {
+      "id": 9,
+      "x": 443,
+      "y": 299,
+      "w": 398,
+      "h": 98,
+      "radius": 18,
+      "layerId": "layer-28"
+    },
+    {
+      "id": 11,
+      "x": 20,
+      "y": 50,
+      "w": 610,
+      "h": 650,
+      "radius": 18,
+      "layerId": "layer-1",
+      "group_id": 4
+    },
+    {
+      "id": 12,
+      "x": 650,
+      "y": 50,
+      "w": 610,
+      "h": 650,
+      "radius": 18,
+      "layerId": "layer-1",
+      "group_id": 3
+    },
+    {
+      "id": 13,
+      "x": 651,
+      "y": 51,
+      "w": 608,
+      "h": 648,
+      "radius": 18,
+      "layerId": "layer-2",
+      "group_id": 3
+    },
+    {
+      "id": 14,
+      "x": 727,
+      "y": 350,
+      "w": 100,
+      "h": 32,
+      "radius": [
+        5,
+        15
+      ],
+      "layerId": "layer-29"
+    }
+  ],
+  "texts": [
+    {
+      "id": 3,
+      "x": 48,
+      "y": 119,
+      "w": 380,
+      "h": 72,
+      "buffer_ptr": 4096,
+      "layerId": "layer-25",
+      "group_id": 2
+    },
+    {
+      "id": 6,
+      "x": 29,
+      "y": 61,
+      "w": 380,
+      "h": 72,
+      "buffer_ptr": 8192,
+      "layerId": "layer-10",
+      "group_id": 4
+    },
+    {
+      "id": 7,
+      "x": 455,
+      "y": 313,
+      "w": 380,
+      "h": 72,
+      "buffer_ptr": 12288,
+      "layerId": "layer-26"
+    },
+    {
+      "id": 10,
+      "x": 5,
+      "y": 1,
+      "w": 380,
+      "h": 72,
+      "buffer_ptr": 16384,
+      "layerId": "layer-10"
+    },
+    {
+      "id": 15,
+      "x": 738,
+      "y": 352,
+      "w": 83,
+      "h": 29,
+      "buffer_ptr": 20480,
+      "layerId": "layer-30"
+    }
+  ],
+  "textBuffers": {
+    "4096": "HELLO, WORLD!",
+    "8192": "HELLO, WORLD!",
+    "12288": "ATTENTION!",
+    "16384": "OPEN | MOVE | EXIT",
+    "20480": "OKAY"
+  },
+  "paletteEvents": [],
+  "layers": [
+    {
+      "id": "background",
+      "name": "Screen",
+      "color": "#060200"
+    },
+    {
+      "id": "group-3",
+      "kind": "group",
+      "name": "Dim"
+    },
+    {
+      "id": "layer-1",
+      "name": "Dim Border",
+      "color": "#5b2400",
+      "parentId": "group-3"
+    },
+    {
+      "id": "layer-2",
+      "name": "Dim Screenfill",
+      "color": "#060200",
+      "parentId": "group-3"
+    },
+    {
+      "id": "layer-10",
+      "name": "Dim Text",
+      "color": "#5b2400",
+      "parentId": "group-3"
+    },
+    {
+      "id": "group-2",
+      "kind": "group",
+      "name": "Active"
+    },
+    {
+      "id": "layer-3",
+      "name": "Active Border",
+      "color": "#dd5800",
+      "parentId": "group-2"
+    },
+    {
+      "id": "layer-4",
+      "name": "Active Screenfill",
+      "color": "#060200",
+      "parentId": "group-2"
+    },
+    {
+      "id": "layer-25",
+      "name": "Active Text",
+      "color": "#dd5800",
+      "parentId": "group-2"
+    },
+    {
+      "id": "group-1",
+      "kind": "group",
+      "name": "Hot"
+    },
+    {
+      "id": "layer-27",
+      "name": "Hot Border",
+      "color": "#ff3400",
+      "parentId": "group-1"
+    },
+    {
+      "id": "layer-28",
+      "name": "Hot Screenfill",
+      "color": "#060200",
+      "parentId": "group-1"
+    },
+    {
+      "id": "layer-26",
+      "name": "Hot Text",
+      "color": "#ff3400",
+      "parentId": "group-1"
+    },
+    {
+      "id": "group-4",
+      "kind": "group",
+      "name": "Hot Button",
+      "parentId": "group-1"
+    },
+    {
+      "id": "layer-29",
+      "name": "Hot Button",
+      "color": "#ff3400",
+      "parentId": "group-4"
+    },
+    {
+      "id": "layer-30",
+      "name": "Hot Button Text",
+      "color": "#050100",
+      "parentId": "group-4"
+    }
+  ]
+}
