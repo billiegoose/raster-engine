@@ -102,8 +102,8 @@ test('Amber component atlas uses native 1080p pixels and four aligned vertical c
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
   expect(validateScene(scene)).toBe(scene);
   expect(canvasSize(scene)).toEqual({width:1920,height:1080});
-  expect(scene.shapes).toHaveLength(60);
-  expect(scene.texts).toHaveLength(36);
+  expect(scene.shapes).toHaveLength(59);
+  expect(scene.texts).toHaveLength(31);
   const shapes=new Map(scene.shapes.map(o=>[o.id,o]));
   const texts=new Map(scene.texts.map(o=>[o.id,o]));
   const label=id=>scene.textBuffers[String(texts.get(id).buffer_ptr)];
@@ -112,20 +112,24 @@ test('Amber component atlas uses native 1080p pixels and four aligned vertical c
   expect([25,46,61,96].map(id=>shapes.get(id).w)).toEqual([390,390,390,390]);
   expect([27,48,63,99].map(label)).toEqual(['BUTTONS','TEXT FIELDS','CHOICES','VALUES']);
   expect([29,31,34,37].map(id=>[shapes.get(id).x,shapes.get(id).y,shapes.get(id).w]))
-    .toEqual([[285,168,350],[285,298,350],[285,428,350],[285,558,350]]);
+    .toEqual([[285,153,350],[285,225,350],[285,297,350],[285,369,350]]);
   expect([30,33,36,39].map(label)).toEqual(['PRIMARY','STANDARD','INACTIVE','ALERT']);
   expect([50,53,57].map(id=>[shapes.get(id).x,shapes.get(id).y,shapes.get(id).w]))
-    .toEqual([[695,168,350],[695,298,350],[695,428,350]]);
+    .toEqual([[695,153,350],[695,225,350],[695,297,350]]);
   expect([52,55,59].map(label)).toEqual(['INACTIVE','STANDARD','REQUIRED']);
   expect([85,40,76,79,89,93].map(id=>shapes.get(id).y))
-    .toEqual([170,300,430,560,690,820]);
+    .toEqual([160,216,272,328,384,440]);
   expect([75,42,78,81,88,92].map(label))
     .toEqual(['CHECKED','UNCHECKED','SELECTED','UNSELECTED','OFF','ON']);
-  expect([texts.get(45).x,texts.get(45).y,label(45)]).toEqual([1110,632,'TOGGLES']);
+  expect(texts.has(45)).toBe(false);
+  expect([11,25,46,61,96].map(id=>shapes.get(id).h)).toEqual([325,364,292,421,287]);
+  expect(texts.get(69).layerId).toBe('layer-6');
+  expect(texts.has(20)).toBe(false);
+  expect(shapes.has(21)).toBe(false);
   expect([13,17,15,18,19].map(label)).toEqual(['PALETTE','BASE','DIM','PRIMARY','ALERT']);
   expect([100,101,102,103].map(id=>shapes.get(id).layerId))
     .toEqual(['layer-7','layer-3','layer-6','layer-9']);
-  expect([20,22,23,24].map(label)).toEqual(['RENDERER','RECTANGLES','TEXT MASKS','64 LAYERS']);
+  expect([20,22,23,24].every(id=>!texts.has(id))).toBe(true);
   for(const obj of [...scene.shapes,...scene.texts]){
     expect(obj.x).toBeGreaterThanOrEqual(0);
     expect(obj.y).toBeGreaterThanOrEqual(0);

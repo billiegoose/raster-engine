@@ -118,8 +118,10 @@ The included `amber-components.json` showcase uses **1920 × 1080** with a
 semantic palette legend and four aligned columns of vertically stacked examples:
 **Buttons**, **Text Fields**, **Choices** (checkboxes, radio buttons and switches),
 and **Values** (progress and volume). Controls remain at their native pixel
-sizes, with no image scaling. The sidebar documents the four palette roles and hardware renderer primitives
-rather than repeating the column titles or pretending to be app navigation.
+sizes, with no image scaling. The compact sidebar documents the four semantic palette roles without repeating
+the column titles. Component panels end just below their vertically stacked
+examples, leaving the lower half of the 1080p canvas open for new component
+families. The volume label uses the primary (active) ink color.
 `amber-os.json`, Paint, and other older scene files continue to use 720p unless
 resized in the editor.
 
