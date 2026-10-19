@@ -155,3 +155,42 @@ test('marquee includes only fully contained objects, not partial overlaps',()=>{
   expect(objectsFullyInsideRect(scene,{left:0,top:0,right:120,bottom:60})).toEqual(refs.slice(0,2));
   expect(objectsFullyInsideRect(scene,{left:0,top:0,right:52,bottom:42}).length).toBe(0);
 });
+
+test('individual group members can be selected without losing default whole-group selection',()=>{
+  const {scene,refs,a,b}=sample();
+  const group=groupSelection(scene,refs.slice(0,2));
+  expect(group).toBeGreaterThan(0);
+  expect(resolveSelection(scene,[refs[0]])).toEqual(refs.slice(0,2));
+  expect(resolveSelection(scene,[refs[0]],{expandGroups:false})).toEqual([refs[0]]);
+  expect(selectionUnits(scene,[refs[0]],{expandGroups:false})[0].members).toHaveLength(1);
+  expect(selectionUnits(scene,[refs[0]])[0].members).toHaveLength(2);
+  const before={ax:a.x,bx:b.x};
+  moveSelection(scene,[refs[0]],11,0,{expandGroups:false});
+  expect(a.x).toBe(before.ax+11);
+  expect(b.x).toBe(before.bx);
+  moveSelection(scene,[refs[0]],9,0);
+  expect(a.x).toBe(before.ax+20);
+  expect(b.x).toBe(before.bx+9);
+});
+
+test('individual group member editing, clipboard, layer transfer and deletion never expands to siblings',()=>{
+  const {scene,refs,a,b}=sample();
+  groupSelection(scene,refs.slice(0,2));
+  const secondLayer=getLayer(scene,'layer-2')?.id??getLayer(scene,'layer-1').id;
+  expect(copySelection(scene,[refs[0]],{expandGroups:false})).toHaveLength(1);
+  expect(copySelection(scene,[refs[0]])).toHaveLength(2);
+  const otherLayer=scene.layers.find(layer=>layer.id!=='background'&&layer.id!==a.layerId);
+  if(otherLayer){
+    const original=b.layerId;
+    expect(moveSelectionToLayer(scene,[refs[0]],otherLayer.id,{expandGroups:false})).toBe(1);
+    expect(a.layerId).toBe(otherLayer.id);
+    expect(b.layerId).toBe(original);
+  }
+  expect(ungroupSelection(scene,[refs[0]],{expandGroups:false})).toBe(true);
+  expect(a.group_id).toBeUndefined();
+  expect(b.group_id).toBeDefined();
+  const previousB={...b};
+  expect(deleteSelection(scene,[refs[0]],{expandGroups:false})).toBe(1);
+  expect(getObject(scene,refs[0].type,refs[0].id)).toBeNull();
+  expect(getObject(scene,refs[1].type,refs[1].id)).toEqual(previousB);
+});

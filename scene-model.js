@@ -338,12 +338,12 @@ export function rectangleThumbnail(rect,maxWidth=124,maxHeight=78){
 // group_id never changes the rasterizer's shapes/texts instruction format.
 const objectKey = ({type,id}) => `${type}:${id}`;
 const objectRef = ({type,object}) => ({type,id:object.id});
-export function resolveSelection(scene,refs=[]){
+export function resolveSelection(scene,refs=[],{expandGroups=true}={}){
   const selected = new Map();
   for(const ref of refs){
     const obj = getObject(scene,ref.type,ref.id);
     if(!obj)continue;
-    if(obj.group_id != null){
+    if(expandGroups&&obj.group_id != null){
       for(const item of sceneObjects(scene)){
         if(item.object.group_id === obj.group_id){
           const member=objectRef(item);
@@ -355,9 +355,9 @@ export function resolveSelection(scene,refs=[]){
   return [...selected.values()];
 }
 
-export function selectionUnits(scene,refs=[]){
+export function selectionUnits(scene,refs=[],options={}){
   const groups=new Map();
-  for(const ref of resolveSelection(scene,refs)){
+  for(const ref of resolveSelection(scene,refs,options)){
     const obj=getObject(scene,ref.type,ref.id);
     const key=obj.group_id == null?objectKey(ref):`group:${obj.group_id}`;
     if(!groups.has(key))groups.set(key,[]);
@@ -378,11 +378,11 @@ const shiftUnit=(scene,unit,dx,dy)=>{
     moveObject(scene,ref.type,ref.id,obj.x,obj.y,dx,dy);
   }
 };
-export function moveSelection(scene,refs,dx,dy){
-  for(const unit of selectionUnits(scene,refs))shiftUnit(scene,unit,dx,dy);
+export function moveSelection(scene,refs,dx,dy,options={}){
+  for(const unit of selectionUnits(scene,refs,options))shiftUnit(scene,unit,dx,dy);
 }
-export function alignSelection(scene,refs,mode){
-  const units=selectionUnits(scene,refs);
+export function alignSelection(scene,refs,mode,options={}){
+  const units=selectionUnits(scene,refs,options);
   if(units.length<2)return false;
   const minX=Math.min(...units.map(u=>u.x)),minY=Math.min(...units.map(u=>u.y));
   const maxX=Math.max(...units.map(u=>u.right)),maxY=Math.max(...units.map(u=>u.bottom));
@@ -401,10 +401,10 @@ export function alignSelection(scene,refs,mode){
   }
   return true;
 }
-export function distributeSelection(scene,refs,axis){
+export function distributeSelection(scene,refs,axis,options={}){
   const horizontal=axis==='horizontal';
   if(!horizontal&&axis!=='vertical')return false;
-  const units=selectionUnits(scene,refs).sort((a,b)=>
+  const units=selectionUnits(scene,refs,options).sort((a,b)=>
     (horizontal?a.x-b.x:a.y-b.y)||(horizontal?a.y-b.y:a.x-b.x));
   if(units.length<3)return false;
   const start=horizontal?units[0].x:units[0].y;
@@ -421,10 +421,10 @@ export function distributeSelection(scene,refs,axis){
   return true;
 }
 /** Reassign selected objects (including complete groups) to a stable layer ID. */
-export function moveSelectionToLayer(scene,refs,layerId){
+export function moveSelectionToLayer(scene,refs,layerId,options={}){
   if(layerId==='background'||!getLayer(scene,layerId))return 0;
   let moved=0;
-  for(const ref of resolveSelection(scene,refs)){
+  for(const ref of resolveSelection(scene,refs,options)){
     const object=getObject(scene,ref.type,ref.id);
     if(object&&object.layerId!==layerId){object.layerId=layerId;moved++;}
   }
@@ -443,14 +443,14 @@ export function objectsFullyInsideRect(scene,{left,top,right,bottom}){
 export function nextGroupId(scene){
   return Math.max(0,...sceneObjects(scene).map(({object})=>Number(object.group_id)||0))+1;
 }
-export function groupSelection(scene,refs){
-  if(selectionUnits(scene,refs).length<2)return null;
+export function groupSelection(scene,refs,options={}){
+  if(selectionUnits(scene,refs,options).length<2)return null;
   const id=nextGroupId(scene);
-  for(const ref of resolveSelection(scene,refs))getObject(scene,ref.type,ref.id).group_id=id;
+  for(const ref of resolveSelection(scene,refs,options))getObject(scene,ref.type,ref.id).group_id=id;
   return id;
 }
-export function ungroupSelection(scene,refs){
-  const members=resolveSelection(scene,refs);
+export function ungroupSelection(scene,refs,options={}){
+  const members=resolveSelection(scene,refs,options);
   let changed=false;
   for(const ref of members){
     const obj=getObject(scene,ref.type,ref.id);
@@ -458,8 +458,8 @@ export function ungroupSelection(scene,refs){
   }
   return changed;
 }
-export function copySelection(scene,refs){
-  return resolveSelection(scene,refs).map(ref=>{
+export function copySelection(scene,refs,options={}){
+  return resolveSelection(scene,refs,options).map(ref=>{
     const obj=getObject(scene,ref.type,ref.id);
     const entry={type:ref.type,object:structuredClone(obj)};
     if(ref.type==='text')entry.buffer=structuredClone(scene.textBuffers[String(obj.buffer_ptr)]??'');
@@ -491,8 +491,8 @@ export function pasteSelection(scene,clipboard,offset=20){
   }
   return result;
 }
-export function deleteSelection(scene,refs){
-  const members=resolveSelection(scene,refs);
+export function deleteSelection(scene,refs,options={}){
+  const members=resolveSelection(scene,refs,options);
   for(const ref of members)removeObject(scene,ref.type,ref.id);
   return members.length;
 }

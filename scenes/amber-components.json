@@ -7,8 +7,7 @@
       "w": 1280,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-1",
-      "group_id": 1
+      "layerId": "layer-1"
     },
     {
       "id": 2,
@@ -17,8 +16,7 @@
       "w": 120,
       "h": 2,
       "radius": 0,
-      "layerId": "layer-6",
-      "group_id": 1
+      "layerId": "layer-6"
     },
     {
       "id": 6,
@@ -27,18 +25,7 @@
       "w": 10,
       "h": 10,
       "radius": 2,
-      "layerId": "layer-6",
-      "group_id": 1
-    },
-    {
-      "id": 7,
-      "x": 20,
-      "y": 685,
-      "w": 1240,
-      "h": 1,
-      "radius": 0,
-      "layerId": "layer-1",
-      "group_id": 2
+      "layerId": "layer-6"
     },
     {
       "id": 11,
@@ -91,37 +78,27 @@
       "group_id": 9
     },
     {
-      "id": 23,
-      "x": 42,
-      "y": 547,
-      "w": 17,
-      "h": 17,
-      "radius": 9,
-      "layerId": "layer-16",
-      "group_id": 10
-    },
-    {
-      "id": 26,
+      "id": 25,
       "x": 265,
       "y": 69,
       "w": 484,
-      "h": 292,
+      "h": 202,
       "radius": 18,
       "layerId": "layer-1",
       "group_id": 12
     },
     {
-      "id": 27,
+      "id": 26,
       "x": 266,
       "y": 70,
       "w": 482,
-      "h": 290,
+      "h": 200,
       "radius": 17,
       "layerId": "layer-4",
       "group_id": 12
     },
     {
-      "id": 29,
+      "id": 28,
       "x": 283,
       "y": 126,
       "w": 448,
@@ -131,120 +108,128 @@
       "group_id": 12
     },
     {
-      "id": 30,
+      "id": 29,
       "x": 285,
-      "y": 149,
+      "y": 153,
       "w": 208,
-      "h": 47,
+      "h": 40,
       "radius": [
         5,
         15
       ],
-      "layerId": "layer-26",
+      "layerId": "layer-22",
       "group_id": 13
     },
     {
-      "id": 32,
+      "id": 31,
       "x": 511,
-      "y": 149,
+      "y": 153,
       "w": 219,
-      "h": 47,
-      "radius": 12,
+      "h": 40,
+      "radius": [
+        5,
+        15
+      ],
       "layerId": "layer-22",
       "group_id": 14
     },
     {
-      "id": 33,
+      "id": 32,
       "x": 513,
-      "y": 151,
+      "y": 155,
       "w": 215,
-      "h": 43,
-      "radius": 10,
+      "h": 36,
+      "radius": [
+        5,
+        15
+      ],
       "layerId": "layer-24",
       "group_id": 14
     },
     {
-      "id": 35,
+      "id": 34,
       "x": 285,
-      "y": 216,
+      "y": 220,
       "w": 208,
-      "h": 47,
-      "radius": 12,
+      "h": 40,
+      "radius": [
+        5,
+        15
+      ],
       "layerId": "layer-21",
       "group_id": 15
     },
     {
-      "id": 36,
+      "id": 35,
       "x": 286,
-      "y": 217,
+      "y": 221,
       "w": 206,
-      "h": 45,
-      "radius": 11,
+      "h": 38,
+      "radius": [
+        5,
+        15
+      ],
       "layerId": "layer-24",
       "group_id": 15
     },
     {
-      "id": 38,
+      "id": 37,
       "x": 511,
-      "y": 216,
+      "y": 220,
       "w": 219,
-      "h": 47,
-      "radius": 12,
+      "h": 40,
+      "radius": [
+        5,
+        15
+      ],
       "layerId": "layer-23",
       "group_id": 16
     },
     {
-      "id": 39,
+      "id": 38,
       "x": 513,
-      "y": 218,
+      "y": 222,
       "w": 215,
-      "h": 43,
-      "radius": 10,
+      "h": 36,
+      "radius": [
+        5,
+        15
+      ],
       "layerId": "layer-24",
       "group_id": 16
     },
     {
-      "id": 41,
-      "x": 286,
-      "y": 292,
+      "id": 40,
+      "x": 510,
+      "y": 596,
       "w": 26,
       "h": 26,
-      "radius": 5,
-      "layerId": "layer-22",
+      "radius": 2,
+      "layerId": "layer-41",
       "group_id": 17
     },
     {
-      "id": 42,
-      "x": 292,
-      "y": 298,
-      "w": 14,
-      "h": 14,
-      "radius": 2,
-      "layerId": "layer-25",
-      "group_id": 17
+      "id": 43,
+      "x": 1040,
+      "y": 466,
+      "w": 64,
+      "h": 29,
+      "radius": 3,
+      "layerId": "layer-41",
+      "group_id": 18
     },
     {
       "id": 44,
-      "x": 525,
-      "y": 291,
-      "w": 64,
-      "h": 29,
-      "radius": 15,
-      "layerId": "layer-21",
-      "group_id": 18
-    },
-    {
-      "id": 45,
-      "x": 560,
-      "y": 296,
+      "x": 1079,
+      "y": 471,
       "w": 20,
       "h": 20,
-      "radius": 10,
-      "layerId": "layer-26",
+      "radius": 2,
+      "layerId": "layer-42",
       "group_id": 18
     },
     {
-      "id": 47,
+      "id": 46,
       "x": 765,
       "y": 69,
       "w": 495,
@@ -254,7 +239,7 @@
       "group_id": 19
     },
     {
-      "id": 48,
+      "id": 47,
       "x": 766,
       "y": 70,
       "w": 493,
@@ -264,7 +249,7 @@
       "group_id": 19
     },
     {
-      "id": 50,
+      "id": 49,
       "x": 783,
       "y": 126,
       "w": 459,
@@ -274,48 +259,48 @@
       "group_id": 19
     },
     {
-      "id": 51,
+      "id": 50,
       "x": 785,
-      "y": 149,
+      "y": 153,
       "w": 455,
-      "h": 47,
-      "radius": 9,
+      "h": 40,
+      "radius": 7,
       "layerId": "layer-31",
       "group_id": 20
     },
     {
-      "id": 52,
+      "id": 51,
       "x": 786,
-      "y": 150,
+      "y": 154,
       "w": 453,
-      "h": 45,
-      "radius": 8,
+      "h": 38,
+      "radius": 6,
       "layerId": "layer-34",
       "group_id": 20
     },
     {
-      "id": 54,
+      "id": 53,
       "x": 785,
-      "y": 216,
+      "y": 218,
       "w": 455,
-      "h": 47,
-      "radius": 9,
+      "h": 40,
+      "radius": 7,
       "layerId": "layer-32",
       "group_id": 21
     },
     {
-      "id": 55,
+      "id": 54,
       "x": 787,
-      "y": 218,
+      "y": 220,
       "w": 451,
-      "h": 43,
-      "radius": 7,
+      "h": 36,
+      "radius": 5,
       "layerId": "layer-34",
       "group_id": 21
     },
     {
-      "id": 57,
-      "x": 1040,
+      "id": 56,
+      "x": 955,
       "y": 225,
       "w": 3,
       "h": 28,
@@ -324,67 +309,67 @@
       "group_id": 22
     },
     {
-      "id": 58,
+      "id": 57,
       "x": 785,
-      "y": 283,
+      "y": 287,
       "w": 455,
-      "h": 47,
-      "radius": 9,
+      "h": 40,
+      "radius": 7,
       "layerId": "layer-33",
       "group_id": 23
     },
     {
-      "id": 59,
+      "id": 58,
       "x": 787,
-      "y": 285,
+      "y": 289,
       "w": 451,
-      "h": 43,
-      "radius": 7,
+      "h": 36,
+      "radius": 5,
       "layerId": "layer-34",
       "group_id": 23
     },
     {
-      "id": 61,
+      "id": 60,
       "x": 1209,
-      "y": 298,
+      "y": 300,
       "w": 12,
       "h": 12,
-      "radius": 6,
+      "radius": 2,
       "layerId": "layer-36",
       "group_id": 24
     },
     {
-      "id": 62,
-      "x": 265,
-      "y": 377,
-      "w": 484,
+      "id": 61,
+      "x": 264,
+      "y": 375,
+      "w": 995,
       "h": 294,
       "radius": 18,
       "layerId": "layer-1",
       "group_id": 25
     },
     {
-      "id": 63,
-      "x": 266,
-      "y": 378,
-      "w": 482,
+      "id": 62,
+      "x": 265,
+      "y": 376,
+      "w": 993,
       "h": 292,
       "radius": 17,
       "layerId": "layer-4",
       "group_id": 25
     },
     {
-      "id": 65,
-      "x": 283,
-      "y": 434,
-      "w": 448,
+      "id": 64,
+      "x": 282,
+      "y": 432,
+      "w": 959,
       "h": 1,
       "radius": 0,
       "layerId": "layer-41",
       "group_id": 25
     },
     {
-      "id": 68,
+      "id": 67,
       "x": 286,
       "y": 494,
       "w": 441,
@@ -394,7 +379,7 @@
       "group_id": 26
     },
     {
-      "id": 69,
+      "id": 68,
       "x": 286,
       "y": 494,
       "w": 300,
@@ -404,7 +389,7 @@
       "group_id": 26
     },
     {
-      "id": 71,
+      "id": 70,
       "x": 462,
       "y": 545,
       "w": 249,
@@ -414,7 +399,7 @@
       "group_id": 27
     },
     {
-      "id": 72,
+      "id": 71,
       "x": 462,
       "y": 545,
       "w": 162,
@@ -424,186 +409,140 @@
       "group_id": 27
     },
     {
-      "id": 73,
+      "id": 72,
       "x": 613,
       "y": 535,
       "w": 23,
       "h": 23,
-      "radius": 12,
-      "layerId": "layer-46",
+      "radius": 2,
+      "layerId": "layer-45",
       "group_id": 27
     },
     {
-      "id": 74,
-      "x": 286,
+      "id": 76,
+      "x": 780,
       "y": 596,
       "w": 26,
       "h": 26,
-      "radius": 5,
-      "layerId": "layer-42",
-      "group_id": 28
-    },
-    {
-      "id": 75,
-      "x": 292,
-      "y": 602,
-      "w": 14,
-      "h": 14,
-      "radius": 2,
-      "layerId": "layer-45",
-      "group_id": 28
-    },
-    {
-      "id": 77,
-      "x": 524,
-      "y": 596,
-      "w": 27,
-      "h": 27,
-      "radius": 14,
+      "radius": 13,
       "layerId": "layer-41",
       "group_id": 29
     },
     {
-      "id": 78,
-      "x": 532,
+      "id": 77,
+      "x": 788,
       "y": 604,
-      "w": 11,
-      "h": 11,
-      "radius": 6,
-      "layerId": "layer-46",
+      "w": 10,
+      "h": 10,
+      "radius": 5,
+      "layerId": "layer-45",
       "group_id": 29
     },
     {
-      "id": 80,
-      "x": 765,
-      "y": 377,
-      "w": 495,
-      "h": 294,
-      "radius": 18,
-      "layerId": "layer-1",
+      "id": 79,
+      "x": 1020,
+      "y": 596,
+      "w": 26,
+      "h": 26,
+      "radius": 13,
+      "layerId": "layer-41",
       "group_id": 30
     },
     {
-      "id": 81,
-      "x": 766,
-      "y": 378,
-      "w": 493,
-      "h": 292,
-      "radius": 17,
-      "layerId": "layer-4",
+      "id": 80,
+      "x": 1024,
+      "y": 600,
+      "w": 18,
+      "h": 18,
+      "radius": 9,
+      "layerId": "layer-44",
       "group_id": 30
     },
     {
       "id": 83,
-      "x": 783,
-      "y": 434,
-      "w": 459,
-      "h": 1,
-      "radius": 0,
-      "layerId": "layer-53",
-      "group_id": 30
+      "x": 512,
+      "y": 598,
+      "w": 22,
+      "h": 22,
+      "radius": 2,
+      "layerId": "layer-44",
+      "group_id": 31
     },
     {
       "id": 84,
-      "x": 785,
-      "y": 447,
-      "w": 455,
-      "h": 199,
-      "radius": 14,
-      "layerId": "layer-51",
-      "group_id": 31
+      "x": 288,
+      "y": 599,
+      "w": 22,
+      "h": 22,
+      "radius": 2,
+      "layerId": "layer-44",
+      "group_id": 32
     },
     {
       "id": 85,
-      "x": 787,
-      "y": 449,
-      "w": 451,
-      "h": 195,
-      "radius": 12,
-      "layerId": "layer-52",
-      "group_id": 31
+      "x": 286,
+      "y": 597,
+      "w": 26,
+      "h": 26,
+      "radius": 2,
+      "layerId": "layer-41",
+      "group_id": 33
     },
     {
       "id": 86,
-      "x": 808,
-      "y": 468,
-      "w": 12,
-      "h": 12,
-      "radius": 6,
-      "layerId": "layer-58",
-      "group_id": 31
+      "x": 291,
+      "y": 602,
+      "w": 16,
+      "h": 16,
+      "radius": 2,
+      "layerId": "layer-45",
+      "group_id": 34
     },
     {
-      "id": 89,
-      "x": 808,
-      "y": 575,
-      "w": 189,
-      "h": 47,
-      "radius": 12,
-      "layerId": "layer-53",
-      "group_id": 32
-    },
-    {
-      "id": 90,
-      "x": 809,
-      "y": 576,
-      "w": 187,
-      "h": 45,
-      "radius": 11,
-      "layerId": "layer-56",
-      "group_id": 32
-    },
-    {
-      "id": 92,
-      "x": 1012,
-      "y": 575,
-      "w": 209,
-      "h": 47,
-      "radius": [
-        5,
-        15
-      ],
-      "layerId": "layer-58",
-      "group_id": 33
+      "id": 87,
+      "x": 784,
+      "y": 600,
+      "w": 18,
+      "h": 18,
+      "radius": 9,
+      "layerId": "layer-44",
+      "group_id": 35
     }
   ],
   "texts": [
     {
       "id": 3,
       "x": 22,
-      "y": 5,
+      "y": 9,
       "w": 310,
-      "h": 38,
+      "h": 32,
       "layerId": "layer-8",
-      "buffer_ptr": 4096,
-      "group_id": 1
+      "buffer_ptr": 4096
     },
     {
       "id": 4,
       "x": 392,
-      "y": 5,
+      "y": 9,
       "w": 360,
-      "h": 38,
+      "h": 32,
       "layerId": "layer-8",
-      "buffer_ptr": 8192,
-      "group_id": 1
+      "buffer_ptr": 8192
     },
     {
       "id": 5,
-      "x": 1040,
-      "y": 5,
-      "w": 210,
-      "h": 38,
+      "x": 1100,
+      "y": 9,
+      "w": 127,
+      "h": 32,
       "layerId": "layer-7",
-      "buffer_ptr": 12288,
-      "group_id": 1
+      "buffer_ptr": 12288
     },
     {
       "id": 8,
       "x": 22,
-      "y": 682,
+      "y": 685,
       "w": 250,
-      "h": 38,
+      "h": 32,
       "layerId": "layer-7",
       "buffer_ptr": 16384,
       "group_id": 2
@@ -611,19 +550,19 @@
     {
       "id": 9,
       "x": 484,
-      "y": 682,
+      "y": 685,
       "w": 300,
-      "h": 38,
+      "h": 32,
       "layerId": "layer-7",
       "buffer_ptr": 20480,
       "group_id": 2
     },
     {
       "id": 10,
-      "x": 1033,
-      "y": 682,
-      "w": 227,
-      "h": 38,
+      "x": 1099,
+      "y": 685,
+      "w": 164,
+      "h": 32,
       "layerId": "layer-8",
       "buffer_ptr": 24576,
       "group_id": 2
@@ -651,7 +590,7 @@
     {
       "id": 17,
       "x": 51,
-      "y": 211,
+      "y": 217,
       "w": 167,
       "h": 38,
       "layerId": "layer-20",
@@ -699,17 +638,17 @@
       "group_id": 9
     },
     {
-      "id": 24,
-      "x": 75,
+      "id": 23,
+      "x": 42,
       "y": 536,
-      "w": 150,
+      "w": 181,
       "h": 38,
       "layerId": "layer-18",
       "buffer_ptr": 57344,
       "group_id": 10
     },
     {
-      "id": 25,
+      "id": 24,
       "x": 42,
       "y": 609,
       "w": 178,
@@ -719,7 +658,7 @@
       "group_id": 11
     },
     {
-      "id": 28,
+      "id": 27,
       "x": 284,
       "y": 81,
       "w": 446,
@@ -729,67 +668,67 @@
       "group_id": 12
     },
     {
-      "id": 31,
+      "id": 30,
       "x": 303,
-      "y": 154,
+      "y": 158,
       "w": 172,
-      "h": 38,
+      "h": 31,
       "layerId": "layer-30",
       "buffer_ptr": 69632,
       "group_id": 13
     },
     {
-      "id": 34,
+      "id": 33,
       "x": 529,
-      "y": 154,
+      "y": 158,
       "w": 183,
-      "h": 38,
+      "h": 31,
       "layerId": "layer-28",
       "buffer_ptr": 73728,
       "group_id": 14
     },
     {
-      "id": 37,
+      "id": 36,
       "x": 303,
-      "y": 221,
+      "y": 225,
       "w": 172,
-      "h": 38,
+      "h": 31,
       "layerId": "layer-27",
       "buffer_ptr": 77824,
       "group_id": 15
     },
     {
-      "id": 40,
+      "id": 39,
       "x": 529,
-      "y": 221,
+      "y": 225,
       "w": 183,
-      "h": 38,
+      "h": 31,
       "layerId": "layer-29",
       "buffer_ptr": 81920,
       "group_id": 16
     },
     {
-      "id": 43,
-      "x": 325,
-      "y": 286,
-      "w": 156,
+      "id": 42,
+      "x": 550,
+      "y": 595,
+      "w": 205,
       "h": 38,
-      "layerId": "layer-28",
+      "layerId": "layer-48",
       "buffer_ptr": 86016,
       "group_id": 17
     },
     {
-      "id": 46,
-      "x": 605,
-      "y": 286,
-      "w": 121,
+      "id": 45,
+      "x": 810,
+      "y": 469,
+      "w": 188,
       "h": 38,
-      "layerId": "layer-28",
+      "layerId": "layer-48",
       "buffer_ptr": 90112,
       "group_id": 18
     },
     {
-      "id": 49,
+      "id": 48,
       "x": 784,
       "y": 81,
       "w": 457,
@@ -799,39 +738,39 @@
       "group_id": 19
     },
     {
-      "id": 53,
+      "id": 52,
       "x": 801,
-      "y": 154,
+      "y": 158,
       "w": 423,
-      "h": 38,
+      "h": 31,
       "layerId": "layer-37",
       "buffer_ptr": 98304,
       "group_id": 20
     },
     {
-      "id": 56,
+      "id": 55,
       "x": 801,
-      "y": 221,
+      "y": 223,
       "w": 423,
-      "h": 38,
+      "h": 31,
       "layerId": "layer-38",
       "buffer_ptr": 102400,
       "group_id": 21
     },
     {
-      "id": 60,
+      "id": 59,
       "x": 801,
-      "y": 288,
+      "y": 292,
       "w": 423,
-      "h": 38,
+      "h": 31,
       "layerId": "layer-39",
       "buffer_ptr": 106496,
       "group_id": 23
     },
     {
-      "id": 64,
-      "x": 284,
-      "y": 389,
+      "id": 63,
+      "x": 283,
+      "y": 387,
       "w": 446,
       "h": 38,
       "layerId": "layer-48",
@@ -839,7 +778,7 @@
       "group_id": 25
     },
     {
-      "id": 66,
+      "id": 65,
       "x": 285,
       "y": 446,
       "w": 170,
@@ -849,7 +788,7 @@
       "group_id": 26
     },
     {
-      "id": 67,
+      "id": 66,
       "x": 653,
       "y": 446,
       "w": 80,
@@ -859,7 +798,7 @@
       "group_id": 26
     },
     {
-      "id": 70,
+      "id": 69,
       "x": 285,
       "y": 526,
       "w": 163,
@@ -869,74 +808,34 @@
       "group_id": 27
     },
     {
-      "id": 76,
+      "id": 75,
       "x": 326,
-      "y": 592,
-      "w": 128,
+      "y": 595,
+      "w": 165,
       "h": 38,
       "layerId": "layer-48",
       "buffer_ptr": 126976,
       "group_id": 28
     },
     {
-      "id": 79,
-      "x": 562,
-      "y": 592,
-      "w": 154,
+      "id": 78,
+      "x": 820,
+      "y": 596,
+      "w": 178,
       "h": 38,
       "layerId": "layer-48",
       "buffer_ptr": 131072,
       "group_id": 29
     },
     {
-      "id": 82,
-      "x": 784,
-      "y": 389,
-      "w": 457,
+      "id": 81,
+      "x": 1060,
+      "y": 596,
+      "w": 185,
       "h": 38,
-      "layerId": "layer-60",
+      "layerId": "layer-47",
       "buffer_ptr": 135168,
       "group_id": 30
-    },
-    {
-      "id": 87,
-      "x": 830,
-      "y": 457,
-      "w": 386,
-      "h": 38,
-      "layerId": "layer-60",
-      "buffer_ptr": 139264,
-      "group_id": 31
-    },
-    {
-      "id": 88,
-      "x": 808,
-      "y": 513,
-      "w": 415,
-      "h": 38,
-      "layerId": "layer-59",
-      "buffer_ptr": 143360,
-      "group_id": 31
-    },
-    {
-      "id": 91,
-      "x": 826,
-      "y": 580,
-      "w": 153,
-      "h": 38,
-      "layerId": "layer-59",
-      "buffer_ptr": 147456,
-      "group_id": 32
-    },
-    {
-      "id": 93,
-      "x": 1030,
-      "y": 580,
-      "w": 173,
-      "h": 38,
-      "layerId": "layer-62",
-      "buffer_ptr": 151552,
-      "group_id": 33
     }
   ],
   "textBuffers": {
@@ -955,28 +854,24 @@
     "53248": "MONITOR",
     "57344": "ONLINE",
     "61440": "V1.0",
-    "65536": "COMMANDS",
-    "69632": "RUN",
-    "73728": "OPEN",
-    "77824": "WAIT",
-    "81920": "DELETE",
-    "86016": "AUTO",
-    "90112": "LIVE",
+    "65536": "BUTTONS",
+    "69632": "PRIMARY",
+    "73728": "STANDARD",
+    "77824": "INACTIVE",
+    "81920": "ALERT",
+    "86016": "UNCHECKED",
+    "90112": "TOGGLE",
     "94208": "INPUT FIELDS",
-    "98304": "FIND FILES",
-    "102400": "USER_NAME",
+    "98304": "INACTIVE",
+    "102400": "STANDARD",
     "106496": "REQUIRED",
     "110592": "STATE + CHOICE",
     "114688": "SYNC",
     "118784": "68%",
     "122880": "VOLUME",
-    "126976": "PIN",
-    "131072": "SAFE",
-    "135168": "DIALOG + NOTICE",
-    "139264": "SAVE CHANGES?",
-    "143360": "2 FILES MODIFIED",
-    "147456": "CANCEL",
-    "151552": "SAVE"
+    "126976": "CHECKED",
+    "131072": "SELECTED",
+    "135168": "UNSELECTED"
   },
   "paletteEvents": [],
   "layers": [
@@ -1142,7 +1037,7 @@
     {
       "id": "group-7",
       "kind": "group",
-      "name": "02  /  COMMANDS"
+      "name": "02  /  BUTTONS"
     },
     {
       "id": "group-8",
@@ -1369,100 +1264,6 @@
       "name": "REVERSE",
       "color": "#060200",
       "parentId": "group-15"
-    },
-    {
-      "id": "group-16",
-      "kind": "group",
-      "name": "05  /  MODAL FRAME"
-    },
-    {
-      "id": "layer-51",
-      "name": "Modal outline",
-      "color": "#dd5800",
-      "parentId": "group-16"
-    },
-    {
-      "id": "layer-52",
-      "name": "Modal inset",
-      "color": "#060200",
-      "parentId": "group-16"
-    },
-    {
-      "id": "group-17",
-      "kind": "group",
-      "name": "06  /  DIALOGS"
-    },
-    {
-      "id": "group-18",
-      "kind": "group",
-      "name": "Surfaces",
-      "parentId": "group-17"
-    },
-    {
-      "id": "layer-53",
-      "name": "DIM",
-      "color": "#5b2400",
-      "parentId": "group-18"
-    },
-    {
-      "id": "layer-54",
-      "name": "PRIMARY",
-      "color": "#dd5800",
-      "parentId": "group-18"
-    },
-    {
-      "id": "layer-55",
-      "name": "HOT",
-      "color": "#ff3400",
-      "parentId": "group-18"
-    },
-    {
-      "id": "layer-56",
-      "name": "CUTOUT",
-      "color": "#060200",
-      "parentId": "group-18"
-    },
-    {
-      "id": "layer-57",
-      "name": "SOLID",
-      "color": "#dd5800",
-      "parentId": "group-18"
-    },
-    {
-      "id": "layer-58",
-      "name": "SOLID HOT",
-      "color": "#ff3400",
-      "parentId": "group-18"
-    },
-    {
-      "id": "group-19",
-      "kind": "group",
-      "name": "Typography",
-      "parentId": "group-17"
-    },
-    {
-      "id": "layer-59",
-      "name": "DIM TEXT",
-      "color": "#5b2400",
-      "parentId": "group-19"
-    },
-    {
-      "id": "layer-60",
-      "name": "TEXT",
-      "color": "#dd5800",
-      "parentId": "group-19"
-    },
-    {
-      "id": "layer-61",
-      "name": "HOT TEXT",
-      "color": "#ff3400",
-      "parentId": "group-19"
-    },
-    {
-      "id": "layer-62",
-      "name": "REVERSE",
-      "color": "#060200",
-      "parentId": "group-19"
     }
   ]
 }

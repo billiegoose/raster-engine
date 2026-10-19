@@ -21,6 +21,8 @@ export function createSceneEditor({getScene,history,onSimulate}){
   const stage=$('editor-stage'),list=$('object-list'),properties=$('object-properties');
   let selection=[],drag=null,clipboard=[],pasteCount=0;
   let mostRecentLayer=null;
+  const exactSelection={expandGroups:false};
+  let selectedGroupId=null;
   const collapsedLayers=new Set();
   let draggedObjects=null,draggedLayer=null;
 
@@ -155,7 +157,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       return;
     }
     if(selection.length!==1){
-      const units=selectionUnits(data,selection);
+      const units=selectionUnits(data,selection,exactSelection);
       summary.textContent=`${selection.length} objects`;
       properties.innerHTML=`<p class="multi-selection-description">${selection.length} selected objects · ${units.length} movable ${units.length===1?'unit':'units'}. Use the Align, Distribute, and Group controls in the toolbar. Drag any selected object to move the selection.</p>`;
       return;
@@ -190,7 +192,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
   }
 
   function updateControls(){
-    const count=selection.length,units=selectionUnits(scene(),selection);
+    const count=selection.length,units=selectionUnits(scene(),selection,exactSelection);
     const grouped=selection.some(ref=>getObject(scene(),ref.type,ref.id)?.group_id!=null);
     $('undo-edit').disabled=!history.state().canUndo;
     $('redo-edit').disabled=!history.state().canRedo;
@@ -205,33 +207,69 @@ export function createSceneEditor({getScene,history,onSimulate}){
     $('distribute-objects').disabled=units.length<3;
   }
   function render(){
-    selection=resolveSelection(scene(),selection);
+    selection=resolveSelection(scene(),selection,exactSelection);
     if(mostRecentLayer&&!getLayer(scene(),mostRecentLayer))mostRecentLayer=null;
     renderStage();renderList();renderProperties();renderPaletteEvents();updateControls();
   }
-  function setSelection(refs){
-    selection=resolveSelection(scene(),refs);
+  // Reveal a selected canvas object in the Objects panel without stealing
+  // focus or moving the scroll position when its tile is already visible.
+  function revealObjectTile(ref){
+    if(!ref)return;
+    const obj=getObject(scene(),ref.type,ref.id);
+    if(!obj)return;
+    let changed=false;
+    let layerId=obj.layerId;
+    const visited=new Set();
+    while(layerId&&!visited.has(layerId)){
+      visited.add(layerId);
+      if(collapsedLayers.delete(layerId))changed=true;
+      layerId=getLayerNode(scene(),layerId)?.parentId;
+    }
+    const selector=`[data-select-type="${ref.type}"][data-select-id="${ref.id}"]`;
+    let tile=list.querySelector(selector);
+    // A canvas selection must remain discoverable even when the Objects
+    // filter previously hid its layer or thumbnail.
+    if(!tile&&$('object-filter').value){
+      $('object-filter').value='';
+      changed=true;
+    }
+    if(changed){renderList();tile=list.querySelector(selector);}
+    if(!tile)return;
+    const viewport=list.getBoundingClientRect();
+    const bounds=tile.getBoundingClientRect();
+    if(bounds.top<viewport.top)list.scrollTop+=bounds.top-viewport.top;
+    else if(bounds.bottom>viewport.bottom)list.scrollTop+=bounds.bottom-viewport.bottom;
+  }
+
+  function setSelection(refs,{groupId=null,focusRef=null}={}){
+    selection=resolveSelection(scene(),refs,exactSelection);
+    selectedGroupId=groupId;
     if(refs.length){
       const ref=refs.at(-1);
       const obj=getObject(scene(),ref.type,ref.id);
       if(obj&&obj.layerId!=='background')mostRecentLayer=obj.layerId;
     }
     renderStage();renderList();renderProperties();updateControls();
+    revealObjectTile(focusRef??(refs.length?refs.at(-1):null));
   }
-  function select(ref,additive=false){
+  function select(ref,additive=false,{individual=false}={}){
     if(!ref){if(!additive)setSelection([]);return;}
-    const members=resolveSelection(scene(),[ref]);
+    const obj=getObject(scene(),ref.type,ref.id);
+    if(!obj)return;
+    const members=individual?[ref]:resolveSelection(scene(),[ref]);
     const old=selected();
     if(additive){
       const already=members.every(member=>old.has(key(member)));
       const changed=already?selection.filter(member=>!members.some(item=>key(item)===key(member))):[...selection,...members];
-      setSelection(changed);
-    }else setSelection(members);
-    // A group click expands to its members, but the specifically clicked
-    // object (rather than the last expanded member) controls new insertions.
-    const obj=getObject(scene(),ref.type,ref.id);
-    if(obj&&obj.layerId!=='background')mostRecentLayer=obj.layerId;
+      setSelection(changed,{focusRef:changed.some(item=>key(item)===key(ref))?ref:null});
+    }else setSelection(members,{
+      groupId:!individual&&obj.group_id!=null&&members.length>1?obj.group_id:null,
+      focusRef:ref
+    });
+    // The clicked member, not its last group sibling, sets insertion layer.
+    if(obj.layerId!=='background')mostRecentLayer=obj.layerId;
   }
+
   const elementFor=ref=>[...stage.querySelectorAll('.scene-object')].find(el=>
     el.dataset.objectType===ref.type&&Number(el.dataset.objectId)===ref.id);
 
@@ -245,6 +283,9 @@ export function createSceneEditor({getScene,history,onSimulate}){
       event.preventDefault();
       const ref={type:el.dataset.objectType,id:Number(el.dataset.objectId)};
       if(modifier){select(ref,true);return;}
+      const current=getObject(scene(),ref.type,ref.id);
+      const drillDown=selectedGroupId!=null&&current?.group_id===selectedGroupId&&
+        selected().has(key(ref));
       if(!selected().has(key(ref)))select(ref);
       const mode=event.target.closest('[data-drag-handle]')?'resize':'move';
       const start=selection.map(item=>{
@@ -253,7 +294,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       });
       history.begin();
       drag={mode,pointerId:event.pointerId,clientX:event.clientX,clientY:event.clientY,start,
-        resizeRef:ref,changed:false};
+        resizeRef:ref,drillDown:drillDown&&mode==='move',clickedRef:ref,changed:false};
     }else{
       const base=modifier?[...selection]:[];
       if(!modifier)setSelection([]);
@@ -306,7 +347,9 @@ export function createSceneEditor({getScene,history,onSimulate}){
       }
     }else{
       history.commit();
-      render();
+      if(finished.drillDown&&!finished.changed){
+        select(finished.clickedRef,false,{individual:true});
+      }else render();
     }
   }
   stage.addEventListener('pointerup',finishDrag);
@@ -315,13 +358,15 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const el=event.target.closest('.scene-object');
     if(el&&(event.key==='Enter'||event.key===' ')){
       event.preventDefault();
-      select({type:el.dataset.objectType,id:Number(el.dataset.objectId)},event.shiftKey);
+      const ref={type:el.dataset.objectType,id:Number(el.dataset.objectId)};
+      const obj=getObject(scene(),ref.type,ref.id);
+      select(ref,event.shiftKey,{individual:!event.shiftKey&&selectedGroupId!=null&&obj?.group_id===selectedGroupId});
     }
   });
   list.addEventListener('click',event=>{
     const el=event.target.closest('[data-select-type]');
     if(el)select({type:el.dataset.selectType,id:Number(el.dataset.selectId)},
-      event.shiftKey||event.ctrlKey||event.metaKey);
+      event.shiftKey||event.ctrlKey||event.metaKey,{individual:true});
   });
   $('object-filter').addEventListener('input',renderList);
   $('add-layer').addEventListener('click',()=>edit(()=>addLayer(scene(),{color:'#92d0e1'})));
@@ -401,7 +446,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
     if(!tile||!event.dataTransfer)return;
     draggedLayer=null;
     const ref={type:tile.dataset.selectType,id:Number(tile.dataset.selectId)};
-    const refs=selected().has(key(ref))?selection:resolveSelection(scene(),[ref]);
+    const refs=selected().has(key(ref))?selection:[ref];
     draggedObjects=refs.map(item=>({...item}));
     event.dataTransfer.effectAllowed='move';
     event.dataTransfer.setData('application/x-raster-objects',JSON.stringify(draggedObjects));
@@ -444,7 +489,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
     if(!draggedObjects||!section.dataset.layerDrop)return;
     event.preventDefault();
     const refs=draggedObjects;draggedObjects=null;clearDropHighlights();
-    edit(()=>moveSelectionToLayer(scene(),refs,section.dataset.layerDrop));
+    edit(()=>moveSelectionToLayer(scene(),refs,section.dataset.layerDrop,exactSelection));
     setSelection(refs);
   });
   list.addEventListener('dragend',()=>{
@@ -487,12 +532,12 @@ export function createSceneEditor({getScene,history,onSimulate}){
   });
   function deleteSelected(){
     if(!selection.length)return;
-    edit(()=>removeSelectedObjects(scene(),selection));
+    edit(()=>removeSelectedObjects(scene(),selection,exactSelection));
     setSelection([]);
   }
   function copySelected(){
     if(!selection.length)return false;
-    clipboard=copySelection(scene(),selection);
+    clipboard=copySelection(scene(),selection,exactSelection);
     pasteCount=0;
     updateControls();
     return true;
@@ -518,15 +563,15 @@ export function createSceneEditor({getScene,history,onSimulate}){
   $('paste-objects').addEventListener('click',()=>pasteCopied());
   $('duplicate-objects').addEventListener('click',duplicateSelected);
   $('delete-objects').addEventListener('click',deleteSelected);
-  $('group-objects').addEventListener('click',()=>edit(()=>groupSelection(scene(),selection)));
-  $('ungroup-objects').addEventListener('click',()=>edit(()=>ungroupSelection(scene(),selection)));
+  $('group-objects').addEventListener('click',()=>edit(()=>groupSelection(scene(),selection,exactSelection)));
+  $('ungroup-objects').addEventListener('click',()=>edit(()=>ungroupSelection(scene(),selection,exactSelection)));
   $('align-objects').addEventListener('change',event=>{
     const value=event.target.value;event.target.value='';
-    if(value)edit(()=>alignSelection(scene(),selection,value));
+    if(value)edit(()=>alignSelection(scene(),selection,value,exactSelection));
   });
   $('distribute-objects').addEventListener('change',event=>{
     const value=event.target.value;event.target.value='';
-    if(value)edit(()=>distributeSelection(scene(),selection,value));
+    if(value)edit(()=>distributeSelection(scene(),selection,value,exactSelection));
   });
 
   $('addPalette').addEventListener('click',()=>edit(()=>{
@@ -559,8 +604,8 @@ export function createSceneEditor({getScene,history,onSimulate}){
       if(letter==='x'&&copySelected()){event.preventDefault();deleteSelected();return;}
       if(letter==='v'&&clipboard.length){event.preventDefault();pasteCopied();return;}
       if(letter==='d'&&selection.length){event.preventDefault();duplicateSelected();return;}
-      if(letter==='g'&&event.shiftKey){event.preventDefault();edit(()=>ungroupSelection(scene(),selection));return;}
-      if(letter==='g'&&selection.length){event.preventDefault();edit(()=>groupSelection(scene(),selection));return;}
+      if(letter==='g'&&event.shiftKey){event.preventDefault();edit(()=>ungroupSelection(scene(),selection,exactSelection));return;}
+      if(letter==='g'&&selection.length){event.preventDefault();edit(()=>groupSelection(scene(),selection,exactSelection));return;}
       return;
     }
     if(!selection.length)return;
