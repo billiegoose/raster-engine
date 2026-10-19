@@ -16,7 +16,7 @@
       "w": 120,
       "h": 2,
       "radius": 0,
-      "layerId": "layer-6"
+      "layerId": "layer-9"
     },
     {
       "id": 6,
@@ -25,7 +25,7 @@
       "w": 10,
       "h": 10,
       "radius": 2,
-      "layerId": "layer-6"
+      "layerId": "layer-9"
     },
     {
       "id": 11,
@@ -44,7 +44,7 @@
       "w": 226,
       "h": 600,
       "radius": 17,
-      "layerId": "layer-4",
+      "layerId": "layer-2",
       "group_id": 3
     },
     {
@@ -54,7 +54,7 @@
       "w": 192,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-11",
+      "layerId": "layer-3",
       "group_id": 3
     },
     {
@@ -64,7 +64,7 @@
       "w": 193,
       "h": 50,
       "radius": 8,
-      "layerId": "layer-15",
+      "layerId": "layer-6",
       "group_id": 5
     },
     {
@@ -74,7 +74,7 @@
       "w": 193,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-11",
+      "layerId": "layer-3",
       "group_id": 9
     },
     {
@@ -94,7 +94,7 @@
       "w": 482,
       "h": 200,
       "radius": 17,
-      "layerId": "layer-4",
+      "layerId": "layer-2",
       "group_id": 12
     },
     {
@@ -104,7 +104,7 @@
       "w": 448,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-21",
+      "layerId": "layer-3",
       "group_id": 12
     },
     {
@@ -117,7 +117,7 @@
         5,
         15
       ],
-      "layerId": "layer-22",
+      "layerId": "layer-6",
       "group_id": 13
     },
     {
@@ -130,7 +130,7 @@
         5,
         15
       ],
-      "layerId": "layer-22",
+      "layerId": "layer-6",
       "group_id": 14
     },
     {
@@ -143,7 +143,7 @@
         5,
         15
       ],
-      "layerId": "layer-24",
+      "layerId": "layer-7",
       "group_id": 14
     },
     {
@@ -156,7 +156,7 @@
         5,
         15
       ],
-      "layerId": "layer-21",
+      "layerId": "layer-3",
       "group_id": 15
     },
     {
@@ -169,7 +169,7 @@
         5,
         15
       ],
-      "layerId": "layer-24",
+      "layerId": "layer-4",
       "group_id": 15
     },
     {
@@ -182,7 +182,7 @@
         5,
         15
       ],
-      "layerId": "layer-23",
+      "layerId": "layer-9",
       "group_id": 16
     },
     {
@@ -195,7 +195,7 @@
         5,
         15
       ],
-      "layerId": "layer-24",
+      "layerId": "layer-10",
       "group_id": 16
     },
     {
@@ -205,7 +205,7 @@
       "w": 26,
       "h": 26,
       "radius": 2,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 17
     },
     {
@@ -225,7 +225,7 @@
       "w": 493,
       "h": 290,
       "radius": 17,
-      "layerId": "layer-4",
+      "layerId": "layer-2",
       "group_id": 19
     },
     {
@@ -235,7 +235,7 @@
       "w": 459,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-31",
+      "layerId": "layer-3",
       "group_id": 19
     },
     {
@@ -245,7 +245,7 @@
       "w": 455,
       "h": 40,
       "radius": 7,
-      "layerId": "layer-31",
+      "layerId": "layer-3",
       "group_id": 20
     },
     {
@@ -255,7 +255,7 @@
       "w": 453,
       "h": 38,
       "radius": 6,
-      "layerId": "layer-34",
+      "layerId": "layer-4",
       "group_id": 20
     },
     {
@@ -265,7 +265,7 @@
       "w": 455,
       "h": 40,
       "radius": 7,
-      "layerId": "layer-32",
+      "layerId": "layer-6",
       "group_id": 21
     },
     {
@@ -275,7 +275,7 @@
       "w": 451,
       "h": 36,
       "radius": 5,
-      "layerId": "layer-34",
+      "layerId": "layer-7",
       "group_id": 21
     },
     {
@@ -285,7 +285,7 @@
       "w": 3,
       "h": 28,
       "radius": 0,
-      "layerId": "layer-35",
+      "layerId": "layer-8",
       "group_id": 22
     },
     {
@@ -295,7 +295,7 @@
       "w": 455,
       "h": 40,
       "radius": 7,
-      "layerId": "layer-33",
+      "layerId": "layer-9",
       "group_id": 23
     },
     {
@@ -305,7 +305,7 @@
       "w": 451,
       "h": 36,
       "radius": 5,
-      "layerId": "layer-34",
+      "layerId": "layer-10",
       "group_id": 23
     },
     {
@@ -315,7 +315,7 @@
       "w": 12,
       "h": 12,
       "radius": 2,
-      "layerId": "layer-36",
+      "layerId": "layer-11",
       "group_id": 24
     },
     {
@@ -335,7 +335,7 @@
       "w": 993,
       "h": 292,
       "radius": 17,
-      "layerId": "layer-4",
+      "layerId": "layer-2",
       "group_id": 25
     },
     {
@@ -345,7 +345,7 @@
       "w": 959,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 25
     },
     {
@@ -355,7 +355,7 @@
       "w": 441,
       "h": 13,
       "radius": 6,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 26
     },
     {
@@ -365,7 +365,7 @@
       "w": 300,
       "h": 13,
       "radius": 6,
-      "layerId": "layer-45",
+      "layerId": "layer-6",
       "group_id": 26
     },
     {
@@ -375,7 +375,7 @@
       "w": 249,
       "h": 5,
       "radius": 2,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 27
     },
     {
@@ -385,7 +385,7 @@
       "w": 162,
       "h": 5,
       "radius": 2,
-      "layerId": "layer-45",
+      "layerId": "layer-6",
       "group_id": 27
     },
     {
@@ -395,7 +395,7 @@
       "w": 23,
       "h": 23,
       "radius": 2,
-      "layerId": "layer-45",
+      "layerId": "layer-6",
       "group_id": 27
     },
     {
@@ -405,7 +405,7 @@
       "w": 26,
       "h": 26,
       "radius": 13,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 29
     },
     {
@@ -415,7 +415,7 @@
       "w": 10,
       "h": 10,
       "radius": 5,
-      "layerId": "layer-45",
+      "layerId": "layer-6",
       "group_id": 29
     },
     {
@@ -425,7 +425,7 @@
       "w": 26,
       "h": 26,
       "radius": 13,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 30
     },
     {
@@ -435,7 +435,7 @@
       "w": 18,
       "h": 18,
       "radius": 9,
-      "layerId": "layer-44",
+      "layerId": "layer-4",
       "group_id": 30
     },
     {
@@ -445,7 +445,7 @@
       "w": 22,
       "h": 22,
       "radius": 2,
-      "layerId": "layer-44",
+      "layerId": "layer-4",
       "group_id": 31
     },
     {
@@ -455,7 +455,7 @@
       "w": 22,
       "h": 22,
       "radius": 2,
-      "layerId": "layer-44",
+      "layerId": "layer-4",
       "group_id": 32
     },
     {
@@ -465,7 +465,7 @@
       "w": 26,
       "h": 26,
       "radius": 2,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 33
     },
     {
@@ -475,7 +475,7 @@
       "w": 16,
       "h": 16,
       "radius": 2,
-      "layerId": "layer-45",
+      "layerId": "layer-6",
       "group_id": 34
     },
     {
@@ -485,7 +485,7 @@
       "w": 18,
       "h": 18,
       "radius": 9,
-      "layerId": "layer-44",
+      "layerId": "layer-4",
       "group_id": 35
     },
     {
@@ -495,7 +495,7 @@
       "w": 48,
       "h": 26,
       "radius": 2,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 36
     },
     {
@@ -505,7 +505,7 @@
       "w": 44,
       "h": 22,
       "radius": 1,
-      "layerId": "layer-44",
+      "layerId": "layer-4",
       "group_id": 36
     },
     {
@@ -515,7 +515,7 @@
       "w": 16,
       "h": 16,
       "radius": 1,
-      "layerId": "layer-47",
+      "layerId": "layer-5",
       "group_id": 36
     },
     {
@@ -525,7 +525,7 @@
       "w": 48,
       "h": 26,
       "radius": 2,
-      "layerId": "layer-41",
+      "layerId": "layer-3",
       "group_id": 37
     },
     {
@@ -535,7 +535,7 @@
       "w": 44,
       "h": 22,
       "radius": 1,
-      "layerId": "layer-44",
+      "layerId": "layer-4",
       "group_id": 37
     },
     {
@@ -545,7 +545,7 @@
       "w": 16,
       "h": 16,
       "radius": 1,
-      "layerId": "layer-45",
+      "layerId": "layer-6",
       "group_id": 37
     }
   ],
@@ -556,7 +556,7 @@
       "y": 9,
       "w": 310,
       "h": 32,
-      "layerId": "layer-8",
+      "layerId": "layer-6",
       "buffer_ptr": 4096
     },
     {
@@ -565,7 +565,7 @@
       "y": 9,
       "w": 360,
       "h": 32,
-      "layerId": "layer-8",
+      "layerId": "layer-6",
       "buffer_ptr": 8192
     },
     {
@@ -574,7 +574,7 @@
       "y": 9,
       "w": 127,
       "h": 32,
-      "layerId": "layer-7",
+      "layerId": "layer-1",
       "buffer_ptr": 12288
     },
     {
@@ -583,7 +583,7 @@
       "y": 685,
       "w": 250,
       "h": 32,
-      "layerId": "layer-7",
+      "layerId": "layer-1",
       "buffer_ptr": 16384,
       "group_id": 2
     },
@@ -593,7 +593,7 @@
       "y": 685,
       "w": 300,
       "h": 32,
-      "layerId": "layer-7",
+      "layerId": "layer-1",
       "buffer_ptr": 20480,
       "group_id": 2
     },
@@ -603,7 +603,7 @@
       "y": 685,
       "w": 164,
       "h": 32,
-      "layerId": "layer-8",
+      "layerId": "layer-6",
       "buffer_ptr": 24576,
       "group_id": 2
     },
@@ -613,7 +613,7 @@
       "y": 81,
       "w": 190,
       "h": 38,
-      "layerId": "layer-18",
+      "layerId": "layer-6",
       "buffer_ptr": 28672,
       "group_id": 3
     },
@@ -623,7 +623,7 @@
       "y": 151,
       "w": 169,
       "h": 38,
-      "layerId": "layer-17",
+      "layerId": "layer-3",
       "buffer_ptr": 32768,
       "group_id": 4
     },
@@ -633,7 +633,7 @@
       "y": 217,
       "w": 167,
       "h": 38,
-      "layerId": "layer-20",
+      "layerId": "layer-7",
       "buffer_ptr": 36864,
       "group_id": 5
     },
@@ -643,7 +643,7 @@
       "y": 274,
       "w": 169,
       "h": 38,
-      "layerId": "layer-18",
+      "layerId": "layer-6",
       "buffer_ptr": 40960,
       "group_id": 6
     },
@@ -653,7 +653,7 @@
       "y": 338,
       "w": 169,
       "h": 38,
-      "layerId": "layer-18",
+      "layerId": "layer-6",
       "buffer_ptr": 45056,
       "group_id": 7
     },
@@ -663,7 +663,7 @@
       "y": 404,
       "w": 169,
       "h": 38,
-      "layerId": "layer-17",
+      "layerId": "layer-3",
       "buffer_ptr": 49152,
       "group_id": 8
     },
@@ -673,7 +673,7 @@
       "y": 484,
       "w": 181,
       "h": 38,
-      "layerId": "layer-17",
+      "layerId": "layer-3",
       "buffer_ptr": 53248,
       "group_id": 9
     },
@@ -683,7 +683,7 @@
       "y": 536,
       "w": 181,
       "h": 38,
-      "layerId": "layer-18",
+      "layerId": "layer-6",
       "buffer_ptr": 57344,
       "group_id": 10
     },
@@ -693,7 +693,7 @@
       "y": 609,
       "w": 178,
       "h": 38,
-      "layerId": "layer-17",
+      "layerId": "layer-3",
       "buffer_ptr": 61440,
       "group_id": 11
     },
@@ -703,7 +703,7 @@
       "y": 81,
       "w": 446,
       "h": 38,
-      "layerId": "layer-28",
+      "layerId": "layer-6",
       "buffer_ptr": 65536,
       "group_id": 12
     },
@@ -713,7 +713,7 @@
       "y": 158,
       "w": 172,
       "h": 31,
-      "layerId": "layer-30",
+      "layerId": "layer-7",
       "buffer_ptr": 69632,
       "group_id": 13
     },
@@ -723,7 +723,7 @@
       "y": 158,
       "w": 183,
       "h": 31,
-      "layerId": "layer-28",
+      "layerId": "layer-8",
       "buffer_ptr": 73728,
       "group_id": 14
     },
@@ -733,7 +733,7 @@
       "y": 225,
       "w": 172,
       "h": 31,
-      "layerId": "layer-27",
+      "layerId": "layer-5",
       "buffer_ptr": 77824,
       "group_id": 15
     },
@@ -743,7 +743,7 @@
       "y": 225,
       "w": 183,
       "h": 31,
-      "layerId": "layer-29",
+      "layerId": "layer-11",
       "buffer_ptr": 81920,
       "group_id": 16
     },
@@ -753,7 +753,7 @@
       "y": 595,
       "w": 205,
       "h": 38,
-      "layerId": "layer-48",
+      "layerId": "layer-6",
       "buffer_ptr": 86016,
       "group_id": 17
     },
@@ -763,7 +763,7 @@
       "y": 446,
       "w": 190,
       "h": 38,
-      "layerId": "layer-48",
+      "layerId": "layer-6",
       "buffer_ptr": 90112
     },
     {
@@ -772,7 +772,7 @@
       "y": 81,
       "w": 457,
       "h": 38,
-      "layerId": "layer-38",
+      "layerId": "layer-6",
       "buffer_ptr": 94208,
       "group_id": 19
     },
@@ -782,7 +782,7 @@
       "y": 158,
       "w": 423,
       "h": 31,
-      "layerId": "layer-37",
+      "layerId": "layer-5",
       "buffer_ptr": 98304,
       "group_id": 20
     },
@@ -792,7 +792,7 @@
       "y": 223,
       "w": 423,
       "h": 31,
-      "layerId": "layer-38",
+      "layerId": "layer-8",
       "buffer_ptr": 102400,
       "group_id": 21
     },
@@ -802,7 +802,7 @@
       "y": 292,
       "w": 423,
       "h": 31,
-      "layerId": "layer-39",
+      "layerId": "layer-11",
       "buffer_ptr": 106496,
       "group_id": 23
     },
@@ -812,7 +812,7 @@
       "y": 387,
       "w": 446,
       "h": 38,
-      "layerId": "layer-48",
+      "layerId": "layer-6",
       "buffer_ptr": 110592,
       "group_id": 25
     },
@@ -822,7 +822,7 @@
       "y": 446,
       "w": 170,
       "h": 38,
-      "layerId": "layer-48",
+      "layerId": "layer-6",
       "buffer_ptr": 114688,
       "group_id": 26
     },
@@ -832,7 +832,7 @@
       "y": 446,
       "w": 80,
       "h": 38,
-      "layerId": "layer-48",
+      "layerId": "layer-6",
       "buffer_ptr": 118784,
       "group_id": 26
     },
@@ -842,7 +842,7 @@
       "y": 526,
       "w": 163,
       "h": 38,
-      "layerId": "layer-47",
+      "layerId": "layer-3",
       "buffer_ptr": 122880,
       "group_id": 27
     },
@@ -852,7 +852,7 @@
       "y": 595,
       "w": 165,
       "h": 38,
-      "layerId": "layer-48",
+      "layerId": "layer-6",
       "buffer_ptr": 126976,
       "group_id": 28
     },
@@ -862,7 +862,7 @@
       "y": 596,
       "w": 178,
       "h": 38,
-      "layerId": "layer-48",
+      "layerId": "layer-6",
       "buffer_ptr": 131072,
       "group_id": 29
     },
@@ -872,7 +872,7 @@
       "y": 596,
       "w": 185,
       "h": 38,
-      "layerId": "layer-47",
+      "layerId": "layer-3",
       "buffer_ptr": 135168,
       "group_id": 30
     },
@@ -882,7 +882,7 @@
       "y": 497,
       "w": 67,
       "h": 31,
-      "layerId": "layer-47",
+      "layerId": "layer-3",
       "buffer_ptr": 139264,
       "group_id": 36
     },
@@ -892,7 +892,7 @@
       "y": 497,
       "w": 51,
       "h": 31,
-      "layerId": "layer-48",
+      "layerId": "layer-6",
       "buffer_ptr": 143360,
       "group_id": 37
     }
@@ -938,393 +938,94 @@
   "layers": [
     {
       "id": "background",
-      "name": "Phosphor black",
+      "name": "BACKGROUND",
       "color": "#060200"
     },
     {
       "id": "group-1",
       "kind": "group",
-      "name": "00  /  OS CHROME"
+      "name": "01 / FRAME"
+    },
+    {
+      "id": "layer-1",
+      "name": "OUTLINES + CHROME",
+      "color": "#5b2400",
+      "parentId": "group-1"
+    },
+    {
+      "id": "layer-2",
+      "name": "PANEL INSETS",
+      "color": "#060200",
+      "parentId": "group-1"
     },
     {
       "id": "group-2",
       "kind": "group",
-      "name": "Surfaces",
-      "parentId": "group-1"
+      "name": "02 / DIM + DISABLED"
     },
     {
-      "id": "layer-1",
-      "name": "DIM",
+      "id": "layer-3",
+      "name": "DIM SURFACES + LABELS",
       "color": "#5b2400",
       "parentId": "group-2"
     },
     {
-      "id": "layer-2",
-      "name": "PRIMARY",
-      "color": "#dd5800",
-      "parentId": "group-2"
-    },
-    {
-      "id": "layer-3",
-      "name": "HOT",
-      "color": "#ff3400",
-      "parentId": "group-2"
-    },
-    {
       "id": "layer-4",
-      "name": "CUTOUT",
+      "name": "RECESSED CONTROLS",
       "color": "#060200",
       "parentId": "group-2"
     },
     {
       "id": "layer-5",
-      "name": "SOLID",
-      "color": "#dd5800",
-      "parentId": "group-2"
-    },
-    {
-      "id": "layer-6",
-      "name": "SOLID HOT",
-      "color": "#ff3400",
+      "name": "DISABLED FOREGROUND",
+      "color": "#5b2400",
       "parentId": "group-2"
     },
     {
       "id": "group-3",
       "kind": "group",
-      "name": "Typography",
-      "parentId": "group-1"
+      "name": "03 / PRIMARY"
     },
     {
-      "id": "layer-7",
-      "name": "DIM TEXT",
-      "color": "#5b2400",
-      "parentId": "group-3"
-    },
-    {
-      "id": "layer-8",
-      "name": "TEXT",
+      "id": "layer-6",
+      "name": "ACTIVE SURFACES + TEXT",
       "color": "#dd5800",
       "parentId": "group-3"
     },
     {
-      "id": "layer-9",
-      "name": "HOT TEXT",
-      "color": "#ff3400",
+      "id": "layer-7",
+      "name": "INVERSE CUTOUTS",
+      "color": "#060200",
       "parentId": "group-3"
     },
     {
-      "id": "layer-10",
-      "name": "REVERSE",
-      "color": "#060200",
+      "id": "layer-8",
+      "name": "PRIMARY FOREGROUND",
+      "color": "#dd5800",
       "parentId": "group-3"
     },
     {
       "id": "group-4",
       "kind": "group",
-      "name": "01  /  NAVIGATION"
+      "name": "04 / ALERT"
     },
     {
-      "id": "group-5",
-      "kind": "group",
-      "name": "Surfaces",
+      "id": "layer-9",
+      "name": "ALERT SURFACES",
+      "color": "#ff3400",
+      "parentId": "group-4"
+    },
+    {
+      "id": "layer-10",
+      "name": "ALERT CUTOUTS",
+      "color": "#060200",
       "parentId": "group-4"
     },
     {
       "id": "layer-11",
-      "name": "DIM",
-      "color": "#5b2400",
-      "parentId": "group-5"
-    },
-    {
-      "id": "layer-12",
-      "name": "PRIMARY",
-      "color": "#dd5800",
-      "parentId": "group-5"
-    },
-    {
-      "id": "layer-13",
-      "name": "HOT",
+      "name": "ALERT FOREGROUND",
       "color": "#ff3400",
-      "parentId": "group-5"
-    },
-    {
-      "id": "layer-14",
-      "name": "CUTOUT",
-      "color": "#060200",
-      "parentId": "group-5"
-    },
-    {
-      "id": "layer-15",
-      "name": "SOLID",
-      "color": "#dd5800",
-      "parentId": "group-5"
-    },
-    {
-      "id": "layer-16",
-      "name": "SOLID HOT",
-      "color": "#ff3400",
-      "parentId": "group-5"
-    },
-    {
-      "id": "group-6",
-      "kind": "group",
-      "name": "Typography",
       "parentId": "group-4"
-    },
-    {
-      "id": "layer-17",
-      "name": "DIM TEXT",
-      "color": "#5b2400",
-      "parentId": "group-6"
-    },
-    {
-      "id": "layer-18",
-      "name": "TEXT",
-      "color": "#dd5800",
-      "parentId": "group-6"
-    },
-    {
-      "id": "layer-19",
-      "name": "HOT TEXT",
-      "color": "#ff3400",
-      "parentId": "group-6"
-    },
-    {
-      "id": "layer-20",
-      "name": "REVERSE",
-      "color": "#060200",
-      "parentId": "group-6"
-    },
-    {
-      "id": "group-7",
-      "kind": "group",
-      "name": "02  /  BUTTONS"
-    },
-    {
-      "id": "group-8",
-      "kind": "group",
-      "name": "Surfaces",
-      "parentId": "group-7"
-    },
-    {
-      "id": "layer-21",
-      "name": "DIM",
-      "color": "#5b2400",
-      "parentId": "group-8"
-    },
-    {
-      "id": "layer-22",
-      "name": "PRIMARY",
-      "color": "#dd5800",
-      "parentId": "group-8"
-    },
-    {
-      "id": "layer-23",
-      "name": "HOT",
-      "color": "#ff3400",
-      "parentId": "group-8"
-    },
-    {
-      "id": "layer-24",
-      "name": "CUTOUT",
-      "color": "#060200",
-      "parentId": "group-8"
-    },
-    {
-      "id": "layer-25",
-      "name": "SOLID",
-      "color": "#dd5800",
-      "parentId": "group-8"
-    },
-    {
-      "id": "layer-26",
-      "name": "SOLID HOT",
-      "color": "#ff3400",
-      "parentId": "group-8"
-    },
-    {
-      "id": "group-9",
-      "kind": "group",
-      "name": "Typography",
-      "parentId": "group-7"
-    },
-    {
-      "id": "layer-27",
-      "name": "DIM TEXT",
-      "color": "#5b2400",
-      "parentId": "group-9"
-    },
-    {
-      "id": "layer-28",
-      "name": "TEXT",
-      "color": "#dd5800",
-      "parentId": "group-9"
-    },
-    {
-      "id": "layer-29",
-      "name": "HOT TEXT",
-      "color": "#ff3400",
-      "parentId": "group-9"
-    },
-    {
-      "id": "layer-30",
-      "name": "REVERSE",
-      "color": "#060200",
-      "parentId": "group-9"
-    },
-    {
-      "id": "group-10",
-      "kind": "group",
-      "name": "03  /  FIELDS"
-    },
-    {
-      "id": "group-11",
-      "kind": "group",
-      "name": "Surfaces",
-      "parentId": "group-10"
-    },
-    {
-      "id": "layer-31",
-      "name": "DIM",
-      "color": "#5b2400",
-      "parentId": "group-11"
-    },
-    {
-      "id": "layer-32",
-      "name": "PRIMARY",
-      "color": "#dd5800",
-      "parentId": "group-11"
-    },
-    {
-      "id": "layer-33",
-      "name": "HOT",
-      "color": "#ff3400",
-      "parentId": "group-11"
-    },
-    {
-      "id": "layer-34",
-      "name": "CUTOUT",
-      "color": "#060200",
-      "parentId": "group-11"
-    },
-    {
-      "id": "layer-35",
-      "name": "SOLID",
-      "color": "#dd5800",
-      "parentId": "group-11"
-    },
-    {
-      "id": "layer-36",
-      "name": "SOLID HOT",
-      "color": "#ff3400",
-      "parentId": "group-11"
-    },
-    {
-      "id": "group-12",
-      "kind": "group",
-      "name": "Typography",
-      "parentId": "group-10"
-    },
-    {
-      "id": "layer-37",
-      "name": "DIM TEXT",
-      "color": "#5b2400",
-      "parentId": "group-12"
-    },
-    {
-      "id": "layer-38",
-      "name": "TEXT",
-      "color": "#dd5800",
-      "parentId": "group-12"
-    },
-    {
-      "id": "layer-39",
-      "name": "HOT TEXT",
-      "color": "#ff3400",
-      "parentId": "group-12"
-    },
-    {
-      "id": "layer-40",
-      "name": "REVERSE",
-      "color": "#060200",
-      "parentId": "group-12"
-    },
-    {
-      "id": "group-13",
-      "kind": "group",
-      "name": "04  /  STATE + CHOICE"
-    },
-    {
-      "id": "group-14",
-      "kind": "group",
-      "name": "Surfaces",
-      "parentId": "group-13"
-    },
-    {
-      "id": "layer-41",
-      "name": "DIM",
-      "color": "#5b2400",
-      "parentId": "group-14"
-    },
-    {
-      "id": "layer-42",
-      "name": "PRIMARY",
-      "color": "#dd5800",
-      "parentId": "group-14"
-    },
-    {
-      "id": "layer-43",
-      "name": "HOT",
-      "color": "#ff3400",
-      "parentId": "group-14"
-    },
-    {
-      "id": "layer-44",
-      "name": "CUTOUT",
-      "color": "#060200",
-      "parentId": "group-14"
-    },
-    {
-      "id": "layer-45",
-      "name": "SOLID",
-      "color": "#dd5800",
-      "parentId": "group-14"
-    },
-    {
-      "id": "layer-46",
-      "name": "SOLID HOT",
-      "color": "#ff3400",
-      "parentId": "group-14"
-    },
-    {
-      "id": "group-15",
-      "kind": "group",
-      "name": "Typography",
-      "parentId": "group-13"
-    },
-    {
-      "id": "layer-47",
-      "name": "DIM TEXT",
-      "color": "#5b2400",
-      "parentId": "group-15"
-    },
-    {
-      "id": "layer-48",
-      "name": "TEXT",
-      "color": "#dd5800",
-      "parentId": "group-15"
-    },
-    {
-      "id": "layer-49",
-      "name": "HOT TEXT",
-      "color": "#ff3400",
-      "parentId": "group-15"
-    },
-    {
-      "id": "layer-50",
-      "name": "REVERSE",
-      "color": "#060200",
-      "parentId": "group-15"
     }
   ]
 }
