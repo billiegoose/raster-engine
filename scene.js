@@ -1,9 +1,23 @@
-/* 1280x720 HD scene data and viewport constants; safe to import in the browser.
+/* Scene data and default viewport dimensions; safe to import in the browser.
    The previous 640x480 scene is scaled uniformly by 3/2 and centered
    horizontally (+160 px), preserving square pixels and circular corners. */
 export const WIDTH=1280, HEIGHT=720, LAYERS=64;
+export const CANVAS_PRESETS=Object.freeze([
+  {width:1280,height:720,label:'720p · 1280 × 720'},
+  {width:1920,height:1080,label:'1080p · 1920 × 1080'}
+]);
+// Scenes without explicit dimensions are legacy 720p scenes.
+export function canvasSize(scene){
+  if((scene?.width===undefined)!==(scene?.height===undefined))
+    throw Error('Scene width and height must be specified together');
+  const width=scene?.width??WIDTH,height=scene?.height??HEIGHT;
+  if(!Number.isInteger(width)||!Number.isInteger(height)||
+     width<1||width>1920||height<1||height>1080)
+    throw Error('Scene dimensions must be positive integers up to 1920 × 1080');
+  return {width,height};
+}
 export const initialPalette=()=>Array.from({length:LAYERS},(_,i)=>i===0?'#101827':'#ffffff');
-export const blankScene=()=>({layers:[{id:'background',name:'',color:'#101827'},{id:'layer-1',name:'',color:'#92d0e1'}],shapes:[],texts:[],textBuffers:{},paletteEvents:[]});
+export const blankScene=()=>({width:WIDTH,height:HEIGHT,layers:[{id:'background',name:'',color:'#101827'},{id:'layer-1',name:'',color:'#92d0e1'}],shapes:[],texts:[],textBuffers:{},paletteEvents:[]});
 
 export const demoScene=()=>({
   palette:Object.assign(initialPalette(),{

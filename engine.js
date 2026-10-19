@@ -2,7 +2,7 @@
    A compact Y-program schedules rounded rectangles and palette changes.
    The Y VM executes those instructions, maintains active rounded-rectangle
    generators, and materializes an X linked list for the current scanline. */
-import {WIDTH,HEIGHT,LAYERS,initialPalette,demoScene} from './scene.js';
+import {LAYERS,canvasSize} from './scene.js';
 export {WIDTH,HEIGHT,LAYERS,initialPalette,demoScene} from './scene.js';
 
 const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,n));
@@ -138,8 +138,8 @@ function syncActiveRects(machine,y){
       continue;
     }
     const [leftRaw,rightRaw]=span;
-    const left=clamp(Math.round(leftRaw),0,WIDTH);
-    const right=clamp(Math.round(rightRaw),0,WIDTH);
+    const left=clamp(Math.round(leftRaw),0,machine.width);
+    const right=clamp(Math.round(rightRaw),0,machine.width);
     if(right<=left){
       deleteNode(machine,startKey,changes);
       deleteNode(machine,stopKey,changes);
@@ -153,12 +153,12 @@ function syncActiveRects(machine,y){
   return changes;
 }
 
-function renderRow(head){
-  const counts=new Int32Array(LAYERS),row=new Uint8Array(WIDTH);
+function renderRow(head,width){
+  const counts=new Int32Array(LAYERS),row=new Uint8Array(width);
   let node=head.next,events=0,top=0;
-  for(let x=0;x<WIDTH;x++){
+  for(let x=0;x<width;x++){
     // Only X transitions can change the highest active layer. Recompute
-    // compositing priority at those positions instead of 1280 times per row.
+    // compositing priority at those positions instead of once per pixel.
     if(node&&node.x<=x){
       while(node&&node.x<=x){
         const l=node.layer;
@@ -172,11 +172,11 @@ function renderRow(head){
     }
     row[x]=top;
   }
-  while(node&&node.x===WIDTH){
+  while(node&&node.x===width){
     const l=node.layer;
     if(!Number.isInteger(l)||l<1||l>=LAYERS)throw Error(`Invalid paint layer ${l}`);
     counts[l]+=node.delta;
-    if(counts[l]<0)throw Error(`Unbalanced STOP at x=${WIDTH} layer=${l}`);
+    if(counts[l]<0)throw Error(`Unbalanced STOP at x=${width} layer=${l}`);
     node=node.next;events++;
   }
   if(node)throw Error('X instruction beyond screen');
@@ -185,9 +185,10 @@ function renderRow(head){
 }
 
 export function compileY(scene){
+  const {height}=canvasSize(scene);
   const buckets=new Map();
   function push(y,instruction){
-    if(y<0||y>=HEIGHT)return;
+    if(y<0||y>=height)return;
     if(!buckets.has(y))buckets.set(y,[]);
     buckets.get(y).push(instruction);
   }
@@ -199,7 +200,7 @@ export function compileY(scene){
   for(const event of scene.paletteEvents||[]){
     const y=Math.round(Number(event.y)||0);
     const layer=Math.round(Number(event.layer)||0);
-    if(y<0||y>=HEIGHT||layer<0||layer>=LAYERS)continue;
+    if(y<0||y>=height||layer<0||layer>=LAYERS)continue;
     push(y,{op:'SET_PALETTE',layer,color:event.color});
   }
   const ys=[...buckets.keys()].sort((a,b)=>a-b);
@@ -213,13 +214,14 @@ export function compileY(scene){
     });
     program.push(...instructions);
   }
-  program.push({op:'WAIT_Y',y:HEIGHT});
+  program.push({op:'WAIT_Y',y:height});
   program.push({op:'HALT'});
   return program;
 }
 
 function makeMachine(scene,program){
   return {
+    ...canvasSize(scene),
     head:{key:'HEAD',next:null},
     nodes:new Map(),
     activeRects:new Map(),
@@ -277,10 +279,10 @@ export function advanceY(machine,y){
 export function runYProgram(scene,program){
   const machine=makeMachine(scene,program),scanlines=[],logs=[];
   let totalEdits=0,totalEvents=0;
-  for(let y=0;y<HEIGHT;y++){
+  for(let y=0;y<machine.height;y++){
     const {executed,changes,pc}=advanceY(machine,y);
     const edges=listArray(machine.head);
-    const {row,events}=renderRow(machine.head);
+    const {row,events}=renderRow(machine.head,machine.width);
     totalEdits+=changes.length;
     totalEvents+=events;
     scanlines.push({y,row,edges,palette:[...machine.palette],events,edits:changes.length,executed,changes,pc});
@@ -293,7 +295,8 @@ export function compile(scene){return runYProgram(scene,compileY(scene));}
 export const rasterize=compile;
 
 export function referenceRow(scene,y){
-  const row=new Uint8Array(WIDTH);
+  const {width}=canvasSize(scene);
+  const row=new Uint8Array(width);
   // Normalize geometry once per shape per row, not once per pixel. This is
   // important for the larger VGA reference image while remaining independent
   // of the X-list interpreter and its palette reference-count machinery.
@@ -301,8 +304,8 @@ export function referenceRow(scene,y){
     const rect=normalizeRect(raw);
     const span=spanForRect(rect,y);
     if(!span)continue;
-    const left=clamp(Math.round(span[0]),0,WIDTH);
-    const right=clamp(Math.round(span[1]),0,WIDTH);
+    const left=clamp(Math.round(span[0]),0,width);
+    const right=clamp(Math.round(span[1]),0,width);
     for(let x=left;x<right;x++)row[x]=Math.max(row[x],rect.layer);
   }
   return row;

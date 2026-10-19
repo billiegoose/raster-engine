@@ -1,4 +1,5 @@
-import {WIDTH, HEIGHT, rasterize} from './engine.js';
+import {rasterize} from './engine.js';
+import {canvasSize} from './scene.js';
 import {createSceneStore, SceneStoreError, MAX_SCENE_BYTES} from './scene-store.js';
 import {compileScene} from './scene-model.js';
 
@@ -42,13 +43,14 @@ export function runBackend({backend = 'javascript', scene} = {}) {
   if (!scene || !Array.isArray(scene.shapes) || !Array.isArray(scene.paletteEvents) || (!Array.isArray(scene.palette) && !Array.isArray(scene.layers))) {
     throw new Error('Scene must contain shapes, palette, and paletteEvents arrays');
   }
+  const dimensions=canvasSize(scene);
   const result = implementation.run(compileScene(scene));
   // Preserve the inspector's existing trace contract; JSON has no Uint8Array.
   return {
     ...result,
     backend,
-    width: WIDTH,
-    height: HEIGHT,
+    width: dimensions.width,
+    height: dimensions.height,
     scanlines: result.scanlines.map(({row, ...scanline}) => ({...scanline, row: Array.from(row)}))
   };
 }

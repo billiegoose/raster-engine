@@ -1,6 +1,6 @@
 /* Visual scene editor. Selection, grouping, and clipboard operations work on
    the flat shape/text model; only the raster simulator generates pixels. */
-import {WIDTH,HEIGHT,LAYERS} from './scene.js';
+import {LAYERS,canvasSize} from './scene.js';
 import {editableScene,sceneObjects,getObject,getLayerName,setLayerName,getLayer,getLayerNode,drawingLayers,layerTree,layerSubtree,layerIndex,addLayer,addLayerGroup,deleteLayer,reorderLayer,setLayerColor,addRectangle,addText,updateObject,
   moveObject,resizeObject,radiusCss,paletteColor,rectangleThumbnail,
   resolveSelection,selectionUnits,objectsFullyInsideRect,moveSelectionToLayer,alignSelection,distributeSelection,
@@ -49,6 +49,13 @@ export function createSceneEditor({getScene,history,onSimulate}){
 
   function renderStage(){
     const data=scene(),active=selected();
+    const {width,height}=canvasSize(data);
+    const shell=$('editor-canvas-shell');
+    shell.style.width=`${width}px`;
+    shell.style.height=`${height}px`;
+    stage.style.width=`${width}px`;
+    stage.style.height=`${height}px`;
+    stage.setAttribute('aria-label',`Editable ${width} by ${height} scene`);
     stage.style.backgroundColor=validColor(data.layers[0].color);
     stage.replaceChildren();
     const allowResize=selection.length===1;
@@ -165,8 +172,9 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const {type,id}=selection[0],obj=getObject(data,type,id);
     if(!obj)return;
     summary.textContent=type==='rect'?'RECTANGLE':'TEXT';
-    const fields=[numericField('x','X',obj.x,-WIDTH,WIDTH),numericField('y','Y',obj.y,-HEIGHT,HEIGHT),
-      numericField('w','Width',obj.w,1,WIDTH),numericField('h','Height',obj.h,1,HEIGHT)].join('');
+    const {width,height}=canvasSize(data);
+    const fields=[numericField('x','X',obj.x,-width,width),numericField('y','Y',obj.y,-height,height),
+      numericField('w','Width',obj.w,1,width),numericField('h','Height',obj.h,1,height)].join('');
     const radius=type==='rect'?`<label class="property-field property-full">Corner radius <input data-property="radius" type="text" value="${html(Array.isArray(obj.radius)?obj.radius.join(' '):obj.radius??0)}" aria-label="CSS radius TL TR BR BL"></label>`:'';
     const text=type==='text'?`<div class="property-full"><label class="property-field">Text content
       <textarea id="text-value" data-text-buffer="${html(obj.buffer_ptr)}" rows="5" spellcheck="false"></textarea></label>
@@ -183,7 +191,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const data=scene();
     $('palette-event-count').textContent=`${data.paletteEvents.length}`;
     $('paletteEvents').innerHTML=data.paletteEvents.map((event,i)=>`<div class="palette-row">
-      <label>Y<input data-event="${i}" data-event-key="y" type="number" min="0" max="719" value="${html(event.y)}"></label>
+      <label>Y<input data-event="${i}" data-event-key="y" type="number" min="0" max="${canvasSize(data).height-1}" value="${html(event.y)}"></label>
       <label>Layer<select data-event="${i}" data-event-key="layerId">${drawingLayers(data).map((layer,index)=>
         `<option value="${html(layer.id)}"${event.layerId===layer.id?' selected':''}>${html(layer.name|| (index===0?'Background':'Unnamed layer'))}</option>`).join('')}</select></label>
       <label>Color<input data-event="${i}" data-event-key="color" type="color" value="${html(validColor(event.color))}"></label>
@@ -311,8 +319,9 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const dx=Math.round(event.clientX-drag.clientX),dy=Math.round(event.clientY-drag.clientY);
     if(drag.mode==='marquee'){
       const bounds=stage.getBoundingClientRect();
-      const x1=clamp(drag.clientX-bounds.left,0,WIDTH),y1=clamp(drag.clientY-bounds.top,0,HEIGHT);
-      const x2=clamp(event.clientX-bounds.left,0,WIDTH),y2=clamp(event.clientY-bounds.top,0,HEIGHT);
+      const {width,height}=canvasSize(scene());
+      const x1=clamp(drag.clientX-bounds.left,0,width),y1=clamp(drag.clientY-bounds.top,0,height);
+      const x2=clamp(event.clientX-bounds.left,0,width),y2=clamp(event.clientY-bounds.top,0,height);
       Object.assign(drag.rect.style,{left:`${Math.min(x1,x2)}px`,top:`${Math.min(y1,y2)}px`,
         width:`${Math.abs(x2-x1)}px`,height:`${Math.abs(y2-y1)}px`});
       drag.changed=drag.changed||Math.abs(dx)>3||Math.abs(dy)>3;
@@ -339,8 +348,9 @@ export function createSceneEditor({getScene,history,onSimulate}){
       finished.rect.remove();
       if(finished.changed){
         const bounds=stage.getBoundingClientRect();
-        const x1=clamp(finished.clientX-bounds.left,0,WIDTH),y1=clamp(finished.clientY-bounds.top,0,HEIGHT);
-        const x2=clamp(event.clientX-bounds.left,0,WIDTH),y2=clamp(event.clientY-bounds.top,0,HEIGHT);
+        const {width,height}=canvasSize(scene());
+        const x1=clamp(finished.clientX-bounds.left,0,width),y1=clamp(finished.clientY-bounds.top,0,height);
+        const x2=clamp(event.clientX-bounds.left,0,width),y2=clamp(event.clientY-bounds.top,0,height);
         const left=Math.min(x1,x2),right=Math.max(x1,x2),top=Math.min(y1,y2),bottom=Math.max(y1,y2);
         const hits=objectsFullyInsideRect(scene(),{left,top,right,bottom});
         setSelection([...finished.base,...hits]);
@@ -584,7 +594,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       const item=scene().paletteEvents[Number(target.dataset.event)];
       if(!item)return;
       const name=target.dataset.eventKey;
-      item[name]=name==='color'||name==='layerId'?target.value:clamp(Math.round(Number(target.value)||0),0,HEIGHT-1);
+      item[name]=name==='color'||name==='layerId'?target.value:clamp(Math.round(Number(target.value)||0),0,canvasSize(scene()).height-1);
     });
   });
   $('paletteEvents').addEventListener('click',event=>{

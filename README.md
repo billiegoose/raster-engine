@@ -1,6 +1,6 @@
 # Raster Engine
 
-An experimental framebuffer-free **1280 × 720 HD (720p)** graphics engine built with Bun, JavaScript, HTML and Canvas.
+An experimental framebuffer-free graphics engine supporting **1280 × 720 (720p)** and **1920 × 1080 (1080p)** scenes, built with Bun, JavaScript, HTML and Canvas.
 
 ## Run
 
@@ -58,7 +58,7 @@ The original shape primitive is a rectangle with a `radius` parameter; the Pytho
 
 The browser has two distinct workspaces that share one editable JSON scene:
 
-- **Scene editor:** A native-size 1280 × 720 visual editor built from DOM
+- **Scene editor:** A native-resolution 720p or 1080p visual editor built from DOM
   rectangles and clipped text. The canvas scrolls in narrower windows rather
   than scaling the artwork or font. Select objects on the canvas or from
   preview tiles in the searchable layer tree. Each drawing layer has a persistent
@@ -100,6 +100,25 @@ with differing corner-pixel details where CSS and the rasterizer's integer
 circles diverge. **No background raster rendering happens while dragging.**
 Scenes can be saved and reopened as JSON files in the local `scenes/` folder
 through the editor's native scene-file toolbar.
+
+## Canvas resolution
+
+Each scene stores its own `width` and `height` in JSON. Use the **Canvas** selector
+in the scene-file toolbar to switch the current scene between **720p (1280 × 720)**
+and **1080p (1920 × 1080)**. The change is undoable, and saving the scene
+persists the dimensions; opening another scene restores that scene's resolution.
+The editor and simulator operate at the scene's real pixel dimensions, rather
+than scaling pixels or RED2 glyphs. Resizing only expands or clips the visible
+canvas: existing rectangles, text, and coordinates retain their original sizes
+and positions. New scenes default to 720p, while old JSON files without
+`width`/`height` are read as 720p for backward compatibility. The reference
+backends also accept positive integer custom dimensions up to 1920 × 1080.
+
+The included `amber-components.json` showcase uses **1920 × 1080**; its original
+component designs retain their native pixel geometry, while the surrounding
+header, navigation frame, and footer extend to full HD. The added space is
+available for more component examples. `amber-os.json`, Paint, and other older
+scene files continue to use 720p unless resized in the editor.
 
 ## Local scene files
 

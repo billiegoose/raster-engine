@@ -3,6 +3,7 @@
 import {mkdir, readdir, lstat, readFile, writeFile, rename, unlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {canvasSize} from './scene.js';
 
 export const MAX_SCENE_BYTES = 1024 * 1024;
 
@@ -30,6 +31,9 @@ export function validateScene(scene) {
      (scene.textBuffers!=null&&(typeof scene.textBuffers!=='object'||!scene.textBuffers||Array.isArray(scene.textBuffers)))){
     throw new SceneStoreError('Scene requires shapes, paletteEvents and optional texts/textBuffers');
   }
+  let dimensions;
+  try { dimensions=canvasSize(scene); }
+  catch(error){ throw new SceneStoreError(error.message); }
   const ordered=scene.layers!==undefined;
   let ids,drawableIds;
   if(ordered){
@@ -102,7 +106,7 @@ export function validateScene(scene) {
       Array.isArray(value)&&value.every(byte=>Number.isInteger(byte)&&byte>=0&&byte<=255))){
     throw new SceneStoreError('Invalid text buffer');
   }
-  if(!scene.paletteEvents.every(event=>event&&Number.isInteger(event.y)&&event.y>=0&&event.y<720&&
+  if(!scene.paletteEvents.every(event=>event&&Number.isInteger(event.y)&&event.y>=0&&event.y<dimensions.height&&
       (ordered?typeof event.layerId==='string'&&drawableIds.has(event.layerId):
        Number.isInteger(event.layer)&&event.layer>=0&&event.layer<64)&&
       typeof event.color==='string'&&/^#[0-9a-f]{6}$/i.test(event.color))){

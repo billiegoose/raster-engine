@@ -1,5 +1,5 @@
 import {test, expect} from 'bun:test';
-import {demoScene} from './scene.js';
+import {demoScene,canvasSize} from './scene.js';
 import {compileY, rasterize} from './engine.js';
 import {listBackends, runBackend} from './api.js';
 import {readFileSync} from 'node:fs';
@@ -8,8 +8,8 @@ function comparePythonAndJS(scene) {
   const js=rasterize(scene);
   const py=runBackend({backend:'python',scene});
   expect(py.backend).toBe('python');
-  expect(py.width).toBe(1280);
-  expect(py.height).toBe(720);
+  expect(py.width).toBe(canvasSize(scene).width);
+  expect(py.height).toBe(canvasSize(scene).height);
   expect(py.program).toEqual(js.program);
   expect(py.logs).toEqual(js.logs);
   expect(py.totalEvents).toBe(js.totalEvents);
@@ -63,4 +63,14 @@ test('Python standalone Y bytecode compiler agrees with JS on mixed dimensions',
   ],paletteEvents:[{y:3,layer:4,color:'#abcdef'}]};
   comparePythonAndJS(scene);
   expect(compileY(scene).some(instruction=>instruction.op==='ROUND_RECT')).toBe(true);
+});
+
+
+test('Python and JavaScript match every 1080p pixel and X/Y trace, including the final scanline',()=>{
+  const scene={width:1920,height:1080,palette:demoScene().palette,
+    shapes:[{id:1,x:1740,y:1000,w:180,h:80,radius:[20,10,0,7],layer:2},
+      {id:2,x:1800,y:1040,w:120,h:40,radius:0,layer:3},
+      {id:3,x:1905,y:1070,w:70,h:40,radius:4,layer:4}],
+    paletteEvents:[{y:0,layer:2,color:'#ac6200'},{y:1079,layer:3,color:'#ff3400'}]};
+  comparePythonAndJS(scene);
 });

@@ -1,6 +1,6 @@
 /* Scene-editing operations. No DOM, rasterizer, or server dependencies.
    The editor and simulator operate on the same serialized scene data. */
-import {WIDTH,HEIGHT,LAYERS} from './scene.js';
+import {WIDTH,HEIGHT,LAYERS,canvasSize} from './scene.js';
 
 const integer=value=>Math.round(Number(value)||0);
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
@@ -13,6 +13,8 @@ export function sceneObjects(scene){
 }
 
 export function editableScene(scene){
+  if(scene.width===undefined&&scene.height===undefined){scene.width=WIDTH;scene.height=HEIGHT;}
+  canvasSize(scene);
   scene.texts??=[];
   scene.textBuffers??={};
   scene.paletteEvents??=[];
@@ -197,6 +199,15 @@ export function reorderLayer(scene,id,targetId,side='above'){
 
 /** Pack only drawable leaves into physical palette slots 0..63; groups are
  * organizational and never change an object's ID, geometry or color. */
+export function setCanvasSize(scene,width,height){
+  canvasSize({width,height});
+  if(scene.width===width&&scene.height===height)return false;
+  scene.width=width;
+  scene.height=height;
+  // Keep artwork at native pixel coordinates, even when the viewport shrinks.
+  return true;
+}
+
 export function compileScene(source){
   if(!Array.isArray(source.layers))return structuredClone(source);
   const leaves=source.layers.filter(node=>!isFolder(node));
@@ -212,6 +223,7 @@ export function compileScene(source){
   };
   const palette=Array.from({length:LAYERS},(_,i)=>leaves[i]?.color??'#ffffff');
   return {
+    ...canvasSize(source),
     palette,
     shapes:(source.shapes??[]).map(({layerId,...object})=>({...object,layer:physical(layerId)})),
     texts:(source.texts??[]).map(({layerId,...object})=>({...object,layer:physical(layerId)})),
@@ -239,7 +251,8 @@ export function addRectangle(scene,requestedLayer=null){
   const id=nextObjectId(scene);
   let layerId=getLayer(scene,requestedLayer)?.id??drawingLayers(scene).at(-1)?.id;
   if(!layerId||layerId==='background')layerId=addLayer(scene,{color:'#92d0e1'}).id;
-  const object={id,x:340,y:210,w:240,h:150,radius:18,layerId};
+  const {width,height}=canvasSize(scene);
+  const object={id,x:340+Math.round((width-WIDTH)/2),y:210+Math.round((height-HEIGHT)/2),w:240,h:150,radius:18,layerId};
   scene.shapes.push(object);
   return object;
 }
@@ -249,7 +262,8 @@ export function addText(scene,requestedLayer=null){
   const id=nextObjectId(scene),ptr=nextBufferPtr(scene);
   let layerId=getLayer(scene,requestedLayer)?.id??drawingLayers(scene).at(-1)?.id;
   if(!layerId||layerId==='background')layerId=addLayer(scene,{color:'#17212e'}).id;
-  const object={id,x:352,y:225,w:380,h:72,layerId,buffer_ptr:ptr};
+  const {width,height}=canvasSize(scene);
+  const object={id,x:352+Math.round((width-WIDTH)/2),y:225+Math.round((height-HEIGHT)/2),w:380,h:72,layerId,buffer_ptr:ptr};
   scene.texts.push(object);
   scene.textBuffers[String(ptr)]='HELLO, WORLD!';
   return object;
@@ -288,9 +302,10 @@ export function updateObject(scene,type,id,key,value){
   const object=getObject(scene,type,id);
   if(!object)return false;
   if(['x','y','w','h'].includes(key)){
+    const {width,height}=canvasSize(scene);
     const n=integer(value);
     if(key==='w'||key==='h')object[key]=Math.max(1,n);
-    else object[key]=clamp(n,key==='x'?-WIDTH:-HEIGHT,key==='x'?WIDTH:HEIGHT);
+    else object[key]=clamp(n,key==='x'?-width:-height,key==='x'?width:height);
   }else if(key==='layerId'){
     if(value==='background'||!getLayer(scene,value))return false;
     object.layerId=value;

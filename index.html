@@ -27,7 +27,7 @@
 
   <header class="app-header">
     <div class="brand">
-      <span class="eyebrow">RASTER ENGINE / 1280 × 720</span>
+      <span id="scene-size-heading" class="eyebrow">RASTER ENGINE / 1280 × 720</span>
       <h1>Scene studio</h1>
       <p>Compose with DOM elements. Inspect the actual X/Y raster machine.</p>
     </div>
@@ -42,6 +42,12 @@
       <div class="scene-file-toolbar" aria-label="Scene files">
         <label class="scene-file-select">Scene
           <select id="saved-scenes" aria-label="Scene selector"><option value="">Untitled</option></select>
+        </label>
+        <label class="scene-resolution-select">Canvas
+          <select id="scene-resolution" aria-label="Canvas resolution" title="Change the canvas size without scaling artwork">
+            <option value="1280x720">720p · 1280 × 720</option>
+            <option value="1920x1080">1080p · 1920 × 1080</option>
+          </select>
         </label>
         <button id="scene-new" type="button">New</button>
         <button id="scene-save" type="button" class="primary">Save</button>

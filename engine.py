@@ -5,7 +5,7 @@ X-sorted linked list of paint transitions. Each emitted row contains palette
 indices (0-63), not RGB pixels. ``iter_scanlines`` supports scanline consumers,
 such as a later text compositor, without retaining a framebuffer.
 
-The machine uses the same fixed 1280x720 / 64-layer configuration, integer
+The machine uses per-scene dimensions (default 1280x720) and 64 layers, integer
 circle stepping, event ordering, and observable execution trace as engine.js.
 """
 
@@ -24,6 +24,17 @@ from binary_text import TextSource, normalize_text
 WIDTH = 1280
 HEIGHT = 720
 LAYERS = 64
+
+
+def canvas_size(scene: dict) -> tuple[int, int]:
+    """Validate per-scene dimensions with a backward-compatible 720p default."""
+    if ('width' in scene) != ('height' in scene):
+        raise ValueError('Scene width and height must be specified together')
+    width, height = scene.get('width', WIDTH), scene.get('height', HEIGHT)
+    if (type(width) is not int or type(height) is not int or
+            not 1 <= width <= 1920 or not 1 <= height <= 1080):
+        raise ValueError('Scene dimensions must be positive integers up to 1920 × 1080')
+    return width, height
 
 
 def initial_palette() -> list[str]:
@@ -164,15 +175,19 @@ class Machine:
     text_masks: dict[int, int]
     palette: list[str]
     program: list[dict]
+    width: int = WIDTH
+    height: int = HEIGHT
     pc: int = 0
     y: int = 0
     halted: bool = False
 
 
 def make_machine(scene: dict, program: list[dict]) -> Machine:
+    width, height = canvas_size(scene)
     return Machine(head=XNode('HEAD'), nodes={}, active_rects={},
                    active_texts={}, text_buffers=scene.get('textBuffers', {}),
-                   text_masks={}, palette=list(scene['palette']), program=program)
+                   text_masks={}, palette=list(scene['palette']), program=program,
+                   width=width, height=height)
 
 
 def list_edges(head: XNode) -> list[dict]:
@@ -234,7 +249,7 @@ def _sync_active_rects(machine: Machine, y: int) -> list[dict]:
             _delete_node(machine, start_key, changes)
             _delete_node(machine, stop_key, changes)
             continue
-        left, right = (_clamp(_round(p), 0, WIDTH) for p in span)
+        left, right = (_clamp(_round(p), 0, machine.width) for p in span)
         if right <= left:
             _delete_node(machine, start_key, changes)
             _delete_node(machine, stop_key, changes)
@@ -266,13 +281,13 @@ def _sync_active_texts(machine: Machine, y: int) -> list[dict]:
             if y >= spec['y'] + spec['h']:
                 finished.append(text_id)
             continue
-        left = _clamp(spec['x'], 0, WIDTH)
-        right = _clamp(spec['x'] + spec['w'], 0, WIDTH)
+        left = _clamp(spec['x'], 0, machine.width)
+        right = _clamp(spec['x'] + spec['w'], 0, machine.width)
         if left >= right:
             _delete_node(machine, start_key, changes)
             _delete_node(machine, stop_key, changes)
             continue
-        machine.text_masks[text_id] = source.scanline_bits(y, WIDTH)
+        machine.text_masks[text_id] = source.scanline_bits(y, machine.width)
         _sync_node(machine, start_key, XNode(start_key, left, spec['layer'], 1,
                    text_id, op='START_MASK', buffer_ptr=spec['buffer_ptr']), changes)
         _sync_node(machine, stop_key, XNode(stop_key, right, spec['layer'], -1,
@@ -283,7 +298,8 @@ def _sync_active_texts(machine: Machine, y: int) -> list[dict]:
     return changes
 
 
-def render_row(head: XNode, text_masks: dict[int, int] | None = None) -> tuple[bytearray, int]:
+def render_row(head: XNode, text_masks: dict[int, int] | None = None,
+               width: int = WIDTH) -> tuple[bytearray, int]:
     """Execute a mixed PAINT/MASK X list into palette-layer indices.
 
     Rectangles contribute constant opacity to their layer. Active text mask
@@ -294,7 +310,7 @@ def render_row(head: XNode, text_masks: dict[int, int] | None = None) -> tuple[b
     text_masks = {} if text_masks is None else text_masks
     counts = [0] * LAYERS
     mask_sources: dict[int, set[int]] = {}
-    row = bytearray(WIDTH)
+    row = bytearray(width)
     node = head.next
     events = top = x = 0
 
@@ -318,7 +334,7 @@ def render_row(head: XNode, text_masks: dict[int, int] | None = None) -> tuple[b
         else:
             raise ValueError(f'Unknown X opcode {edge.op}')
 
-    while x < WIDTH:
+    while x < width:
         if node is not None and node.x <= x:
             while node is not None and node.x <= x:
                 apply(node, x)
@@ -326,7 +342,7 @@ def render_row(head: XNode, text_masks: dict[int, int] | None = None) -> tuple[b
                 events += 1
             top = next((layer for layer in range(LAYERS - 1, 0, -1)
                         if counts[layer] > 0), 0)
-        stop = min(node.x, WIDTH) if node is not None else WIDTH
+        stop = min(node.x, width) if node is not None else width
         if stop <= x:
             raise ValueError('X list is not sorted')
         higher_masks = [(layer, tuple(text_masks.get(text_id, 0) for text_id in ids))
@@ -354,8 +370,8 @@ def render_row(head: XNode, text_masks: dict[int, int] | None = None) -> tuple[b
                             break
                     row[pixel] = layer_at_pixel
         x = stop
-    while node is not None and node.x == WIDTH:
-        apply(node, WIDTH)
+    while node is not None and node.x == width:
+        apply(node, width)
         node = node.next
         events += 1
     if node is not None:
@@ -369,10 +385,11 @@ def render_row(head: XNode, text_masks: dict[int, int] | None = None) -> tuple[b
 
 
 def compile_y(scene: dict) -> list[dict]:
+    _, height = canvas_size(scene)
     buckets: dict[int, list[dict]] = {}
 
     def push(y: int, instruction: dict) -> None:
-        if 0 <= y < HEIGHT:
+        if 0 <= y < height:
             buckets.setdefault(y, []).append(instruction)
 
     for shape in scene.get('shapes', []):
@@ -385,7 +402,7 @@ def compile_y(scene: dict) -> list[dict]:
             push(spec['y'], dict(op='TEXT', text=spec))
     for event in scene.get('paletteEvents', []):
         y, layer = _round(event.get('y')), _round(event.get('layer'))
-        if 0 <= y < HEIGHT and 0 <= layer < LAYERS:
+        if 0 <= y < height and 0 <= layer < LAYERS:
             push(y, dict(op='SET_PALETTE', layer=layer, color=event.get('color')))
     program = []
     for y in sorted(buckets):
@@ -396,7 +413,7 @@ def compile_y(scene: dict) -> list[dict]:
             else entry['text']['id'] if entry['op'] == 'TEXT'
             else entry['layer']))
         program.extend(ins)
-    program.extend([dict(op='WAIT_Y', y=HEIGHT), dict(op='HALT')])
+    program.extend([dict(op='WAIT_Y', y=height), dict(op='HALT')])
     return program
 
 
@@ -456,10 +473,10 @@ def iter_scanlines(scene: dict, program: list[dict] | None = None) -> Iterator[d
     if program is None:
         program = compile_y(scene)
     machine = make_machine(scene, program)
-    for y in range(HEIGHT):
+    for y in range(machine.height):
         step = advance_y(machine, y)
         edges = list_edges(machine.head)
-        row, events = render_row(machine.head, machine.text_masks)
+        row, events = render_row(machine.head, machine.text_masks, machine.width)
         yield dict(y=y, row=row, edges=edges, palette=list(machine.palette),
                    events=events, edits=len(step['changes']), **step)
 
@@ -481,12 +498,13 @@ rasterize = compile
 
 def reference_row(scene: dict, y: int) -> bytearray:
     """Independent geometry-only reference, for exact pixel tests."""
-    row = bytearray(WIDTH)
+    width, _ = canvas_size(scene)
+    row = bytearray(width)
     for raw in scene.get('shapes', []):
         span = _span_for_rect(normalize_rect(raw), y)
         if span is None:
             continue
-        left, right = (_clamp(_round(p), 0, WIDTH) for p in span)
+        left, right = (_clamp(_round(p), 0, width) for p in span)
         if left < right:
             layer = _clamp(_round(raw.get('layer')), 1, LAYERS - 1)
             for x in range(left, right):

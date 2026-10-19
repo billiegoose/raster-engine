@@ -1,6 +1,6 @@
 /* Workspace controller: native local scene files and an independent simulator. */
-import {blankScene} from './scene.js';
-import {editableScene} from './scene-model.js';
+import {blankScene,canvasSize} from './scene.js';
+import {editableScene,setCanvasSize} from './scene-model.js';
 import {createSceneEditor} from './scene-editor.js';
 import {createSceneHistory} from './scene-history.js';
 import {createRasterSimulator} from './raster-simulator.js';
@@ -18,6 +18,19 @@ const newButton=$('scene-new'),saveButton=$('scene-save');
 const saveAsButton=$('scene-save-as'),refreshButton=$('scene-refresh');
 const saveAsDialog=$('scene-save-as-dialog'),saveAsName=$('scene-save-as-name');
 const saveAsConfirm=$('scene-save-as-confirm');
+const resolutionPicker=$('scene-resolution');
+function syncResolutionUI(){
+  const {width,height}=canvasSize(scene);
+  const value=`${width}x${height}`;
+  for(const item of [...resolutionPicker.options])if(item.dataset.custom==='true')item.remove();
+  if(![...resolutionPicker.options].some(item=>item.value===value)){
+    const custom=new Option(`Custom · ${width} × ${height}`,value);
+    custom.dataset.custom='true';
+    resolutionPicker.add(custom);
+  }
+  resolutionPicker.value=value;
+  $('scene-size-heading').textContent=`RASTER ENGINE / ${width} × ${height}`;
+}
 
 function sceneStatus(message,kind='info'){
   $('scene-file-status').textContent=message;
@@ -34,6 +47,7 @@ function sceneChanged(){
   sceneRevision++;
   sceneDirty=snapshot()!==savedSnapshot;
   simulator.markDirty();
+  syncResolutionUI();
   sceneStatus(sceneDirty?`Unsaved changes · ${savedName?savedName+'.json':'Untitled'}`:
     (savedName?`${savedName}.json · saved`:'Untitled · not saved'),sceneDirty?'dirty':'info');
 }
@@ -62,6 +76,7 @@ function newScene(){
   history.reset();
   editor.clearSelection();
   simulator.markDirty();
+  syncResolutionUI();
   syncFileUI();
   sceneStatus('Untitled · not saved');
   return true;
@@ -88,6 +103,7 @@ async function loadScene(name){
     history.reset();
     editor.clearSelection();
     simulator.markDirty();
+    syncResolutionUI();
     sceneStatus(`Opened ${savedName}.json`);
   }catch(error){sceneStatus('Open failed: '+error.message,'error');}
   finally{setSceneFileBusy(false);}
@@ -152,6 +168,11 @@ editor=createSceneEditor({getScene,history,onSimulate(){setMode('simulator');}})
 const simulator=createRasterSimulator({getScene,onEditor:()=>setMode('editor')});
 editor.setOnTextInput(sceneChanged);
 
+resolutionPicker.addEventListener('change',()=>{
+  const [width,height]=resolutionPicker.value.split('x').map(Number);
+  if(history.transaction(()=>setCanvasSize(scene,width,height)))editor.render();
+  syncResolutionUI();
+});
 newButton.addEventListener('click',newScene);
 saveButton.addEventListener('click',saveScene);
 saveAsButton.addEventListener('click',openSaveAs);
@@ -187,4 +208,5 @@ refreshButton.addEventListener('click',async()=>{
 void refreshScenes().catch(error=>sceneStatus('Unable to list scenes: '+error.message,'error'));
 $('mode-editor').addEventListener('click',()=>setMode('editor'));
 $('mode-simulator').addEventListener('click',()=>setMode('simulator'));
+syncResolutionUI();
 setMode('editor');

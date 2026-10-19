@@ -1,6 +1,6 @@
 /* Raster simulator. Runs a selected reference backend and inspects the exact
    Y/X execution trace. Does not mutate scene objects or implement editing. */
-import {WIDTH,HEIGHT,LAYERS} from './scene.js';
+import {LAYERS,canvasSize} from './scene.js';
 import {paletteView} from './palette-view.js';
 import {compileScene} from './scene-model.js';
 
@@ -25,6 +25,8 @@ export function createRasterSimulator({getScene,onEditor}){
   let result=null,selectedY=330,runGeneration=0,revision=0,renderedRevision=-1;
   let playing=false,timer=null,imageData=null,timelineImage=null,loaded=false;
   const backend=$('backend');
+  const width=()=>result?.width??canvasSize(getScene()).width;
+  const height=()=>result?.height??canvasSize(getScene()).height;
 
   async function loadBackends(){
     if(loaded)return;
@@ -55,17 +57,18 @@ export function createRasterSimulator({getScene,onEditor}){
     if(!result||!imageData)return;
     ctx.putImageData(imageData,0,0);
     ctx.fillStyle='rgba(255,255,255,.8)';
-    ctx.fillRect(0,selectedY,WIDTH,1);
+    ctx.fillRect(0,selectedY,width(),1);
     if(timelineImage)timelineCtx.putImageData(timelineImage,0,0);
     timelineCtx.fillStyle='#ffffff';
-    timelineCtx.fillRect(0,Math.floor(selectedY*timeline.height/HEIGHT),timeline.width,1);
+    timelineCtx.fillRect(0,Math.floor(selectedY*timeline.height/height()),timeline.width,1);
     $('yvalue').textContent=selectedY;
     $('scanline').value=String(selectedY);
   }
 
   function buildPixels(){
     if(!result)return;
-    const image=ctx.createImageData(WIDTH,HEIGHT);
+    const {width:rasterWidth,height:rasterHeight}=result;
+    const image=ctx.createImageData(rasterWidth,rasterHeight);
     const colors=new Map();
     const rgb=hex=>{
       if(!colors.has(hex)){
@@ -76,10 +79,10 @@ export function createRasterSimulator({getScene,onEditor}){
     };
     for(const scanline of result.scanlines){
       const y=scanline.y;
-      if(y<0||y>=HEIGHT)continue;
-      for(let x=0;x<WIDTH;x++){
+      if(y<0||y>=rasterHeight)continue;
+      for(let x=0;x<rasterWidth;x++){
         const [r,g,b]=rgb(scanline.palette[scanline.row[x]]);
-        const i=(y*WIDTH+x)*4;
+        const i=(y*rasterWidth+x)*4;
         image.data[i]=r;image.data[i+1]=g;image.data[i+2]=b;image.data[i+3]=255;
       }
     }
@@ -90,10 +93,10 @@ export function createRasterSimulator({getScene,onEditor}){
     const tctx=off.getContext('2d');
     tctx.fillStyle='#0b1420';tctx.fillRect(0,0,tw,th);
     for(const scanline of result.scanlines){
-      const py=Math.floor(scanline.y*th/HEIGHT);
+      const py=Math.floor(scanline.y*th/rasterHeight);
       for(const edge of scanline.edges){
         tctx.fillStyle=edge.op?'#cc8be6':'#6dc6d0';
-        tctx.fillRect(Math.floor(edge.x*tw/WIDTH),py,1,1);
+        tctx.fillRect(Math.floor(edge.x*tw/rasterWidth),py,1,1);
       }
       if(scanline.edits){
         tctx.fillStyle='#efb55c';
@@ -132,7 +135,7 @@ export function createRasterSimulator({getScene,onEditor}){
   }
 
   function changeY(y){
-    selectedY=clamp(Math.round(Number(y)||0),0,HEIGHT-1);
+    selectedY=clamp(Math.round(Number(y)||0),0,height()-1);
     drawRaster();inspect();
   }
 
@@ -162,6 +165,11 @@ export function createRasterSimulator({getScene,onEditor}){
       if(!response.ok)throw Error(data.error||`HTTP ${response.status}`);
       if(generation!==runGeneration||thisRevision!==revision)return;
       result=data;
+      screen.width=data.width;
+      screen.height=data.height;
+      timeline.width=data.width;
+      selectedY=clamp(selectedY,0,data.height-1);
+      $('scanline').max=String(data.height-1);
       renderedRevision=thisRevision;
       $('simulation-dirty').hidden=true;
       buildPixels();drawRaster();inspect();
@@ -169,7 +177,7 @@ export function createRasterSimulator({getScene,onEditor}){
     }catch(error){
       if(generation!==runGeneration||thisRevision!==revision)return;
       result=null;imageData=null;timelineImage=null;
-      ctx.clearRect(0,0,WIDTH,HEIGHT);
+      ctx.clearRect(0,0,width(),height());
       timelineCtx.clearRect(0,0,timeline.width,timeline.height);
       $('stats').textContent=`ERROR: ${error.message}`;
       $('rowstats').textContent='No simulation result';
@@ -195,14 +203,14 @@ export function createRasterSimulator({getScene,onEditor}){
     if(playing){pause();return;}
     playing=true;
     $('play').textContent='❚❚ Pause';
-    timer=setInterval(()=>changeY((selectedY+1)%HEIGHT),65);
+    timer=setInterval(()=>changeY((selectedY+1)%height()),65);
   });
   $('back-to-editor').addEventListener('click',()=>onEditor?.());
   $('y-program').addEventListener('click',event=>{
     const el=event.target.closest('[data-program-pc]');
     if(!el||!result)return;
     const instruction=result.program[Number(el.dataset.programPc)];
-    if(instruction?.op==='WAIT_Y')changeY(Math.min(HEIGHT-1,instruction.y));
+    if(instruction?.op==='WAIT_Y')changeY(Math.min(height()-1,instruction.y));
   });
   void loadBackends();
   return {open,markDirty,pause,run,hasResult:()=>!!result};

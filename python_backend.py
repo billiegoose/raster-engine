@@ -9,14 +9,15 @@ No third-party Python packages required.
 
 import json
 import sys
-from engine import WIDTH, HEIGHT, rasterize
+from engine import canvas_size, rasterize
 
 
 def run(payload: dict) -> dict:
+    width, height = canvas_size(payload['scene'])
     result = rasterize(payload['scene'])
     for scanline in result['scanlines']:
         scanline['row'] = list(scanline['row'])
-    return dict(**result, width=WIDTH, height=HEIGHT, backend='python')
+    return dict(**result, width=width, height=height, backend='python')
 
 
 def main() -> None:
