@@ -114,11 +114,14 @@ and positions. New scenes default to 720p, while old JSON files without
 `width`/`height` are read as 720p for backward compatibility. The reference
 backends also accept positive integer custom dimensions up to 1920 × 1080.
 
-The included `amber-components.json` showcase uses **1920 × 1080**; its original
-component designs retain their native pixel geometry, while the surrounding
-header, navigation frame, and footer extend to full HD. The added space is
-available for more component examples. `amber-os.json`, Paint, and other older
-scene files continue to use 720p unless resized in the editor.
+The included `amber-components.json` showcase uses **1920 × 1080** with a
+semantic palette legend and four aligned columns of vertically stacked examples:
+**Buttons**, **Text Fields**, **Choices** (checkboxes, radio buttons and switches),
+and **Values** (progress and volume). Controls remain at their native pixel
+sizes, with no image scaling. The sidebar documents the four palette roles and hardware renderer primitives
+rather than repeating the column titles or pretending to be app navigation.
+`amber-os.json`, Paint, and other older scene files continue to use 720p unless
+resized in the editor.
 
 ## Local scene files
 

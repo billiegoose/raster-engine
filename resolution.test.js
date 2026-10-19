@@ -98,17 +98,42 @@ test('scene validation uses the saved canvas height for palette events',()=>{
   }
 });
 
-test('Amber components showcase is 1080p without scaling its existing controls',()=>{
+test('Amber component atlas uses native 1080p pixels and four aligned vertical columns',()=>{
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
   expect(validateScene(scene)).toBe(scene);
   expect(canvasSize(scene)).toEqual({width:1920,height:1080});
-  expect(scene.shapes).toHaveLength(53);
-  expect(scene.texts).toHaveLength(35);
-  const input=scene.shapes.find(shape=>shape.id===50);
-  expect([input.x,input.y,input.w,input.h]).toEqual([785,153,455,40]);
-  expect(scene.shapes.find(shape=>shape.id===1).w).toBe(1920);
-  const text=scene.texts.find(t=>t.id===9);
-  expect(scene.textBuffers[String(text.buffer_ptr)]).toBe('RED2 / 1080P');
-  expect(text.y).toBe(1045);
+  expect(scene.shapes).toHaveLength(60);
+  expect(scene.texts).toHaveLength(36);
+  const shapes=new Map(scene.shapes.map(o=>[o.id,o]));
+  const texts=new Map(scene.texts.map(o=>[o.id,o]));
+  const label=id=>scene.textBuffers[String(texts.get(id).buffer_ptr)];
+  const columns=[265,675,1085,1495];
+  expect([25,46,61,96].map(id=>shapes.get(id).x)).toEqual(columns);
+  expect([25,46,61,96].map(id=>shapes.get(id).w)).toEqual([390,390,390,390]);
+  expect([27,48,63,99].map(label)).toEqual(['BUTTONS','TEXT FIELDS','CHOICES','VALUES']);
+  expect([29,31,34,37].map(id=>[shapes.get(id).x,shapes.get(id).y,shapes.get(id).w]))
+    .toEqual([[285,168,350],[285,298,350],[285,428,350],[285,558,350]]);
+  expect([30,33,36,39].map(label)).toEqual(['PRIMARY','STANDARD','INACTIVE','ALERT']);
+  expect([50,53,57].map(id=>[shapes.get(id).x,shapes.get(id).y,shapes.get(id).w]))
+    .toEqual([[695,168,350],[695,298,350],[695,428,350]]);
+  expect([52,55,59].map(label)).toEqual(['INACTIVE','STANDARD','REQUIRED']);
+  expect([85,40,76,79,89,93].map(id=>shapes.get(id).y))
+    .toEqual([170,300,430,560,690,820]);
+  expect([75,42,78,81,88,92].map(label))
+    .toEqual(['CHECKED','UNCHECKED','SELECTED','UNSELECTED','OFF','ON']);
+  expect([texts.get(45).x,texts.get(45).y,label(45)]).toEqual([1110,632,'TOGGLES']);
+  expect([13,17,15,18,19].map(label)).toEqual(['PALETTE','BASE','DIM','PRIMARY','ALERT']);
+  expect([100,101,102,103].map(id=>shapes.get(id).layerId))
+    .toEqual(['layer-7','layer-3','layer-6','layer-9']);
+  expect([20,22,23,24].map(label)).toEqual(['RENDERER','RECTANGLES','TEXT MASKS','64 LAYERS']);
+  for(const obj of [...scene.shapes,...scene.texts]){
+    expect(obj.x).toBeGreaterThanOrEqual(0);
+    expect(obj.y).toBeGreaterThanOrEqual(0);
+    expect(obj.x+obj.w).toBeLessThanOrEqual(1920);
+    expect(obj.y+obj.h).toBeLessThanOrEqual(1080);
+  }
+  expect(shapes.get(1).w).toBe(1920);
+  expect(label(9)).toBe('RED2 / 1080P');
+  expect(texts.get(9).y).toBe(1045);
   expect(compileScene(scene)).toMatchObject({width:1920,height:1080});
 });
