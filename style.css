@@ -68,7 +68,7 @@ p { line-height: 1.65; color: #a7bad0; }
 .mode-button.active:hover { background: #a1e9d8; }
 .dirty-dot { color: #f3bb73; font-size: 10px; }
 
-main { width: 100%; max-width: 1800px; margin: 0 auto; padding: 20px 24px 48px; }
+main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; }
 .workspace { min-width: 0; }
 .workspace-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 2px 0 17px; flex-wrap: wrap; }
 .workspace-toolbar-right, .header-actions, .transport { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
@@ -105,13 +105,19 @@ main { width: 100%; max-width: 1800px; margin: 0 auto; padding: 20px 24px 48px; 
 /* Editor and simulator use native scene-resolution CSS pixels. Narrow viewports
    scroll horizontally instead of scaling glyphs or rounding pixel positions. */
 .editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 348px; align-items: start; gap: 17px; }
-/* Preserve native pixels: stack the sidebar before the canvas gets squeezed. */
+/* Keep a native-width canvas beside its sidebar whenever both fit.
+   The 1080p scene needs more horizontal room than a legacy 720p scene. */
 @media (max-width: 1780px) {
   .editor-layout { grid-template-columns: minmax(0, 1fr); }
-  .editor-sidebar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-@media (max-width: 850px) {
-  .editor-sidebar { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1781px) and (max-width: 2400px) {
+  .editor-layout[data-canvas-width="1920"] { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1780px) {
+  .editor-sidebar { width: min(100%, 520px); }
+}
+@media (min-width: 1781px) and (max-width: 2400px) {
+  .editor-layout[data-canvas-width="1920"] .editor-sidebar { width: min(100%, 520px); }
 }
 .editor-canvas-panel { min-width: 0; }
 .editor-canvas-scroll {
@@ -175,15 +181,25 @@ main { width: 100%; max-width: 1800px; margin: 0 auto; padding: 20px 24px 48px; 
   pointer-events: auto;
 }
 .editor-help { color: #899eb4; font-size: 10px; line-height: 1.7; padding-top: 12px; }
-.editor-sidebar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+/* The inspector stays within one viewport (or the native canvas height,
+   whichever is smaller). Objects consume the remaining vertical space. */
+.editor-sidebar {
+  display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 0;
+  height: min(calc(var(--canvas-height, 720px) + 72px), calc(100dvh - 24px));
+  position: sticky; top: 12px;
+}
+.object-list-panel { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
+.object-list-panel .panel-heading, .object-filter-row { flex: 0 0 auto; }
+.properties-panel { flex: 0 1 auto; max-height: 45%; overflow-y: auto; }
+.palette-events-panel { flex: 0 0 auto; }
 .object-filter-row { margin-bottom: 9px; }
 /* Flat, compact layers: only horizontal rules separate layers. The panel
    supplies the outer border; tiles do not each require another box. */
 .layer-show-empty { display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
   font-size: 11px; color: var(--muted); cursor: pointer; }
 .layer-show-empty input { width: auto; margin: 0; accent-color: var(--accent); }
-.object-list { display: flex; flex-direction: column; gap: 0; overflow: auto;
-  max-height: 520px; padding: 0 3px 0 0; }
+.object-list { display: block; flex: 1 1 0; min-height: 0; overflow: auto;
+  max-height: none; padding: 0 3px 0 0; }
 .layer-section { position: relative; border: 0; border-bottom: 1px solid #304255;
   border-radius: 0; background: transparent; min-width: 0; }
 .layer-section:first-child { border-top: 1px solid #304255; }
@@ -319,8 +335,7 @@ main { width: 100%; max-width: 1800px; margin: 0 auto; padding: 20px 24px 48px; 
 
 @media(max-width: 1100px) {
   .editor-layout { grid-template-columns: minmax(0, 1fr); }
-  .editor-sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .palette-events-panel { grid-column: 1 / -1; }
+
   .program-columns { grid-template-columns: minmax(0, 1fr) minmax(220px, .75fr); }
   .program-columns > .program-pane:first-child { grid-column: 1 / -1; }
 }
@@ -330,9 +345,8 @@ main { width: 100%; max-width: 1800px; margin: 0 auto; padding: 20px 24px 48px; 
   .mode-button { flex: 1; padding: 10px 7px; }
   main { padding: 15px 12px 35px; }
   .panel { padding: 12px; }
-  .editor-sidebar, .program-columns { grid-template-columns: minmax(0, 1fr); }
-  .palette-events-panel, .program-columns > .program-pane:first-child { grid-column: auto; }
-  .object-list { max-height: 320px; }
+  .program-columns { grid-template-columns: minmax(0, 1fr); }
+  .program-columns > .program-pane:first-child { grid-column: auto; }
   .program-list, .palette-grid { height: 280px; }
   .workspace-toolbar { align-items: start; }
   .workspace-toolbar-right { width: 100%; justify-content: space-between; }

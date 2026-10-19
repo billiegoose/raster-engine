@@ -51,6 +51,9 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const data=scene(),active=selected();
     const {width,height}=canvasSize(data);
     const shell=$('editor-canvas-shell');
+    const layout=stage.closest('.editor-layout');
+    layout.dataset.canvasWidth=String(width);
+    layout.style.setProperty('--canvas-height',`${height}px`);
     shell.style.width=`${width}px`;
     shell.style.height=`${height}px`;
     stage.style.width=`${width}px`;
