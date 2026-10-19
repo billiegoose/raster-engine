@@ -61,28 +61,35 @@ The browser has two distinct workspaces that share one editable JSON scene:
 - **Scene editor:** A native-resolution 720p or 1080p visual editor built from DOM
   rectangles and clipped text. The canvas scrolls in narrower windows rather
   than scaling the artwork or font. Select objects on the canvas or from
-  preview tiles in the searchable layer tree. Each drawing layer has a persistent
-  name, color, and stable ID; an unnamed layer has a placeholder rather than a
-  numeric heading or an object-count label. Use **+ Layer** to add a drawing
-  layer and **+ Group** to add a folder. Groups can contain drawing layers and
-  nested groups, and have inline **+L** and **+G** controls for adding children.
-  Expand or collapse folders and layers with their chevrons. Drag a layer or
-  group by its grip: drop before or after another node to reorder, or onto a
-  folder to move a whole subtree into it. Drag object tiles onto drawing layers
-  to move objects without changing their geometry. The × button deletes a
-  layer or an entire folder subtree, including its objects and scanline palette
-  events; deletion of nonempty content requires confirmation. The background
-  cannot be moved or deleted. Tree changes support undo and redo.
+  the independent, searchable **Objects** hierarchy. Objects can be nested
+  arbitrarily inside named folders without changing their paint layer. Use
+  **+ Folder** or **+F** on an existing folder to build a hierarchy; drag
+  rectangles, text, or nested folders onto a folder to reparent them, or onto
+  the root drop target to move them out. Selecting a folder selects all its
+  descendant objects, including primitives on different paint layers. Its
+  Properties inspector can translate all those objects together. Removing
+  a folder promotes its children instead of deleting the artwork. Group and
+  Ungroup commands are no longer part of the editor.
 
-  Scenes store their tree as a bottom-to-top preorder `layers` array. Folders
-  have `kind: "group"` and optional `parentId` references; drawing layers retain
-  `id`, `name`, `color` and optional `parentId`. Objects and palette events
-  refer to stable drawing-layer IDs. Folders are organizational only: at most
-  64 drawing layers, including the background, receive physical palette slots
-  when the scene is compiled for simulation. Up to 256 total tree nodes are
-  supported. Existing numbered-layer scenes are migrated when opened. Newly
-  inserted rectangles and text use the most recently selected drawing layer,
-  even after deselection, or the topmost drawing layer if it no longer exists.
+  The separate **Palette / Layers** inspector manages paint order and layer
+  names/colors. Drag layers to reorder physical palette slots (the background
+  remains at the bottom); use the inline color picker to edit a layer's color.
+  The selected object's **Properties** panel assigns its paint layer with a
+  named dropdown, not a color picker. A multi-selection can also be reassigned
+  together. Removing a paint layer reassigns its objects and palette overrides
+  to an adjacent layer rather than deleting them. Advanced scanline palette
+  overrides remain in this inspector.
+
+  Scenes persist independent `objectFolders` (each with `id`, `name` and an
+  optional `parentId`) and object `parentId` references. Paint layers remain
+  a flat, bottom-to-top `layers` array with stable `id`, `name` and `color`;
+  object `layerId` references do not depend on composition. At most 64 paint
+  layers, including background, compile to physical palette slots. These
+  folders do not consume any slots or appear in the rasterized representation.
+  Legacy paint-layer folder structures are flattened on open, preserving
+  their layer ordering and colors; legacy `group_id` object memberships are
+  imported as independent object folders. The raster output is unchanged.
+  All editing operations participate in undo/redo.
 
 The DOM canvas is an **editing approximation**: it uses CSS rounded corners
 and RED2's own OpenType web font (32px artwork scale, 36px line height, with

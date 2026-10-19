@@ -383,3 +383,47 @@ button:disabled:hover { background: #22354a; border-color: #3c526d; }
    of shrinking, preserving accurate pointer coordinates and sharp font pixels. */
 .scene-resolution-select {display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;color:#a7bad0;}
 .scene-resolution-select select {min-height:35px;width:auto;min-width:165px;}
+
+/* Composition and paint are separate inspector workspaces. Neither hierarchy
+   determines the other; only the paint palette has hardware ordering. */
+.editor-inspector-tabs { display: flex; gap: 5px; flex: 0 0 auto; }
+.editor-inspector-tabs button { flex: 1; font-size: 12px; padding: 9px 5px; }
+.editor-inspector-tabs button.active { color: #0c1922; border-color: var(--accent); background: var(--accent); }
+.editor-inspector-pane { display: flex; flex: 1 1 0; flex-direction: column; gap: 14px; min-height: 0; }
+.editor-inspector-pane[hidden] { display: none; }
+#add-folder { font-size: 11px; padding: 5px 9px; }
+.palette-layer-panel { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
+.palette-layer-panel > p { font-size: 11px; line-height: 1.5; margin: 6px 0 12px; }
+.palette-layer-list { flex: 1 1 0; min-height: 0; overflow: auto; }
+.palette-layer-row { display: flex; gap: 7px; align-items: center; padding: 5px 2px; border-bottom: 1px solid #304255; }
+.palette-layer-row .layer-name { flex: 1 1 50px; }
+.palette-layer-row .palette-number { flex: 0 0 22px; text-align: right; font-size: 10px; color: var(--muted); }
+.object-folder { border-left: 1px solid #41566b; margin-left: 4px; }
+.object-folder-header { display: flex; align-items: center; gap: 5px; padding: 5px; background: #1b3445; }
+.object-folder-header button { font-size: 11px; padding: 4px 5px; }
+.object-folder-header .folder-title { flex: 1; min-width: 0; padding: 4px 3px; color: #e7edf5; background: transparent; border: 1px solid transparent; }
+.object-folder-header .folder-title:focus { border-color: var(--accent); background: #101d2c; }
+.object-folder-contents { margin-left: 13px; padding-left: 7px; border-left: 1px solid #41566b; }
+.object-folder-contents[hidden] { display: none; }
+.object-row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 35px; padding: 3px 6px; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 3px; }
+.object-row:hover { background: #1c3444; border-color: #587a90; }
+.object-row.is-selected { background: #21515a; border-color: #f9ce7f; }
+.object-row .object-tile-preview { flex: 0 0 44px; width: 44px; height: 30px; }
+.object-row .object-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.object-row .object-paint-name { font-size: 9px; color: var(--muted); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.object-paint-swatch { flex: 0 0 12px; width: 12px; height: 12px; border: 1px solid #6f8498; border-radius: 2px; }
+.object-root-drop { border: 1px dashed #41566b; color: #91abc2; font-size: 10px; padding: 9px; margin: 8px 4px; text-align: center; border-radius: 3px; }
+.object-folder.is-drop-target > .object-folder-header, .object-root-drop.is-drop-target { background: #244d4a; outline: 2px solid var(--gold); }
+.object-folder-header.is-selected { background: #21515a; }
+.object-folder-header[draggable], .object-row[draggable] { cursor: grab; }
+.object-folder-header[draggable]:active, .object-row[draggable]:active { cursor: grabbing; }
+.property-color-chip { display: inline-block; width: 14px; height: 14px; border: 1px solid #708498; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+
+.palette-layer-row { position: relative; }
+.palette-layer-row[data-layer-insert=above]::before,
+.palette-layer-row[data-layer-insert=below]::after {
+  content: ''; position: absolute; left: 2px; right: 2px; height: 3px;
+  background: var(--gold); z-index: 6; pointer-events: none;
+}
+.palette-layer-row[data-layer-insert=above]::before { top: -2px; }
+.palette-layer-row[data-layer-insert=below]::after { bottom: -2px; }

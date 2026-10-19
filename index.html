@@ -18,8 +18,8 @@
     <symbol id="tool-icon-paste" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 5V3h6v2M9 12h6M9 16h6"/></symbol>
     <symbol id="tool-icon-duplicate" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2M14 11v6m-3-3h6"/></symbol>
     <symbol id="tool-icon-delete" viewBox="0 0 24 24"><path d="M3 6h18m-2 0-1 14H6L5 6M9 6V4h6v2M10 10v7m4-7v7"/></symbol>
-    <symbol id="tool-icon-group" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M4 8V4h4M16 4h4v4M4 16v4h4m8 0h4v-4"/></symbol>
-    <symbol id="tool-icon-ungroup" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M4 8V4h4M16 4h4v4M4 16v4h4m8 0h4v-4M3 21 21 3"/></symbol>
+
+
     <symbol id="tool-icon-align" viewBox="0 0 24 24"><path d="M4 4v16M8 7h13M8 12h8M8 17h11"/></symbol>
     <symbol id="tool-icon-distribute" viewBox="0 0 24 24"><path d="M4 4v16M20 4v16M8 8h8M8 12h8M8 16h8"/></symbol>
     <symbol id="tool-icon-simulate" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></symbol>
@@ -85,8 +85,6 @@
           <button id="delete-objects" type="button" title="Delete selection" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-delete"></use></svg> Delete</button>
         </div>
         <div class="tool-cluster">
-          <button id="group-objects" type="button" title="Group (Ctrl/Cmd+G)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-group"></use></svg> Group</button>
-          <button id="ungroup-objects" type="button" title="Ungroup (Ctrl/Cmd+Shift+G)" disabled><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-ungroup"></use></svg> Ungroup</button>
           <label class="tool-select"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-align"></use></svg><select id="align-objects" aria-label="Align selected objects" disabled>
             <option value="">Align…</option><option value="left">Left</option>
             <option value="center">Center</option><option value="right">Right</option>
@@ -115,25 +113,36 @@
           </div>
         </section>
         <aside class="editor-sidebar">
-          <section class="panel object-list-panel" aria-label="Scene objects">
-            <div class="panel-heading">
-              <h2>Objects</h2><button id="add-layer" type="button" class="secondary" title="Add drawing layer (64 maximum)">+ Layer</button><button id="add-group" type="button" class="secondary" title="Add group of layers">+ Group</button><span id="object-count"></span>
-            </div>
-            <div class="object-filter-row"><input id="object-filter" type="search" placeholder="Find text, type, or layer…" aria-label="Filter scene objects"></div>
-            <div id="object-list" class="object-list" role="tree" aria-label="Layer and folder tree"></div>
-          </section>
-          <section class="panel properties-panel" aria-label="Selected object properties">
-            <div class="panel-heading"><h2>Properties</h2><span id="selection-summary" class="muted"></span></div>
-            <div id="object-properties"><p class="empty">Select a rectangle or text object on the canvas or in the object list.</p></div>
-          </section>
-          <section class="panel palette-events-panel" aria-label="Scanline palette changes">
-            <details>
-              <summary>Advanced · Scanline palette overrides (<span id="palette-event-count"></span>)</summary>
-              <p class="muted">Override any layer's color starting at a scanline.</p>
-              <div id="paletteEvents"></div>
-              <button id="addPalette" type="button" class="secondary">+ Palette event</button>
-            </details>
-          </section>
+          <div class="editor-inspector-tabs" role="tablist" aria-label="Editor inspector">
+            <button id="show-objects" type="button" role="tab" aria-selected="true" aria-controls="objects-pane" class="active">Objects</button>
+            <button id="show-palette" type="button" role="tab" aria-selected="false" aria-controls="palette-pane">Palette / Layers</button>
+          </div>
+          <div id="objects-pane" class="editor-inspector-pane" role="tabpanel" aria-labelledby="show-objects">
+            <section class="panel object-list-panel" aria-label="Scene objects">
+              <div class="panel-heading"><h2>Objects</h2><button id="add-folder" type="button" class="secondary">+ Folder</button><span id="object-count"></span></div>
+              <div class="object-filter-row"><input id="object-filter" type="search" placeholder="Find objects or folders…" aria-label="Filter scene objects"></div>
+              <div id="object-list" class="object-list" role="tree" aria-label="Object and folder hierarchy"></div>
+            </section>
+            <section class="panel properties-panel" aria-label="Selected object properties">
+              <div class="panel-heading"><h2>Properties</h2><span id="selection-summary" class="muted"></span></div>
+              <div id="object-properties"><p class="empty">Select a rectangle or text object on the canvas or in the object list.</p></div>
+            </section>
+          </div>
+          <div id="palette-pane" class="editor-inspector-pane" role="tabpanel" aria-labelledby="show-palette" hidden>
+            <section class="panel palette-layer-panel" aria-label="Palette layer editor">
+              <div class="panel-heading"><h2>Paint layers</h2><button id="add-layer" type="button" class="secondary">+ Layer</button><span id="palette-layer-count" class="muted"></span></div>
+              <p class="muted">Ordered bottom-to-top for painting. Drag to reorder; names and colors are shared by all objects assigned to a layer.</p>
+              <div id="palette-layer-list" class="palette-layer-list" aria-label="Ordered paint layers"></div>
+            </section>
+            <section class="panel palette-events-panel" aria-label="Scanline palette changes">
+              <details>
+                <summary>Advanced · Scanline palette overrides (<span id="palette-event-count"></span>)</summary>
+                <p class="muted">Override any layer's color starting at a scanline.</p>
+                <div id="paletteEvents"></div>
+                <button id="addPalette" type="button" class="secondary">+ Palette event</button>
+              </details>
+            </section>
+          </div>
         </aside>
       </div>
     </section>

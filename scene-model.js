@@ -18,6 +18,7 @@ export function editableScene(scene){
   scene.texts??=[];
   scene.textBuffers??={};
   scene.paletteEvents??=[];
+  scene.objectFolders??=[];
   if(!Array.isArray(scene.layers)){
     // Import the old numbered format without changing saved legacy examples.
     const base=Array.from({length:LAYERS},(_,i)=>i===0?'#101827':'#ffffff');
@@ -173,6 +174,30 @@ export function deleteLayer(scene,id){
   return {objects:objects.length,events};
 }
 
+/** Remove a paint layer without deleting scene objects. Reassign its objects
+ * and palette overrides to an adjacent surviving layer. The background is
+ * permanent and cannot be used for non-background shapes/text. */
+export function removePaintLayer(scene,id){
+  editableScene(scene);
+  if(id==='background'||!getLayer(scene,id))return false;
+  const leaves=drawingLayers(scene);
+  const index=leaves.findIndex(layer=>layer.id===id);
+  if(index<1)return false;
+  let destination=leaves[index+1]??leaves[index-1];
+  if(!destination||destination.id==='background'){
+    destination=addLayer(scene,{name:'Default',color:'#92d0e1',aboveId:id});
+    if(!destination)return false;
+  }
+  for(const {object} of sceneObjects(scene)){
+    if(object.layerId===id)object.layerId=destination.id;
+  }
+  for(const event of scene.paletteEvents){
+    if(event.layerId===id)event.layerId=destination.id;
+  }
+  scene.layers.splice(scene.layers.findIndex(layer=>layer.id===id),1);
+  return true;
+}
+
 /** Move an entire subtree before, after or into another node. Preorder
  * remains contiguous and folders cannot be moved into their own descendants. */
 export function reorderLayer(scene,id,targetId,side='above'){
@@ -225,8 +250,8 @@ export function compileScene(source){
   return {
     ...canvasSize(source),
     palette,
-    shapes:(source.shapes??[]).map(({layerId,...object})=>({...object,layer:physical(layerId)})),
-    texts:(source.texts??[]).map(({layerId,...object})=>({...object,layer:physical(layerId)})),
+    shapes:(source.shapes??[]).map(({layerId,parentId,group_id,...object})=>({...object,layer:physical(layerId)})),
+    texts:(source.texts??[]).map(({layerId,parentId,group_id,...object})=>({...object,layer:physical(layerId)})),
     textBuffers:structuredClone(source.textBuffers??{}),
     paletteEvents:(source.paletteEvents??[]).map(({layerId,...event})=>({...event,layer:physical(layerId)}))
   };
@@ -235,6 +260,120 @@ export function compileScene(source){
 export function getObject(scene,type,id){
   return (type==='rect'?scene.shapes:type==='text'?scene.texts:[])
     ?.find(object=>object.id===id)??null;
+}
+
+// Object folders are an independent composition hierarchy. They NEVER occupy
+// palette slots or change paint order. Object coordinates remain absolute; a
+// folder move simply translates all of its descendant primitives.
+export function objectFolders(scene){return editableScene(scene).objectFolders;}
+export function getObjectFolder(scene,id){return objectFolders(scene).find(f=>f.id===id)??null;}
+const folderRoot=(scene,id)=>{
+  let folder=getObjectFolder(scene,id);
+  const visited=new Set();
+  while(folder?.parentId&& !visited.has(folder.id)){
+    visited.add(folder.id);
+    folder=getObjectFolder(scene,folder.parentId);
+  }
+  return folder?.id??null;
+};
+export function folderDescendants(scene,id){
+  if(!getObjectFolder(scene,id))return new Set();
+  const ids=new Set([id]);
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(const folder of objectFolders(scene)){
+      if(folder.parentId&&ids.has(folder.parentId)&&!ids.has(folder.id)){
+        ids.add(folder.id);changed=true;
+      }
+    }
+  }
+  return ids;
+}
+export function folderMembers(scene,id){
+  const ids=folderDescendants(scene,id);
+  return sceneObjects(scene).filter(({object})=>ids.has(object.parentId))
+    .map(({type,object})=>({type,id:object.id}));
+}
+export function addObjectFolder(scene,{name='New folder',parentId=null}={}){
+  const folders=objectFolders(scene);
+  if(folders.length>=256||(parentId!=null&&!getObjectFolder(scene,parentId)))return null;
+  let n=1;
+  while(folders.some(folder=>folder.id===`folder-${n}`))n++;
+  const folder={id:`folder-${n}`,name:String(name).replace(/[\x00-\x1f\x7f]/g,' ').trim().slice(0,64)};
+  if(parentId!=null)folder.parentId=parentId;
+  folders.push(folder);
+  return folder;
+}
+export function renameObjectFolder(scene,id,name){
+  const folder=getObjectFolder(scene,id);
+  if(!folder)return false;
+  folder.name=String(name??'').replace(/[\x00-\x1f\x7f]/g,' ').trim().slice(0,64);
+  return true;
+}
+export function moveObjectsToFolder(scene,refs,parentId=null){
+  if(parentId!=null&&!getObjectFolder(scene,parentId))return 0;
+  let count=0;
+  for(const ref of refs){
+    const obj=getObject(scene,ref.type,ref.id);
+    if(!obj||(obj.parentId??null)===parentId)continue;
+    if(parentId==null)delete obj.parentId;
+    else obj.parentId=parentId;
+    count++;
+  }
+  return count;
+}
+export function moveObjectFolder(scene,id,parentId=null){
+  const folder=getObjectFolder(scene,id);
+  if(!folder||(folder.parentId??null)===parentId||
+     (parentId!=null&&(!getObjectFolder(scene,parentId)||folderDescendants(scene,id).has(parentId))))return false;
+  if(parentId==null)delete folder.parentId;
+  else folder.parentId=parentId;
+  return true;
+}
+// Deleting a folder keeps its content: promote immediate children to the
+// deleted folder's parent rather than deleting artwork.
+export function deleteObjectFolder(scene,id){
+  const folder=getObjectFolder(scene,id);
+  if(!folder)return false;
+  const parentId=folder.parentId??null;
+  for(const child of objectFolders(scene).filter(child=>child.parentId===id)){
+    if(parentId==null)delete child.parentId;
+    else child.parentId=parentId;
+  }
+  for(const {object} of sceneObjects(scene).filter(({object})=>object.parentId===id)){
+    if(parentId==null)delete object.parentId;
+    else object.parentId=parentId;
+  }
+  scene.objectFolders=scene.objectFolders.filter(item=>item.id!==id);
+  return true;
+}
+export function moveObjectFolderContents(scene,id,dx,dy){
+  const refs=folderMembers(scene,id);
+  for(const ref of refs){
+    const obj=getObject(scene,ref.type,ref.id);
+    moveObject(scene,ref.type,ref.id,obj.x,obj.y,dx,dy);
+  }
+  return refs.length;
+}
+// One-time, lossless import from the former paint-layer folder structure and
+// old Group action. Keep legacy helpers for loading older undo/test fixtures.
+export function prepareObjectEditorScene(scene){
+  editableScene(scene);
+  const paintNodes=scene.layers.filter(node=>node.kind!=='group');
+  if(paintNodes.length!==scene.layers.length||paintNodes.some(node=>node.parentId!=null)){
+    scene.layers=paintNodes.map(({parentId,...node})=>node);
+  }
+  const groups=new Map();
+  for(const {object} of sceneObjects(scene)){
+    if(object.group_id==null)continue;
+    if(!groups.has(object.group_id)){
+      groups.set(object.group_id,addObjectFolder(scene,{name:`Group ${object.group_id}`}));
+    }
+    object.parentId=groups.get(object.group_id).id;
+    delete object.group_id;
+  }
+  return scene;
 }
 
 export function nextObjectId(scene){
@@ -349,8 +488,8 @@ export function rectangleThumbnail(rect,maxWidth=124,maxHeight=78){
   return {width:px(width*scale),height:px(height*scale),borderRadius:cssRadius};
 }
 
-// Presentation-style editing is metadata layered over the same flat scene:
-// group_id never changes the rasterizer's shapes/texts instruction format.
+// Composition-folder membership is authoring metadata over the flat scene;
+// legacy group_id remains supported only for older fixtures and imports.
 const objectKey = ({type,id}) => `${type}:${id}`;
 const objectRef = ({type,object}) => ({type,id:object.id});
 export function resolveSelection(scene,refs=[],{expandGroups=true}={}){
@@ -358,7 +497,11 @@ export function resolveSelection(scene,refs=[],{expandGroups=true}={}){
   for(const ref of refs){
     const obj = getObject(scene,ref.type,ref.id);
     if(!obj)continue;
-    if(expandGroups&&obj.group_id != null){
+    if(expandGroups&&obj.parentId&&getObjectFolder(scene,obj.parentId)){
+      for(const member of folderMembers(scene,folderRoot(scene,obj.parentId))){
+        selected.set(objectKey(member),member);
+      }
+    }else if(expandGroups&&obj.group_id != null){
       for(const item of sceneObjects(scene)){
         if(item.object.group_id === obj.group_id){
           const member=objectRef(item);
@@ -374,7 +517,12 @@ export function selectionUnits(scene,refs=[],options={}){
   const groups=new Map();
   for(const ref of resolveSelection(scene,refs,options)){
     const obj=getObject(scene,ref.type,ref.id);
-    const key=obj.group_id == null?objectKey(ref):`group:${obj.group_id}`;
+    // Exact selection really means individual primitives, even when they
+    // happen to share a composition folder. Group only in normal mode.
+    const key=options.expandGroups===false?objectKey(ref):
+      obj.parentId&&getObjectFolder(scene,obj.parentId)
+        ?`folder:${folderRoot(scene,obj.parentId)}`:
+        obj.group_id == null?objectKey(ref):`group:${obj.group_id}`;
     if(!groups.has(key))groups.set(key,[]);
     groups.get(key).push({type:ref.type,id:ref.id,object:obj});
   }
@@ -492,6 +640,9 @@ export function pasteSelection(scene,clipboard,offset=20){
     const original=entry.object;
     const obj={...structuredClone(original),id:nextId++,x:original.x+offset,y:original.y+offset};
     if(!getLayer(scene,obj.layerId))obj.layerId=drawingLayers(scene).at(-1).id;
+    // Clipboard content can outlive its source scene. Never paste an object
+    // with a parent folder that does not exist in the destination scene.
+    if(obj.parentId!=null&&!getObjectFolder(scene,obj.parentId))delete obj.parentId;
     if(original.group_id!=null){
       if(!groupIds.has(original.group_id))groupIds.set(original.group_id,groupId++);
       obj.group_id=groupIds.get(original.group_id);

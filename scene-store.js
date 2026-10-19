@@ -86,9 +86,32 @@ export function validateScene(scene) {
       throw new SceneStoreError('Invalid legacy layer names');
     }
   }
+  // Independent composition folders. They do not contribute to the 64-slot
+  // raster palette and cannot reference themselves or form parent cycles.
+  const folders=scene.objectFolders??[];
+  if(!Array.isArray(folders)||folders.length>256)throw new SceneStoreError('Invalid object folders');
+  const folderIds=new Set();
+  for(const f of folders){
+    if(!f||typeof f!=='object'||Array.isArray(f)||
+       typeof f.id!=='string'||!/^folder-[1-9][0-9]*$/.test(f.id)||folderIds.has(f.id)||
+       typeof f.name!=='string'||f.name.length>64||f.name!==f.name.trim()||
+       /[\x00-\x1f\x7f]/.test(f.name))throw new SceneStoreError('Invalid object folder');
+    folderIds.add(f.id);
+  }
+  for(const folder of folders){
+    const seen=new Set([folder.id]);
+    let cursor=folder;
+    while(cursor.parentId!==undefined){
+      if(!folderIds.has(cursor.parentId)||seen.has(cursor.parentId))
+        throw new SceneStoreError('Invalid object folder ancestry');
+      seen.add(cursor.parentId);
+      cursor=folders.find(candidate=>candidate.id===cursor.parentId);
+    }
+  }
   const validObject=obj=>obj&&typeof obj==='object'&&
     ['id','x','y','w','h'].every(key=>Number.isFinite(obj[key]))&&
     Number.isInteger(obj.id)&&obj.w>0&&obj.h>0&&
+    (obj.parentId===undefined||folderIds.has(obj.parentId))&&
     (ordered?typeof obj.layerId==='string'&&drawableIds.has(obj.layerId)&&obj.layerId!=='background':
       Number.isInteger(obj.layer)&&obj.layer>=0&&obj.layer<64);
   if(!scene.shapes.every(obj=>validObject(obj)&&

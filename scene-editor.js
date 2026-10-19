@@ -1,10 +1,12 @@
 /* Visual scene editor. Selection, grouping, and clipboard operations work on
    the flat shape/text model; only the raster simulator generates pixels. */
 import {LAYERS,canvasSize} from './scene.js';
-import {editableScene,sceneObjects,getObject,getLayerName,setLayerName,getLayer,getLayerNode,drawingLayers,layerTree,layerSubtree,layerIndex,addLayer,addLayerGroup,deleteLayer,reorderLayer,setLayerColor,addRectangle,addText,updateObject,
+import {prepareObjectEditorScene,sceneObjects,getObject,getLayerName,setLayerName,getLayer,drawingLayers,layerIndex,addLayer,reorderLayer,setLayerColor,addRectangle,addText,updateObject,
   moveObject,resizeObject,radiusCss,paletteColor,rectangleThumbnail,
   resolveSelection,selectionUnits,objectsFullyInsideRect,moveSelectionToLayer,alignSelection,distributeSelection,
-  groupSelection,ungroupSelection,copySelection,pasteSelection,
+  objectFolders,getObjectFolder,folderMembers,addObjectFolder,renameObjectFolder,
+  moveObjectsToFolder,moveObjectFolder,moveObjectFolderContents,deleteObjectFolder,
+  removePaintLayer,copySelection,pasteSelection,
   deleteSelection as removeSelectedObjects} from './scene-model.js';
 
 const $=id=>document.getElementById(id);
@@ -22,11 +24,13 @@ export function createSceneEditor({getScene,history,onSimulate}){
   let selection=[],drag=null,clipboard=[],pasteCount=0;
   let mostRecentLayer=null;
   const exactSelection={expandGroups:false};
-  let selectedGroupId=null;
-  const collapsedLayers=new Set();
-  let draggedObjects=null,draggedLayer=null;
+  let selectedGroupId=null,selectedFolderId=null;
+  const collapsedFolders=new Set();
+  let draggedObjects=null,draggedFolder=null,draggedPaintLayer=null;
 
-  const scene=()=>editableScene(getScene());
+  // Scene normalization happens when a scene is created, loaded or restored,
+  // never during rendering: reads must not mutate history or save-state.
+  const scene=()=>getScene();
   const selected=()=>new Set(selection.map(key));
   const edit=callback=>{const changed=history.transaction(callback);if(changed)render();return changed;};
 
@@ -61,7 +65,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
     stage.setAttribute('aria-label',`Editable ${width} by ${height} scene`);
     stage.style.backgroundColor=validColor(data.layers[0].color);
     stage.replaceChildren();
-    const allowResize=selection.length===1;
+    const allowResize=selection.length===1&&!selectedFolderId;
     for(const {type,object} of sceneObjects(data)){
       const ref={type,id:object.id},chosen=active.has(key(ref));
       const el=document.createElement('div');
@@ -90,86 +94,109 @@ export function createSceneEditor({getScene,history,onSimulate}){
   }
 
   function renderList(){
-    const data=scene(),active=selected();
+    const data=scene(),active=selected(),folders=objectFolders(data);
     const filter=$('object-filter').value.trim().toLowerCase();
-    const objects=sceneObjects(data).sort((a,b)=>
-      layerIndex(data,b.object.layerId)-layerIndex(data,a.object.layerId)||b.object.id-a.object.id);
-    const leaves=drawingLayers(data);
-    $('object-count').textContent=`${objects.length} objects · ${leaves.length}/64 layers`;
+    const objects=sceneObjects(data).sort((a,b)=>b.object.id-a.object.id);
+    $('object-count').textContent=`${objects.length} objects · ${folders.length} folders`;
     $('editor-stats').textContent=`${data.shapes.length} rectangles · ${data.texts.length} text`;
-    $('add-layer').disabled=leaves.length>=LAYERS||data.layers.length>=256;
-    $('add-group').disabled=data.layers.length>=256;
-    const buckets=new Map();
+    $('add-folder').disabled=folders.length>=256;
+    const byParent=new Map(),children=new Map();
     for(const item of objects){
-      const id=item.object.layerId;
-      if(!buckets.has(id))buckets.set(id,[]);
-      buckets.get(id).push(item);
+      const parent=item.object.parentId??null;
+      if(!byParent.has(parent))byParent.set(parent,[]);
+      byParent.get(parent).push(item);
     }
-    const renderNodes=(nodes,depth=1,showAll=false)=>[...nodes].reverse().map(({node,children})=>{
-      const id=html(node.id),background=node.id==='background',folder=node.kind==='group';
-      const contents=buckets.get(node.id)||[];
-      const localMatch=filter&&(
-        node.name.toLowerCase().includes(filter)||
-        (folder?'group':'layer').includes(filter)||
-        contents.some(({type,object})=>objectName(type,object,data).toLowerCase().includes(filter)));
-      const includeChildren=showAll||Boolean(localMatch);
-      const childMarkup=folder?renderNodes(children,depth+1,includeChildren):'';
-      if(filter&&!showAll&&!localMatch&&!childMarkup)return '';
-      const color=html(validColor(node.color)),name=html(node.name);
-      const collapsed=collapsedLayers.has(node.id)&&!filter;
-      const thumbnails=contents.filter(({type,object})=>
-        !filter||includeChildren||objectName(type,object,data).toLowerCase().includes(filter))
-        .map(({type,object})=>{
-          const ref={type,id:object.id},chosen=active.has(key(ref));
-          const description=`${objectName(type,object,data)}, ${node.name||'Unnamed layer'}`;
-          const preview=type==='rect'?(()=>{
-            const thumb=rectangleThumbnail(object,72,54);
-            return `<span class="object-thumbnail-shape" style="width:${thumb.width}px;height:${thumb.height}px;border-radius:${thumb.borderRadius};background:${color}"></span>`;
-          })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(String(data.textBuffers[String(object.buffer_ptr)]??'').split('\n')[0].slice(0,10)||'TEXT')}</span>`;
-          return `<button type="button" draggable="true" class="object-tile${chosen?' is-selected':''}" data-select-type="${type}" data-select-id="${object.id}" aria-label="${html(description)}" title="${html(description)}" aria-pressed="${chosen}">
-            <span class="object-tile-preview">${preview}</span>
-            ${object.group_id!=null?`<span class="object-tile-group" title="Group ${object.group_id}">G${object.group_id}</span>`:''}
-          </button>`;
-        }).join('');
-      const title=node.name||(background?'Background':folder?'New group':'Unnamed layer');
-      return `<section class="layer-section${folder?' layer-folder':''}" role="treeitem" aria-level="${depth}"${folder?` aria-expanded="${!collapsed}"`:''}
-        data-layer-id="${id}" data-layer-reorder="${id}"${folder?` data-layer-group="${id}"`:background?'':` data-layer-drop="${id}"`}>
-        <div class="layer-header">
-          ${background?'<span class="layer-grip layer-grip-fixed" title="Background stays at the bottom">▦</span>':
-            `<button class="layer-grip" type="button" draggable="true" data-layer-drag="${id}" title="Drag ${html(title)} to reorder" aria-label="Drag to reorder ${html(title)}">⠿</button>`}
-          <button type="button" class="layer-toggle" data-layer-toggle="${id}" aria-expanded="${!collapsed}" aria-controls="layer-content-${id}" title="${collapsed?'Expand':'Collapse'} ${html(title)}" aria-label="${collapsed?'Expand':'Collapse'} ${html(title)}">
-            <span class="layer-chevron" aria-hidden="true">${collapsed?'▸':'▾'}</span>
-            ${folder?'<span class="layer-folder-icon" aria-hidden="true">▣</span>':''}
-          </button>
-          <input class="layer-name" type="text" data-layer-name="${id}" maxlength="64" value="${name}" placeholder="${background?'Name background…':folder?'Group name…':'Name layer…'}" title="${html(title)}" aria-label="Name ${background?'background':folder?'group':'layer'}" autocomplete="off" spellcheck="false">
-          ${folder?`<button type="button" class="layer-child-add" data-add-child-layer="${id}" title="Add layer inside ${html(title)}" aria-label="Add layer inside ${html(title)}">+L</button>
-            <button type="button" class="layer-child-add" data-add-child-group="${id}" title="Add group inside ${html(title)}" aria-label="Add group inside ${html(title)}">+G</button>`:
-            `<input class="layer-color" type="color" data-layer-color="${id}" value="${color}" title="Color for ${html(title)}" aria-label="Layer color">`}
-          ${background?'':`<button type="button" class="layer-delete" data-layer-delete="${id}" title="Delete ${html(title)}" aria-label="Delete ${html(title)}">×</button>`}
-        </div>
-        ${folder?`<div id="layer-content-${id}" class="layer-children" role="group"${collapsed?' hidden':''}>${childMarkup||'<p class="layer-empty">Drop layers or groups here</p>'}</div>`:
-          `<div id="layer-content-${id}" class="layer-object-grid"${collapsed?' hidden':''}>
-            ${background?'<p class="layer-empty">Canvas background color</p>':thumbnails||'<p class="layer-empty">Drop objects here</p>'}
-          </div>`}
-      </section>`;
-    }).join('');
+    for(const folder of folders){
+      const parent=folder.parentId??null;
+      if(!children.has(parent))children.set(parent,[]);
+      children.get(parent).push(folder);
+    }
+    const objectMarkup=({type,object},force=false)=>{
+      const ref={type,id:object.id},chosen=active.has(key(ref));
+      const name=objectName(type,object,data),layer=getLayer(data,object.layerId);
+      if(filter&&!force&&!name.toLowerCase().includes(filter)&&
+         !(layer?.name??'').toLowerCase().includes(filter))return '';
+      const color=validColor(layer?.color),paint=layer?.name||`Layer ${layerIndex(data,object.layerId)}`;
+      const thumb=type==='rect'?(()=>{
+        const t=rectangleThumbnail(object,40,26);
+        return `<span class="object-thumbnail-shape" style="width:${t.width}px;height:${t.height}px;border-radius:${t.borderRadius};background:${color}"></span>`;
+      })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(String(data.textBuffers[String(object.buffer_ptr)]??'').split('\n')[0].slice(0,6)||'TEXT')}</span>`;
+      return `<button type="button" draggable="true" role="treeitem" class="object-row${chosen?' is-selected':''}" data-select-type="${type}" data-select-id="${object.id}" aria-pressed="${chosen}" title="${html(name)} · ${html(paint)}">
+        <span class="object-tile-preview">${thumb}</span><span class="object-name">${html(name)}</span><span class="object-paint-swatch" style="background:${color}"></span><span class="object-paint-name">${html(paint)}</span></button>`;
+    };
+    const renderChildren=(parent=null,depth=1,force=false)=>{
+      const direct=(byParent.get(parent)||[]).map(item=>objectMarkup(item,force)).filter(Boolean).join('');
+      const nested=(children.get(parent)||[]).map(folder=>{
+        const match=filter&&folder.name.toLowerCase().includes(filter);
+        const inner=renderChildren(folder.id,depth+1,force||match);
+        if(filter&&!force&&!match&&!inner)return '';
+        const collapsed=collapsedFolders.has(folder.id)&&!filter;
+        const members=folderMembers(data,folder.id).length;
+        const chosen=selectedFolderId===folder.id;
+        return `<div class="object-folder" role="treeitem" aria-level="${depth}" aria-expanded="${!collapsed}" data-folder-drop="${html(folder.id)}">
+          <div class="object-folder-header${chosen?' is-selected':''}" draggable="true" data-folder-drag="${html(folder.id)}">
+            <button type="button" data-folder-toggle="${html(folder.id)}" aria-label="${collapsed?'Expand':'Collapse'} folder">${collapsed?'▸':'▾'}</button>
+            <button type="button" data-folder-select="${html(folder.id)}" title="Select ${members} descendant objects">▣</button>
+            <input class="folder-title" data-folder-name="${html(folder.id)}" maxlength="64" aria-label="Folder name" value="${html(folder.name)}" placeholder="Folder name…">
+            <button type="button" data-add-child-folder="${html(folder.id)}" title="Add nested folder">+F</button>
+            <button type="button" data-folder-delete="${html(folder.id)}" title="Remove folder; keep its contents">×</button>
+          </div><div class="object-folder-contents"${collapsed?' hidden':''}>${inner||'<p class="layer-empty">Drop objects here</p>'}</div>
+        </div>`;
+      }).join('');
+      return direct+nested;
+    };
     const scrollTop=list.scrollTop;
-    list.innerHTML=renderNodes(layerTree(data))||'<p class="empty">No matching layers or objects.</p>';
+    list.innerHTML=renderChildren()+'<div class="object-root-drop" data-objects-root-drop="true">Drop here to move objects or folders to root</div>';
+    if(!objects.length&&!folders.length)list.innerHTML='<p class="empty">No objects yet. Add a rectangle, text, or folder.</p>';
     list.scrollTop=scrollTop;
+  }
+
+  function renderPaletteLayers(){
+    const layers=drawingLayers(scene());
+    $('palette-layer-count').textContent=`${layers.length}/64`;
+    $('add-layer').disabled=layers.length>=LAYERS;
+    $('palette-layer-list').innerHTML=[...layers].reverse().map((layer,i)=>{
+      const physical=layers.length-1-i,background=layer.id==='background';
+      const title=layer.name||(background?'Background':`Layer ${physical}`);
+      const used=sceneObjects(scene()).filter(({object})=>object.layerId===layer.id).length;
+      return `<div class="palette-layer-row" data-paint-layer="${html(layer.id)}">
+        ${background?'<span class="layer-grip layer-grip-fixed">▦</span>':`<button class="layer-grip" type="button" draggable="true" data-layer-drag="${html(layer.id)}" title="Drag to reorder paint layers">⠿</button>`}
+        <span class="palette-number">${physical}</span>
+        <input class="layer-name" data-layer-name="${html(layer.id)}" type="text" maxlength="64" aria-label="Paint layer ${physical} name" placeholder="${html(title)}" value="${html(layer.name)}">
+        <input class="layer-color" data-layer-color="${html(layer.id)}" type="color" value="${validColor(layer.color)}" aria-label="${html(title)} color">
+        <span class="muted" title="Assigned objects">${used}</span>
+        ${background?'':`<button class="layer-delete" data-layer-delete="${html(layer.id)}" title="Remove layer and reassign its objects">×</button>`}
+      </div>`;
+    }).join('');
   }
 
   function renderProperties(){
     const data=scene();
     const summary=$('selection-summary');
-    if(!selection.length){
+    if(!selection.length&&!selectedFolderId){
       summary.textContent='';
-      properties.innerHTML='<p class="empty">Select objects on the canvas or in the Objects list. Shift-click to select several.</p>';
+      properties.innerHTML='<p class="empty">Select objects or a folder on the canvas or in the Objects list.</p>';
       return;
     }
+    if(selectedFolderId&&getObjectFolder(data,selectedFolderId)){
+      const folder=getObjectFolder(data,selectedFolderId);
+      summary.textContent='FOLDER';
+      properties.innerHTML=`<div class="property-grid">
+        <label class="property-field property-full">Folder name<input data-selected-folder-name="${html(folder.id)}" type="text" maxlength="64" value="${html(folder.name)}"></label>
+        <p class="muted property-full">${folderMembers(data,folder.id).length} descendant objects · Moving the folder translates all its contents without changing paint layers.</p>
+        ${numericField('folder-dx','Move X by (px)',0,-canvasSize(data).width,canvasSize(data).width)}
+        ${numericField('folder-dy','Move Y by (px)',0,-canvasSize(data).height,canvasSize(data).height)}
+      </div>`;
+      return;
+    }
+    const layerOptions=drawingLayers(data).filter(layer=>layer.id!=='background').map(layer=>
+      `<option value="${html(layer.id)}">${html(`${layerIndex(data,layer.id)} · ${layer.name||'Unnamed layer'}`)}</option>`).join('');
     if(selection.length!==1){
-      const units=selectionUnits(data,selection,exactSelection);
+      const units=selectionUnits(data,selection,{expandGroups:false});
       summary.textContent=`${selection.length} objects`;
-      properties.innerHTML=`<p class="multi-selection-description">${selection.length} selected objects · ${units.length} movable ${units.length===1?'unit':'units'}. Use the Align, Distribute, and Group controls in the toolbar. Drag any selected object to move the selection.</p>`;
+      properties.innerHTML=`<p class="multi-selection-description">${selection.length} selected objects · ${units.length} movable units. Drag or use Align / Distribute to edit positions.</p>
+        <label class="property-field">Assign selected objects to paint layer
+          <select data-batch-layer><option value="">Choose layer…</option>${layerOptions}</select></label>`;
       return;
     }
     const {type,id}=selection[0],obj=getObject(data,type,id);
@@ -182,7 +209,12 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const text=type==='text'?`<div class="property-full"><label class="property-field">Text content
       <textarea id="text-value" data-text-buffer="${html(obj.buffer_ptr)}" rows="5" spellcheck="false"></textarea></label>
       <div class="buffer-note">Independent buffer · pointer <code>${html(obj.buffer_ptr)}</code></div></div>`:'';
-    properties.innerHTML=`<div class="property-grid">${fields}${radius}
+    const paint=getLayer(data,obj.layerId);
+    const palette=`<label class="property-field property-full">Paint layer
+      <select data-property="layerId">${drawingLayers(data).filter(layer=>layer.id!=='background').map(layer=>
+        `<option value="${html(layer.id)}"${obj.layerId===layer.id?' selected':''}>${html(`${layerIndex(data,layer.id)} · ${layer.name||'Unnamed layer'}`)}</option>`).join('')}</select>
+      <span class="muted"><span class="property-color-chip" style="background:${validColor(paint?.color)}"></span>${html(paint?.name||'Unnamed layer')} · Change color in Palette / Layers</span></label>`;
+    properties.innerHTML=`<div class="property-grid">${fields}${radius}${palette}
       ${text}</div>`;
     if(type==='text'){
       const raw=data.textBuffers[String(obj.buffer_ptr)];
@@ -204,7 +236,6 @@ export function createSceneEditor({getScene,history,onSimulate}){
 
   function updateControls(){
     const count=selection.length,units=selectionUnits(scene(),selection,exactSelection);
-    const grouped=selection.some(ref=>getObject(scene(),ref.type,ref.id)?.group_id!=null);
     $('undo-edit').disabled=!history.state().canUndo;
     $('redo-edit').disabled=!history.state().canRedo;
     $('copy-objects').disabled=count===0;
@@ -212,15 +243,14 @@ export function createSceneEditor({getScene,history,onSimulate}){
     $('paste-objects').disabled=clipboard.length===0;
     $('duplicate-objects').disabled=count===0;
     $('delete-objects').disabled=count===0;
-    $('group-objects').disabled=units.length<2;
-    $('ungroup-objects').disabled=!grouped;
     $('align-objects').disabled=units.length<2;
     $('distribute-objects').disabled=units.length<3;
   }
   function render(){
     selection=resolveSelection(scene(),selection,exactSelection);
+    if(selectedFolderId&&!getObjectFolder(scene(),selectedFolderId))selectedFolderId=null;
     if(mostRecentLayer&&!getLayer(scene(),mostRecentLayer))mostRecentLayer=null;
-    renderStage();renderList();renderProperties();renderPaletteEvents();updateControls();
+    renderStage();renderList();renderPaletteLayers();renderProperties();renderPaletteEvents();updateControls();
   }
   // Reveal a selected canvas object in the Objects panel without stealing
   // focus or moving the scroll position when its tile is already visible.
@@ -229,12 +259,12 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const obj=getObject(scene(),ref.type,ref.id);
     if(!obj)return;
     let changed=false;
-    let layerId=obj.layerId;
+    let folderId=obj.parentId;
     const visited=new Set();
-    while(layerId&&!visited.has(layerId)){
-      visited.add(layerId);
-      if(collapsedLayers.delete(layerId))changed=true;
-      layerId=getLayerNode(scene(),layerId)?.parentId;
+    while(folderId&&!visited.has(folderId)){
+      visited.add(folderId);
+      if(collapsedFolders.delete(folderId))changed=true;
+      folderId=getObjectFolder(scene(),folderId)?.parentId;
     }
     const selector=`[data-select-type="${ref.type}"][data-select-id="${ref.id}"]`;
     let tile=list.querySelector(selector);
@@ -252,9 +282,10 @@ export function createSceneEditor({getScene,history,onSimulate}){
     else if(bounds.bottom>viewport.bottom)list.scrollTop+=bounds.bottom-viewport.bottom;
   }
 
-  function setSelection(refs,{groupId=null,focusRef=null}={}){
+  function setSelection(refs,{groupId=null,folderId=null,focusRef=null}={}){
     selection=resolveSelection(scene(),refs,exactSelection);
     selectedGroupId=groupId;
+    selectedFolderId=folderId;
     if(refs.length){
       const ref=refs.at(-1);
       const obj=getObject(scene(),ref.type,ref.id);
@@ -274,7 +305,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       const changed=already?selection.filter(member=>!members.some(item=>key(item)===key(member))):[...selection,...members];
       setSelection(changed,{focusRef:changed.some(item=>key(item)===key(ref))?ref:null});
     }else setSelection(members,{
-      groupId:!individual&&obj.group_id!=null&&members.length>1?obj.group_id:null,
+      groupId:!individual&&members.length>1?(obj.parentId??obj.group_id??null):null,
       focusRef:ref
     });
     // The clicked member, not its last group sibling, sets insertion layer.
@@ -295,7 +326,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       const ref={type:el.dataset.objectType,id:Number(el.dataset.objectId)};
       if(modifier){select(ref,true);return;}
       const current=getObject(scene(),ref.type,ref.id);
-      const drillDown=selectedGroupId!=null&&current?.group_id===selectedGroupId&&
+      const drillDown=selectedGroupId!=null&&(current?.parentId===selectedGroupId||current?.group_id===selectedGroupId)&&
         selected().has(key(ref));
       if(!selected().has(key(ref)))select(ref);
       const mode=event.target.closest('[data-drag-handle]')?'resize':'move';
@@ -373,7 +404,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       event.preventDefault();
       const ref={type:el.dataset.objectType,id:Number(el.dataset.objectId)};
       const obj=getObject(scene(),ref.type,ref.id);
-      select(ref,event.shiftKey,{individual:!event.shiftKey&&selectedGroupId!=null&&obj?.group_id===selectedGroupId});
+      select(ref,event.shiftKey,{individual:!event.shiftKey&&selectedGroupId!=null&&(obj?.parentId===selectedGroupId||obj?.group_id===selectedGroupId)});
     }
   });
   list.addEventListener('click',event=>{
@@ -382,136 +413,171 @@ export function createSceneEditor({getScene,history,onSimulate}){
       event.shiftKey||event.ctrlKey||event.metaKey,{individual:true});
   });
   $('object-filter').addEventListener('input',renderList);
-  $('add-layer').addEventListener('click',()=>edit(()=>addLayer(scene(),{color:'#92d0e1'})));
-  $('add-group').addEventListener('click',()=>edit(()=>addLayerGroup(scene())));
-  list.addEventListener('click',event=>{
-    const addChildLayer=event.target.closest('[data-add-child-layer]');
-    if(addChildLayer){edit(()=>addLayer(scene(),{parentId:addChildLayer.dataset.addChildLayer,color:'#92d0e1'}));return;}
-    const addChildGroup=event.target.closest('[data-add-child-group]');
-    if(addChildGroup)edit(()=>addLayerGroup(scene(),{parentId:addChildGroup.dataset.addChildGroup}));
+  $('show-objects').addEventListener('click',()=>{
+    $('objects-pane').hidden=false;$('palette-pane').hidden=true;
+    $('show-objects').classList.add('active');$('show-palette').classList.remove('active');
+    $('show-objects').setAttribute('aria-selected','true');$('show-palette').setAttribute('aria-selected','false');
   });
+  $('show-palette').addEventListener('click',()=>{
+    $('objects-pane').hidden=true;$('palette-pane').hidden=false;
+    $('show-objects').classList.remove('active');$('show-palette').classList.add('active');
+    $('show-objects').setAttribute('aria-selected','false');$('show-palette').setAttribute('aria-selected','true');
+  });
+  $('add-folder').addEventListener('click',()=>edit(()=>addObjectFolder(scene(),{
+    parentId:selectedFolderId&&getObjectFolder(scene(),selectedFolderId)?selectedFolderId:null
+  })));
   list.addEventListener('click',event=>{
-    const button=event.target.closest('[data-layer-delete]');
-    if(!button)return;
-    const id=button.dataset.layerDelete,data=scene(),layer=getLayerNode(data,id);
-    if(!layer||id==='background')return;
-    const leafIds=new Set(layerSubtree(data,id).filter(node=>node.kind!=='group').map(node=>node.id));
-    const objects=sceneObjects(data).filter(({object})=>leafIds.has(object.layerId)).length;
-    const events=data.paletteEvents.filter(item=>leafIds.has(item.layerId)).length;
-    if((objects||events)&&!window.confirm(
-      `Delete ${layer.name|| (layer.kind==='group'?'this group':'this layer')} and its ${objects} ${objects===1?'object':'objects'}${events?` and ${events} palette ${events===1?'event':'events'}`:''}? ${layer.kind==='group'?'All nested layers and groups will also be deleted. ':''}You can undo this action.`))return;
-    const removedIds=new Set(layerSubtree(data,id).map(node=>node.id));
-    if(edit(()=>deleteLayer(scene(),id))){
-      for(const deletedId of removedIds)collapsedLayers.delete(deletedId);
-      if(removedIds.has(mostRecentLayer))mostRecentLayer=null;
+    const toggle=event.target.closest('[data-folder-toggle]');
+    if(toggle){
+      const id=toggle.dataset.folderToggle;
+      if(collapsedFolders.has(id))collapsedFolders.delete(id);else collapsedFolders.add(id);
+      renderList();return;
+    }
+    const selectedFolder=event.target.closest('[data-folder-select]');
+    if(selectedFolder){
+      const id=selectedFolder.dataset.folderSelect;
+      setSelection(folderMembers(scene(),id),{folderId:id});return;
+    }
+    const addChild=event.target.closest('[data-add-child-folder]');
+    if(addChild){edit(()=>addObjectFolder(scene(),{parentId:addChild.dataset.addChildFolder}));return;}
+    const removeFolder=event.target.closest('[data-folder-delete]');
+    if(removeFolder){
+      const id=removeFolder.dataset.folderDelete;
+      if(edit(()=>deleteObjectFolder(scene(),id))){
+        collapsedFolders.delete(id);
+        if(selectedFolderId===id)setSelection([]);
+      }
     }
   });
-  list.addEventListener('click',event=>{
-    const toggle=event.target.closest('[data-layer-toggle]');
-    if(!toggle)return;
-    const id=toggle.dataset.layerToggle;
-    if(collapsedLayers.has(id))collapsedLayers.delete(id);
-    else collapsedLayers.add(id);
-    renderList();
-  });
   list.addEventListener('change',event=>{
+    const name=event.target.closest('[data-folder-name]');
+    if(name)edit(()=>renameObjectFolder(scene(),name.dataset.folderName,name.value));
+  });
+  list.addEventListener('keydown',event=>{
+    const input=event.target.closest('[data-folder-name]');
+    if(!input)return;
+    if(event.key==='Enter'){event.preventDefault();input.blur();}
+    if(event.key==='Escape'){
+      event.preventDefault();input.value=getObjectFolder(scene(),input.dataset.folderName)?.name??'';input.blur();
+    }
+  });
+  $('add-layer').addEventListener('click',()=>edit(()=>addLayer(scene(),{color:'#92d0e1'})));
+  const paintList=$('palette-layer-list');
+  paintList.addEventListener('click',event=>{
+    const button=event.target.closest('[data-layer-delete]');
+    if(!button)return;
+    const id=button.dataset.layerDelete,layer=getLayer(scene(),id);
+    if(!layer)return;
+    const count=sceneObjects(scene()).filter(({object})=>object.layerId===id).length;
+    const events=scene().paletteEvents.filter(event=>event.layerId===id).length;
+    if((count||events)&&!window.confirm(`Remove ${layer.name||id}? ${count} objects and ${events} palette overrides will be reassigned to an adjacent paint layer. This can be undone.`))return;
+    edit(()=>removePaintLayer(scene(),id));
+  });
+  paintList.addEventListener('change',event=>{
     const color=event.target.closest('[data-layer-color]');
     if(color){edit(()=>setLayerColor(scene(),color.dataset.layerColor,color.value));return;}
     const name=event.target.closest('[data-layer-name]');
     if(name)edit(()=>setLayerName(scene(),name.dataset.layerName,name.value));
   });
-  list.addEventListener('keydown',event=>{
+  paintList.addEventListener('keydown',event=>{
     const input=event.target.closest('[data-layer-name]');
     if(!input)return;
     if(event.key==='Enter'){event.preventDefault();input.blur();}
     if(event.key==='Escape'){
-      event.preventDefault();
-      input.value=getLayerName(scene(),input.dataset.layerName);
-      input.blur();
+      event.preventDefault();input.value=getLayerName(scene(),input.dataset.layerName);input.blur();
     }
   });
-
-  // Grip drag reorders a complete layer; tile drag transfers objects.
-  const clearDropHighlights=()=>{
-    list.querySelectorAll('.layer-drop-target,.is-dragging').forEach(el=>
-      el.classList.remove('layer-drop-target','is-dragging'));
-    list.querySelectorAll('[data-layer-insert]').forEach(el=>el.removeAttribute('data-layer-insert'));
-  };
-  const dropSide=(event,section)=>{
-    const rect=section.querySelector('.layer-header').getBoundingClientRect();
-    if(section.hasAttribute('data-layer-group')){
-      if(event.target.closest('.layer-children')===section.querySelector('.layer-children'))return 'inside';
-      if(event.clientY>=rect.top+rect.height*.25&&event.clientY<=rect.bottom-rect.height*.25)return 'inside';
-    }
-    return event.clientY<rect.top+rect.height/2?'above':'below';
-  };
+  // Reparenting in Objects never changes paint. Reordering in Palette never
+  // changes composition. Each operation is a single history transaction.
   list.addEventListener('dragstart',event=>{
-    const grip=event.target.closest('[data-layer-drag]');
-    if(grip&&event.dataTransfer){
-      draggedObjects=null;draggedLayer=grip.dataset.layerDrag;
-      event.dataTransfer.effectAllowed='move';
-      event.dataTransfer.setData('application/x-raster-layer',draggedLayer);
-      event.dataTransfer.setData('text/plain',`Reorder scene layer ${draggedLayer}`);
-      grip.closest('.layer-section').classList.add('is-dragging');
+    if(event.target.closest('input'))return;
+    const folder=event.target.closest('[data-folder-drag]');
+    if(folder){
+      draggedFolder=folder.dataset.folderDrag;draggedObjects=null;
+      if(event.dataTransfer){event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',draggedFolder);}
       return;
     }
     const tile=event.target.closest('[data-select-type]');
     if(!tile||!event.dataTransfer)return;
-    draggedLayer=null;
+    draggedFolder=null;
     const ref={type:tile.dataset.selectType,id:Number(tile.dataset.selectId)};
-    const refs=selected().has(key(ref))?selection:[ref];
-    draggedObjects=refs.map(item=>({...item}));
-    event.dataTransfer.effectAllowed='move';
-    event.dataTransfer.setData('application/x-raster-objects',JSON.stringify(draggedObjects));
-    event.dataTransfer.setData('text/plain','Move scene objects between layers');
-    tile.classList.add('is-dragging');
+    draggedObjects=selected().has(key(ref))?selection.map(item=>({...item})):[ref];
+    event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',`Move object ${ref.id}`);
   });
   list.addEventListener('dragover',event=>{
-    if(draggedLayer){
-      const target=event.target.closest('[data-layer-reorder]');
-      if(!target)return;
-      const side=dropSide(event,target);
-      if(target.dataset.layerReorder==='background'&&side==='below')return;
-      event.preventDefault();
-      if(event.dataTransfer)event.dataTransfer.dropEffect='move';
-      clearDropHighlights();target.setAttribute('data-layer-insert',side);
-      return;
-    }
-    const target=event.target.closest('[data-layer-drop]');
-    if(!target||!draggedObjects)return;
-    event.preventDefault();
-    if(event.dataTransfer)event.dataTransfer.dropEffect='move';
-    clearDropHighlights();target.classList.add('layer-drop-target');
-  });
-  list.addEventListener('dragleave',event=>{
-    const section=event.target.closest('[data-layer-reorder]');
-    if(section&&!section.contains(event.relatedTarget)){
-      section.classList.remove('layer-drop-target');
-      section.removeAttribute('data-layer-insert');
-    }
+    const target=event.target.closest('[data-folder-drop],[data-objects-root-drop]');
+    if(!target||(!draggedFolder&&!draggedObjects))return;
+    const parentId=target.dataset.folderDrop??null;
+    if(draggedFolder&&(parentId===draggedFolder))return;
+    event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+    list.querySelectorAll('.is-drop-target').forEach(el=>el.classList.remove('is-drop-target'));
+    target.classList.add('is-drop-target');
   });
   list.addEventListener('drop',event=>{
-    const section=event.target.closest('[data-layer-reorder]');
-    if(!section)return;
-    if(draggedLayer){
-      const source=draggedLayer,target=section.dataset.layerReorder,side=dropSide(event,section);
-      event.preventDefault();draggedLayer=null;clearDropHighlights();
-      edit(()=>reorderLayer(scene(),source,target,side));
-      return;
-    }
-    if(!draggedObjects||!section.dataset.layerDrop)return;
+    const target=event.target.closest('[data-folder-drop],[data-objects-root-drop]');
+    if(!target||(!draggedFolder&&!draggedObjects))return;
     event.preventDefault();
-    const refs=draggedObjects;draggedObjects=null;clearDropHighlights();
-    edit(()=>moveSelectionToLayer(scene(),refs,section.dataset.layerDrop,exactSelection));
-    setSelection(refs);
+    const parentId=target.dataset.folderDrop??null;
+    if(draggedFolder){edit(()=>moveObjectFolder(scene(),draggedFolder,parentId));}
+    else{
+      const refs=draggedObjects;
+      if(edit(()=>moveObjectsToFolder(scene(),refs,parentId)))setSelection(refs);
+    }
+    draggedFolder=null;draggedObjects=null;
+    list.querySelectorAll('.is-drop-target').forEach(el=>el.classList.remove('is-drop-target'));
   });
   list.addEventListener('dragend',()=>{
-    draggedObjects=null;draggedLayer=null;clearDropHighlights();
+    draggedFolder=null;draggedObjects=null;
+    list.querySelectorAll('.is-drop-target').forEach(el=>el.classList.remove('is-drop-target'));
+  });
+  paintList.addEventListener('dragstart',event=>{
+    const grip=event.target.closest('[data-layer-drag]');
+    if(!grip||!event.dataTransfer)return;
+    draggedPaintLayer=grip.dataset.layerDrag;
+    event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',draggedPaintLayer);
+  });
+  paintList.addEventListener('dragover',event=>{
+    const target=event.target.closest('[data-paint-layer]');
+    if(!target||!draggedPaintLayer)return;
+    event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+    paintList.querySelectorAll('[data-layer-insert]').forEach(el=>el.removeAttribute('data-layer-insert'));
+    const bounds=target.getBoundingClientRect();
+    target.setAttribute('data-layer-insert',event.clientY<bounds.top+bounds.height/2?'above':'below');
+  });
+  paintList.addEventListener('drop',event=>{
+    const target=event.target.closest('[data-paint-layer]');
+    if(!target||!draggedPaintLayer)return;
+    event.preventDefault();
+    const bounds=target.getBoundingClientRect();
+    const side=event.clientY<bounds.top+bounds.height/2?'above':'below';
+    const moving=draggedPaintLayer;draggedPaintLayer=null;
+    edit(()=>reorderLayer(scene(),moving,target.dataset.paintLayer,side));
+    paintList.querySelectorAll('[data-layer-insert]').forEach(el=>el.removeAttribute('data-layer-insert'));
+  });
+  paintList.addEventListener('dragend',()=>{
+    draggedPaintLayer=null;
+    paintList.querySelectorAll('[data-layer-insert]').forEach(el=>el.removeAttribute('data-layer-insert'));
   });
 
   properties.addEventListener('change',event=>{
     const target=event.target;
-    if(selection.length!==1||target.dataset.textBuffer!==undefined)return;
+    if(target.dataset.textBuffer!==undefined)return;
+    if(target.dataset.selectedFolderName){
+      edit(()=>renameObjectFolder(scene(),target.dataset.selectedFolderName,target.value));return;
+    }
+    if(target.dataset.property==='folder-dx'||target.dataset.property==='folder-dy'){
+      if(selectedFolderId){
+        const delta=Math.round(Number(target.value)||0);
+        if(delta)edit(()=>moveObjectFolderContents(scene(),selectedFolderId,
+          target.dataset.property==='folder-dx'?delta:0,target.dataset.property==='folder-dy'?delta:0));
+      }
+      return;
+    }
+    if(target.matches('[data-batch-layer]')){
+      if(target.value)edit(()=>moveSelectionToLayer(scene(),selection,target.value,{expandGroups:false}));
+      return;
+    }
+    if(selection.length!==1)return;
     const {type,id}=selection[0];
     if(target.dataset.property){
       edit(()=>updateObject(scene(),type,id,target.dataset.property,target.value));
@@ -576,8 +642,6 @@ export function createSceneEditor({getScene,history,onSimulate}){
   $('paste-objects').addEventListener('click',()=>pasteCopied());
   $('duplicate-objects').addEventListener('click',duplicateSelected);
   $('delete-objects').addEventListener('click',deleteSelected);
-  $('group-objects').addEventListener('click',()=>edit(()=>groupSelection(scene(),selection,exactSelection)));
-  $('ungroup-objects').addEventListener('click',()=>edit(()=>ungroupSelection(scene(),selection,exactSelection)));
   $('align-objects').addEventListener('change',event=>{
     const value=event.target.value;event.target.value='';
     if(value)edit(()=>alignSelection(scene(),selection,value,exactSelection));
@@ -617,8 +681,6 @@ export function createSceneEditor({getScene,history,onSimulate}){
       if(letter==='x'&&copySelected()){event.preventDefault();deleteSelected();return;}
       if(letter==='v'&&clipboard.length){event.preventDefault();pasteCopied();return;}
       if(letter==='d'&&selection.length){event.preventDefault();duplicateSelected();return;}
-      if(letter==='g'&&event.shiftKey){event.preventDefault();edit(()=>ungroupSelection(scene(),selection,exactSelection));return;}
-      if(letter==='g'&&selection.length){event.preventDefault();edit(()=>groupSelection(scene(),selection,exactSelection));return;}
       return;
     }
     if(!selection.length)return;
@@ -641,7 +703,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
   return {
     render,
     updateHistoryControls:updateControls,
-    clearSelection(){selection=[];mostRecentLayer=null;render();},
+    clearSelection(){selection=[];selectedFolderId=null;selectedGroupId=null;mostRecentLayer=null;render();},
     getSelection(){return selection.map(ref=>({...ref}));},
     setSelection(refs){setSelection(refs);},
     setOnTextInput(callback){onTextInput=callback;}

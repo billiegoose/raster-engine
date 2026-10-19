@@ -1,12 +1,12 @@
 /* Workspace controller: native local scene files and an independent simulator. */
 import {blankScene,canvasSize} from './scene.js';
-import {editableScene,setCanvasSize} from './scene-model.js';
+import {prepareObjectEditorScene,setCanvasSize} from './scene-model.js';
 import {createSceneEditor} from './scene-editor.js';
 import {createSceneHistory} from './scene-history.js';
 import {createRasterSimulator} from './raster-simulator.js';
 
 const $=id=>document.getElementById(id);
-let scene=editableScene(blankScene());
+let scene=prepareObjectEditorScene(blankScene());
 const getScene=()=>scene;
 const snapshot=()=>JSON.stringify(scene);
 let editor;
@@ -68,7 +68,7 @@ async function refreshScenes(){
 function newScene(){
   if(sceneFileBusy)return false;
   if(sceneDirty&&!window.confirm('Discard unsaved changes and create a new blank scene?'))return false;
-  scene=editableScene(blankScene());
+  scene=prepareObjectEditorScene(blankScene());
   savedName=null;
   savedSnapshot=snapshot();
   sceneDirty=false;
@@ -95,7 +95,7 @@ async function loadScene(name){
       sceneStatus('Scene changed during loading; open it again to avoid losing edits','dirty');
       return;
     }
-    scene=editableScene(result.scene);
+    scene=prepareObjectEditorScene(result.scene);
     savedName=result.name;
     savedSnapshot=snapshot();
     sceneDirty=false;
@@ -158,7 +158,7 @@ function setMode(target){
 
 const history=createSceneHistory({
   getScene,
-  replaceScene(value){scene=editableScene(value);},
+  replaceScene(value){scene=prepareObjectEditorScene(value);},
   getSelection(){return editor?.getSelection()??[];},
   replaceSelection(refs){editor?.setSelection(refs);},
   onChange(){sceneChanged();},
