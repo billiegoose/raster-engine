@@ -209,26 +209,6 @@
       "group_id": 17
     },
     {
-      "id": 43,
-      "x": 1040,
-      "y": 466,
-      "w": 64,
-      "h": 29,
-      "radius": 3,
-      "layerId": "layer-41",
-      "group_id": 18
-    },
-    {
-      "id": 44,
-      "x": 1079,
-      "y": 471,
-      "w": 20,
-      "h": 20,
-      "radius": 2,
-      "layerId": "layer-42",
-      "group_id": 18
-    },
-    {
       "id": 46,
       "x": 765,
       "y": 69,
@@ -507,6 +487,66 @@
       "radius": 9,
       "layerId": "layer-44",
       "group_id": 35
+    },
+    {
+      "id": 89,
+      "x": 894,
+      "y": 499,
+      "w": 48,
+      "h": 26,
+      "radius": 2,
+      "layerId": "layer-41",
+      "group_id": 36
+    },
+    {
+      "id": 90,
+      "x": 896,
+      "y": 501,
+      "w": 44,
+      "h": 22,
+      "radius": 1,
+      "layerId": "layer-44",
+      "group_id": 36
+    },
+    {
+      "id": 91,
+      "x": 899,
+      "y": 504,
+      "w": 16,
+      "h": 16,
+      "radius": 1,
+      "layerId": "layer-47",
+      "group_id": 36
+    },
+    {
+      "id": 93,
+      "x": 1082,
+      "y": 499,
+      "w": 48,
+      "h": 26,
+      "radius": 2,
+      "layerId": "layer-41",
+      "group_id": 37
+    },
+    {
+      "id": 94,
+      "x": 1084,
+      "y": 501,
+      "w": 44,
+      "h": 22,
+      "radius": 1,
+      "layerId": "layer-44",
+      "group_id": 37
+    },
+    {
+      "id": 95,
+      "x": 1109,
+      "y": 504,
+      "w": 16,
+      "h": 16,
+      "radius": 1,
+      "layerId": "layer-45",
+      "group_id": 37
     }
   ],
   "texts": [
@@ -720,12 +760,11 @@
     {
       "id": 45,
       "x": 810,
-      "y": 469,
-      "w": 188,
+      "y": 446,
+      "w": 190,
       "h": 38,
       "layerId": "layer-48",
-      "buffer_ptr": 90112,
-      "group_id": 18
+      "buffer_ptr": 90112
     },
     {
       "id": 48,
@@ -836,6 +875,26 @@
       "layerId": "layer-47",
       "buffer_ptr": 135168,
       "group_id": 30
+    },
+    {
+      "id": 88,
+      "x": 810,
+      "y": 497,
+      "w": 67,
+      "h": 31,
+      "layerId": "layer-47",
+      "buffer_ptr": 139264,
+      "group_id": 36
+    },
+    {
+      "id": 92,
+      "x": 1018,
+      "y": 497,
+      "w": 51,
+      "h": 31,
+      "layerId": "layer-48",
+      "buffer_ptr": 143360,
+      "group_id": 37
     }
   ],
   "textBuffers": {
@@ -871,7 +930,9 @@
     "122880": "VOLUME",
     "126976": "CHECKED",
     "131072": "SELECTED",
-    "135168": "UNSELECTED"
+    "135168": "UNSELECTED",
+    "139264": "OFF",
+    "143360": "ON"
   },
   "paletteEvents": [],
   "layers": [
