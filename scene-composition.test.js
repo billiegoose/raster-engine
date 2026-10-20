@@ -212,7 +212,7 @@ test('amber-components has meaningful nested groups and no legacy object group I
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
   expect(validateScene(scene)).toBe(scene);
   const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
-  expect(scene.objectFolders).toHaveLength(46);
+  expect(scene.objectFolders).toHaveLength(43);
   expect(scene.objectFolders.filter(group=>group.parentId===undefined).map(group=>group.name)).toEqual([
     'Header','Palette Panel','Buttons Panel','Text Fields Panel',
     'Choices Panel','Values Panel','Status Bar','Tabs Panel','Lists Panel'
@@ -233,63 +233,87 @@ test('amber-components has meaningful nested groups and no legacy object group I
   }
   expect(folderMembers(scene,groups.get('Header').id)).toHaveLength(6);
   expect(folderMembers(scene,groups.get('Values Panel').id)).toHaveLength(12);
-  expect(scene.shapes).toHaveLength(82);
-  expect(scene.texts).toHaveLength(46);
+  expect(scene.shapes).toHaveLength(80);
+  expect(scene.texts).toHaveLength(40);
   expect([...scene.shapes,...scene.texts].every(object=>object.group_id===undefined)).toBe(true);
   expect(compileScene(prepareObjectEditorScene(structuredClone(scene)))).toEqual(compileScene(scene));
 });
 
 
-test('amber-components tabs use square geometry and inverse video on the active tab',()=>{
+test('amber-components tabs match primary and standard buttons with flat bottoms',()=>{
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
   const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
   const tabs=groups.get('Tabs Panel');
   expect(tabs).toBeDefined();
-  const labels=['OVERVIEW','FILES','TASKS','SETTINGS'];
-  const selected=groups.get('Tab: OVERVIEW (selected)');
-  expect(selected?.parentId).toBe(tabs.id);
-  for(const name of labels){
-    const group=groups.get(`Tab: ${name}${name==='OVERVIEW'?' (selected)':''}`);
-    expect(group?.parentId).toBe(tabs.id);
-    const rects=scene.shapes.filter(shape=>shape.parentId===group.id);
-    const texts=scene.texts.filter(text=>text.parentId===group.id);
-    expect(rects.length).toBe(name==='OVERVIEW'?1:2);
-    expect(rects.every(rect=>rect.radius===0)).toBe(true);
-    expect(texts).toHaveLength(1);
-    expect(scene.textBuffers[String(texts[0].buffer_ptr)]).toBe(name);
-    expect(texts[0].layerId).toBe(name==='OVERVIEW'?'layer-7':'layer-6');
-    expect(rects[0].layerId).toBe(name==='OVERVIEW'?'layer-6':'layer-3');
+  expect(groups.has('Overview Tab Content')).toBe(false);
+  expect(scene.objectFolders.filter(g=>g.parentId===tabs.id)).toHaveLength(3);
+  const shapeById=new Map(scene.shapes.map(shape=>[shape.id,shape]));
+  expect([shapeById.get(104).radius,shapeById.get(105).radius]).toEqual([18,17]);
+  const primary=groups.get('Primary Button');
+  const standard=groups.get('Standard Button');
+  const buttonShapes=group=>scene.shapes.filter(shape=>shape.parentId===group.id);
+  const buttonText=group=>scene.texts.filter(text=>text.parentId===group.id);
+  expect(buttonShapes(primary).map(shape=>shape.layerId)).toEqual(['layer-6']);
+  expect(buttonText(primary).map(text=>text.layerId)).toEqual(['layer-7']);
+  expect(buttonShapes(standard).map(shape=>shape.layerId)).toEqual(['layer-6','layer-7']);
+  expect(buttonText(standard).map(text=>text.layerId)).toEqual(['layer-8']);
+  const tabOutlines=[];
+  for(const [index,name] of ['TAB 1','TAB 2','TAB 3'].entries()){
+    const active=index===0;
+    const tab=groups.get(`Tab: ${name}${active?' (selected)':''}`);
+    expect(tab?.parentId).toBe(tabs.id);
+    const rects=buttonShapes(tab),labels=buttonText(tab);
+    expect(rects.map(rect=>rect.layerId)).toEqual(active?['layer-6']:['layer-6','layer-7']);
+    expect(rects.every(rect=>JSON.stringify(rect.radius)==='[5,15,0,0]')).toBe(true);
+    expect(rects[0].h).toBe(40);
+    tabOutlines.push(rects[0]);
+    expect(labels).toHaveLength(1);
+    expect(scene.textBuffers[String(labels[0].buffer_ptr)]).toBe(name);
+    expect(labels[0].layerId).toBe(active?'layer-7':'layer-8');
   }
-  expect(groups.get('Overview Tab Content')?.parentId).toBe(tabs.id);
+  const foot=scene.shapes.filter(shape=>shape.parentId===tabs.id&&
+    shape.layerId==='layer-6'&&shape.h===2);
+  expect(foot).toHaveLength(1);
+  expect(foot[0].radius).toBe(0);
+  expect(foot[0].x).toBe(Math.min(...tabOutlines.map(shape=>shape.x)));
+  expect(foot[0].x+foot[0].w).toBe(Math.max(...tabOutlines.map(shape=>shape.x+shape.w)));
+  expect(foot[0].y).toBe(tabOutlines[0].y+40);
+  expect(tabOutlines.every(shape=>shape.y+shape.h===foot[0].y)).toBe(true);
 });
 
-test('amber-components lists use inverse video for selected items and dim disabled entries',()=>{
+test('amber-components compact list has four items with ITEM 2 in inverse video',()=>{
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
   const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
   const panel=groups.get('Lists Panel');
   const list=groups.get('Selection List');
   expect(list?.parentId).toBe(panel.id);
-  const items=[
-    ['SCENE EDITOR',false,false],
-    ['COMPONENTS',true,false],
-    ['FONT ATLAS',false,false],
-    ['PALETTE',false,false],
-    ['EXPORT',false,true]
-  ];
-  for(const [label,selected,disabled] of items){
-    const name=`List Item: ${label}${selected?' (selected)':disabled?' (disabled)':''}`;
-    const row=groups.get(name);
-    expect(row?.parentId).toBe(list.id);
-    const text=scene.texts.find(item=>item.parentId===row.id&&scene.textBuffers[String(item.buffer_ptr)]===label);
-    expect(text).toBeDefined();
-    expect(text.layerId).toBe(selected?'layer-7':disabled?'layer-3':'layer-6');
-    const rectangles=scene.shapes.filter(shape=>shape.parentId===row.id);
-    expect(rectangles.every(rect=>rect.radius===0)).toBe(true);
-    if(selected){
-      expect(rectangles.some(rect=>rect.layerId==='layer-6'&&rect.w>=800)).toBe(true);
-    }else{
-      expect(rectangles.some(rect=>rect.layerId==='layer-6'&&rect.w>=800)).toBe(false);
-    }
+  const shapesById=new Map(scene.shapes.map(shape=>[shape.id,shape]));
+  expect([shapesById.get(116).radius,shapesById.get(117).radius]).toEqual([18,17]);
+  expect([shapesById.get(120).radius,shapesById.get(121).radius]).toEqual([8,7]);
+  expect(scene.objectFolders.filter(group=>group.parentId===list.id)).toHaveLength(4);
+  const rowStarts=[];
+  for(let i=1;i<=4;i++){
+    const selected=i===2,label=`ITEM ${i}`;
+    const group=groups.get(`List Item: ${label}${selected?' (selected)':''}`);
+    expect(group?.parentId).toBe(list.id);
+    const labels=scene.texts.filter(item=>item.parentId===group.id);
+    expect(labels).toHaveLength(1);
+    expect(scene.textBuffers[String(labels[0].buffer_ptr)]).toBe(label);
+    expect(labels[0].layerId).toBe(selected?'layer-7':'layer-6');
+    const rectangles=scene.shapes.filter(shape=>shape.parentId===group.id);
+    expect(rectangles).toHaveLength(1);
+    expect(rectangles[0].radius).toBe(0);
+    expect(rectangles[0].h).toBe(40);
+    expect(rectangles[0].w).toBe(388);
+    expect(rectangles[0].layerId).toBe(selected?'layer-6':'layer-2');
+    expect(labels[0].y).toBe(rectangles[0].y+5);
+    rowStarts.push(rectangles[0].y);
   }
+  expect(rowStarts).toEqual(rowStarts.map((_,i)=>rowStarts[0]+i*41));
+  const separators=scene.shapes.filter(shape=>shape.parentId===list.id&&shape.layerId==='layer-3');
+  expect(separators).toHaveLength(3);
+  expect(separators.map(shape=>[shape.x,shape.y,shape.w,shape.h,shape.radius])).toEqual(
+    rowStarts.slice(1).map(y=>[706,y-1,388,1,0]));
+  expect(groups.has('List Item: EXPORT (disabled)')).toBe(false);
   expect(validateScene(scene)).toBe(scene);
 });

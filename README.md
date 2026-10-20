@@ -128,9 +128,12 @@ semantic palette legend and four aligned columns of vertically stacked examples:
 **Buttons**, **Text Fields**, **Choices** (checkboxes, radio buttons and switches),
 and **Values** (progress and volume). Controls remain at their native pixel
 sizes, with no image scaling. The compact sidebar documents the four semantic palette roles without repeating
-the column titles. Component panels end just below their vertically stacked
-examples, leaving the lower half of the 1080p canvas open for new component
-families. The volume label uses the primary (active) ink color.
+the column titles. The original component panels sit above a compact
+three-tab example and a four-item list. Tabs reuse the primary/standard button
+styling but have flat bottom edges connected by a continuous bottom bar;
+selected tabs and list rows use inverse video. The list rows are 40 pixels
+tall with one-pixel dim separators, and both demo panels retain the rounded
+corners of the original component panels. The volume label uses the primary (active) ink color.
 `amber-os.json`, Paint, and other older scene files continue to use 720p unless
 resized in the editor.
 
