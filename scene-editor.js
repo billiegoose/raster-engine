@@ -1,5 +1,5 @@
-/* Visual scene editor. Selection, grouping, and clipboard operations work on
-   the flat shape/text model; only the raster simulator generates pixels. */
+/* Visual scene editor. Composition folders organize objects independently of
+   paint layers; only the raster simulator generates pixels. */
 import {LAYERS,canvasSize} from './scene.js';
 import {prepareObjectEditorScene,sceneObjects,getObject,getLayerName,setLayerName,getLayer,drawingLayers,layerIndex,addLayer,reorderLayer,setLayerColor,addRectangle,addText,updateObject,
   moveObject,resizeObject,radiusCss,paletteColor,rectangleThumbnail,
@@ -24,7 +24,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
   let selection=[],drag=null,clipboard=[],pasteCount=0;
   let mostRecentLayer=null;
   const exactSelection={expandGroups:false};
-  let selectedGroupId=null,selectedFolderId=null;
+  let selectedFolderId=null;
   const collapsedFolders=new Set();
   let draggedObjects=null,draggedFolder=null,draggedPaintLayer=null;
 
@@ -136,10 +136,8 @@ export function createSceneEditor({getScene,history,onSimulate}){
         return `<div class="object-folder" role="treeitem" aria-level="${depth}" aria-expanded="${!collapsed}" data-folder-drop="${html(folder.id)}">
           <div class="object-folder-header${chosen?' is-selected':''}" draggable="true" data-folder-drag="${html(folder.id)}">
             <button type="button" data-folder-toggle="${html(folder.id)}" aria-label="${collapsed?'Expand':'Collapse'} folder">${collapsed?'▸':'▾'}</button>
-            <button type="button" data-folder-select="${html(folder.id)}" title="Select ${members} descendant objects">▣</button>
-            <input class="folder-title" data-folder-name="${html(folder.id)}" maxlength="64" aria-label="Folder name" value="${html(folder.name)}" placeholder="Folder name…">
-            <button type="button" data-add-child-folder="${html(folder.id)}" title="Add nested folder">+F</button>
-            <button type="button" data-folder-delete="${html(folder.id)}" title="Remove folder; keep its contents">×</button>
+            <button type="button" class="folder-title" data-folder-select="${html(folder.id)}" title="Select folder (${members} objects). Double-click to rename">${html(folder.name||'New folder')}</button>
+            <input class="folder-rename" data-folder-name="${html(folder.id)}" maxlength="64" aria-label="Rename folder" value="${html(folder.name)}" hidden>
           </div><div class="object-folder-contents"${collapsed?' hidden':''}>${inner||'<p class="layer-empty">Drop objects here</p>'}</div>
         </div>`;
       }).join('');
@@ -241,6 +239,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
     $('copy-objects').disabled=count===0;
     $('cut-objects').disabled=count===0;
     $('paste-objects').disabled=clipboard.length===0;
+    $('remove-folder').disabled=!selectedFolderId||!getObjectFolder(scene(),selectedFolderId);
     $('duplicate-objects').disabled=count===0;
     $('delete-objects').disabled=count===0;
     $('align-objects').disabled=units.length<2;
@@ -282,33 +281,39 @@ export function createSceneEditor({getScene,history,onSimulate}){
     else if(bounds.bottom>viewport.bottom)list.scrollTop+=bounds.bottom-viewport.bottom;
   }
 
-  function setSelection(refs,{groupId=null,folderId=null,focusRef=null}={}){
+  function setSelection(refs,{folderId=null,focusRef=null,preserveList=false,reveal=true}={}){
     selection=resolveSelection(scene(),refs,exactSelection);
-    selectedGroupId=groupId;
     selectedFolderId=folderId;
     if(refs.length){
       const ref=refs.at(-1);
       const obj=getObject(scene(),ref.type,ref.id);
       if(obj&&obj.layerId!=='background')mostRecentLayer=obj.layerId;
     }
-    renderStage();renderList();renderProperties();updateControls();
-    revealObjectTile(focusRef??(refs.length?refs.at(-1):null));
+    renderStage();
+    if(preserveList){
+      // Preserve folder title DOM across clicks so native dblclick still fires.
+      const active=selected();
+      list.querySelectorAll('[data-select-type]').forEach(el=>{
+        const chosen=active.has(`${el.dataset.selectType}:${el.dataset.selectId}`);
+        el.classList.toggle('is-selected',chosen);
+        el.setAttribute('aria-pressed',String(chosen));
+      });
+      list.querySelectorAll('.object-folder-header').forEach(el=>{
+        el.classList.toggle('is-selected',el.closest('[data-folder-drop]')?.dataset.folderDrop===folderId);
+      });
+    }else renderList();
+    renderProperties();updateControls();
+    if(reveal)revealObjectTile(focusRef??(refs.length?refs.at(-1):null));
   }
-  function select(ref,additive=false,{individual=false}={}){
+  function select(ref,additive=false){
     if(!ref){if(!additive)setSelection([]);return;}
     const obj=getObject(scene(),ref.type,ref.id);
     if(!obj)return;
-    const members=individual?[ref]:resolveSelection(scene(),[ref]);
     const old=selected();
     if(additive){
-      const already=members.every(member=>old.has(key(member)));
-      const changed=already?selection.filter(member=>!members.some(item=>key(item)===key(member))):[...selection,...members];
+      const changed=old.has(key(ref))?selection.filter(item=>key(item)!==key(ref)):[...selection,ref];
       setSelection(changed,{focusRef:changed.some(item=>key(item)===key(ref))?ref:null});
-    }else setSelection(members,{
-      groupId:!individual&&members.length>1?(obj.parentId??obj.group_id??null):null,
-      focusRef:ref
-    });
-    // The clicked member, not its last group sibling, sets insertion layer.
+    }else setSelection([ref],{focusRef:ref});
     if(obj.layerId!=='background')mostRecentLayer=obj.layerId;
   }
 
@@ -325,10 +330,11 @@ export function createSceneEditor({getScene,history,onSimulate}){
       event.preventDefault();
       const ref={type:el.dataset.objectType,id:Number(el.dataset.objectId)};
       if(modifier){select(ref,true);return;}
-      const current=getObject(scene(),ref.type,ref.id);
-      const drillDown=selectedGroupId!=null&&(current?.parentId===selectedGroupId||current?.group_id===selectedGroupId)&&
-        selected().has(key(ref));
-      if(!selected().has(key(ref)))select(ref);
+      // Preserve a selected set for dragging, but a simple click always
+      // drills down to the actual object clicked, not the whole folder/set.
+      const alreadySelected=selected().has(key(ref));
+      const drillDown=alreadySelected&&(selectedFolderId!=null||selection.length>1);
+      if(!alreadySelected)select(ref);
       const mode=event.target.closest('[data-drag-handle]')?'resize':'move';
       const start=selection.map(item=>{
         const obj=getObject(scene(),item.type,item.id);
@@ -386,13 +392,13 @@ export function createSceneEditor({getScene,history,onSimulate}){
         const x1=clamp(finished.clientX-bounds.left,0,width),y1=clamp(finished.clientY-bounds.top,0,height);
         const x2=clamp(event.clientX-bounds.left,0,width),y2=clamp(event.clientY-bounds.top,0,height);
         const left=Math.min(x1,x2),right=Math.max(x1,x2),top=Math.min(y1,y2),bottom=Math.max(y1,y2);
-        const hits=objectsFullyInsideRect(scene(),{left,top,right,bottom});
+        const hits=objectsFullyInsideRect(scene(),{left,top,right,bottom},exactSelection);
         setSelection([...finished.base,...hits]);
       }
     }else{
       history.commit();
       if(finished.drillDown&&!finished.changed){
-        select(finished.clickedRef,false,{individual:true});
+        select(finished.clickedRef);
       }else render();
     }
   }
@@ -403,14 +409,13 @@ export function createSceneEditor({getScene,history,onSimulate}){
     if(el&&(event.key==='Enter'||event.key===' ')){
       event.preventDefault();
       const ref={type:el.dataset.objectType,id:Number(el.dataset.objectId)};
-      const obj=getObject(scene(),ref.type,ref.id);
-      select(ref,event.shiftKey,{individual:!event.shiftKey&&selectedGroupId!=null&&(obj?.parentId===selectedGroupId||obj?.group_id===selectedGroupId)});
+      select(ref,event.shiftKey);
     }
   });
   list.addEventListener('click',event=>{
     const el=event.target.closest('[data-select-type]');
     if(el)select({type:el.dataset.selectType,id:Number(el.dataset.selectId)},
-      event.shiftKey||event.ctrlKey||event.metaKey,{individual:true});
+      event.shiftKey||event.ctrlKey||event.metaKey);
   });
   $('object-filter').addEventListener('input',renderList);
   $('show-objects').addEventListener('click',()=>{
@@ -423,9 +428,28 @@ export function createSceneEditor({getScene,history,onSimulate}){
     $('show-objects').classList.remove('active');$('show-palette').classList.add('active');
     $('show-objects').setAttribute('aria-selected','false');$('show-palette').setAttribute('aria-selected','true');
   });
-  $('add-folder').addEventListener('click',()=>edit(()=>addObjectFolder(scene(),{
-    parentId:selectedFolderId&&getObjectFolder(scene(),selectedFolderId)?selectedFolderId:null
-  })));
+  $('add-folder').addEventListener('click',()=>{
+    // When objects are selected, wrap them in a folder at their existing
+    // level. Selecting a folder instead creates an empty child folder.
+    const refs=selectedFolderId?[]:[...selection];
+    const parents=refs.map(ref=>getObject(scene(),ref.type,ref.id)?.parentId??null);
+    const parentId=selectedFolderId??(parents.length&&parents.every(id=>id===parents[0])?parents[0]:null);
+    let created=null;
+    if(edit(()=>{
+      created=addObjectFolder(scene(),{parentId});
+      if(created&&refs.length)moveObjectsToFolder(scene(),refs,created.id);
+    })&&created){
+      setSelection(folderMembers(scene(),created.id),{folderId:created.id});
+    }
+  });
+  $('remove-folder').addEventListener('click',()=>{
+    const id=selectedFolderId;
+    if(!id||!getObjectFolder(scene(),id))return;
+    if(edit(()=>deleteObjectFolder(scene(),id))){
+      collapsedFolders.delete(id);
+      setSelection([]);
+    }
+  });
   list.addEventListener('click',event=>{
     const toggle=event.target.closest('[data-folder-toggle]');
     if(toggle){
@@ -433,25 +457,30 @@ export function createSceneEditor({getScene,history,onSimulate}){
       if(collapsedFolders.has(id))collapsedFolders.delete(id);else collapsedFolders.add(id);
       renderList();return;
     }
-    const selectedFolder=event.target.closest('[data-folder-select]');
-    if(selectedFolder){
-      const id=selectedFolder.dataset.folderSelect;
-      setSelection(folderMembers(scene(),id),{folderId:id});return;
+    const title=event.target.closest('[data-folder-select]');
+    if(title){
+      const id=title.dataset.folderSelect;
+      setSelection(folderMembers(scene(),id),{folderId:id,preserveList:true,reveal:false});
     }
-    const addChild=event.target.closest('[data-add-child-folder]');
-    if(addChild){edit(()=>addObjectFolder(scene(),{parentId:addChild.dataset.addChildFolder}));return;}
-    const removeFolder=event.target.closest('[data-folder-delete]');
-    if(removeFolder){
-      const id=removeFolder.dataset.folderDelete;
-      if(edit(()=>deleteObjectFolder(scene(),id))){
-        collapsedFolders.delete(id);
-        if(selectedFolderId===id)setSelection([]);
-      }
-    }
+  });
+  list.addEventListener('dblclick',event=>{
+    const title=event.target.closest('[data-folder-select]');
+    if(!title)return;
+    const input=title.parentElement.querySelector('[data-folder-name]');
+    if(!input)return;
+    title.hidden=true;input.hidden=false;
+    input.focus();input.select();
   });
   list.addEventListener('change',event=>{
     const name=event.target.closest('[data-folder-name]');
     if(name)edit(()=>renameObjectFolder(scene(),name.dataset.folderName,name.value));
+  });
+  list.addEventListener('focusout',event=>{
+    const input=event.target.closest('[data-folder-name]');
+    if(!input||!list.contains(input))return;
+    const title=input.parentElement.querySelector('[data-folder-select]');
+    input.hidden=true;
+    if(title){title.hidden=false;title.textContent=getObjectFolder(scene(),input.dataset.folderName)?.name||'New folder';}
   });
   list.addEventListener('keydown',event=>{
     const input=event.target.closest('[data-folder-name]');
@@ -703,7 +732,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
   return {
     render,
     updateHistoryControls:updateControls,
-    clearSelection(){selection=[];selectedFolderId=null;selectedGroupId=null;mostRecentLayer=null;render();},
+    clearSelection(){selection=[];selectedFolderId=null;mostRecentLayer=null;render();},
     getSelection(){return selection.map(ref=>({...ref}));},
     setSelection(refs){setSelection(refs);},
     setOnTextInput(callback){onTextInput=callback;}

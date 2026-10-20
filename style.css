@@ -427,3 +427,19 @@ button:disabled:hover { background: #22354a; border-color: #3c526d; }
 }
 .palette-layer-row[data-layer-insert=above]::before { top: -2px; }
 .palette-layer-row[data-layer-insert=below]::after { bottom: -2px; }
+
+/* Folder rows are directly selectable; double-click swaps the label for an
+   inline rename input. No per-folder action buttons are needed. */
+.object-folder-header .folder-title {
+  flex: 1; min-width: 0; text-align: left; padding: 4px 3px;
+  color: #e7edf5; background: transparent; border: 1px solid transparent;
+  font: inherit; cursor: default; overflow: hidden; text-overflow: ellipsis;
+}
+.object-folder-header .folder-title:hover { background: #29435a; }
+.object-folder-header .folder-title[hidden],
+.object-folder-header .folder-rename[hidden] { display: none; }
+.object-folder-header .folder-rename {
+  flex: 1; min-width: 0; padding: 4px 3px; color: #e7edf5;
+  background: #101d2c; border: 1px solid var(--accent); font: inherit;
+}
+#remove-folder { font-size: 11px; padding: 5px 9px; }

@@ -596,9 +596,9 @@ export function moveSelectionToLayer(scene,refs,layerId,options={}){
 
 /** Containment-based marquee selection. A grouped object is selected only
  * when the entire group's bounding box fits within the marquee. */
-export function objectsFullyInsideRect(scene,{left,top,right,bottom}){
+export function objectsFullyInsideRect(scene,{left,top,right,bottom},options={}){
   const all=sceneObjects(scene).map(({type,object})=>({type,id:object.id}));
-  return selectionUnits(scene,all)
+  return selectionUnits(scene,all,options)
     .filter(unit=>unit.x>=left&&unit.y>=top&&unit.right<=right&&unit.bottom<=bottom)
     .flatMap(unit=>unit.members.map(({type,id})=>({type,id})));
 }

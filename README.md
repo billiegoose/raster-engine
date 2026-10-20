@@ -63,10 +63,15 @@ The browser has two distinct workspaces that share one editable JSON scene:
   than scaling the artwork or font. Select objects on the canvas or from
   the independent, searchable **Objects** hierarchy. Objects can be nested
   arbitrarily inside named folders without changing their paint layer. Use
-  **+ Folder** or **+F** on an existing folder to build a hierarchy; drag
-  rectangles, text, or nested folders onto a folder to reparent them, or onto
-  the root drop target to move them out. Selecting a folder selects all its
-  descendant objects, including primitives on different paint layers. Its
+  **+ Folder** to wrap the selected object(s) in a new folder, or to add a
+  child folder when a folder is selected. Select a folder by single-clicking
+  its title; double-click its title to rename it. Use **− Folder** in the
+  Objects toolbar to remove a selected folder while keeping its contents.
+  Drag rectangles, text, or nested folders onto a folder to reparent them, or onto
+  the root drop target to move them out. Clicking a canvas object selects
+  only that object, even if it belongs to a folder. Selecting a folder in
+  the Objects tree selects all its descendant objects, including primitives
+  on different paint layers. Its
   Properties inspector can translate all those objects together. Removing
   a folder promotes its children instead of deleting the artwork. Group and
   Ungroup commands are no longer part of the editor.
