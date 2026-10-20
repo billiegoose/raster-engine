@@ -180,3 +180,22 @@ test('independent folder hierarchy survives JSON serialization without changing 
   expect(folderMembers(restored,root.id)).toHaveLength(3);
   expect(compileScene(restored)).toEqual(compiled);
 });
+
+
+test('amber-os has meaningful nested composition group names and unchanged legacy grouping',()=>{
+  const scene=JSON.parse(readFileSync(new URL('./scenes/amber-os.json',import.meta.url),'utf8'));
+  expect(validateScene(scene)).toBe(scene);
+  const names=scene.objectFolders.map(group=>group.name);
+  expect(names.sort()).toEqual(['Active Message','Left Window','Right Window'].sort());
+  const left=scene.objectFolders.find(group=>group.name==='Left Window');
+  const active=scene.objectFolders.find(group=>group.name==='Active Message');
+  const right=scene.objectFolders.find(group=>group.name==='Right Window');
+  expect(active.parentId).toBe(left.id);
+  expect(folderMembers(scene,left.id)).toHaveLength(6);
+  expect(folderMembers(scene,active.id)).toHaveLength(3);
+  expect(folderMembers(scene,right.id)).toHaveLength(2);
+  const compiled=compileScene(scene);
+  expect(compileScene(prepareObjectEditorScene(structuredClone(scene)))).toEqual(compiled);
+  expect(scene.shapes.every(shape=>shape.group_id===undefined)).toBe(true);
+  expect(scene.texts.every(text=>text.group_id===undefined)).toBe(true);
+});

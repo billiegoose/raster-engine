@@ -62,19 +62,16 @@ The browser has two distinct workspaces that share one editable JSON scene:
   rectangles and clipped text. The canvas scrolls in narrower windows rather
   than scaling the artwork or font. Select objects on the canvas or from
   the independent, searchable **Objects** hierarchy. Objects can be nested
-  arbitrarily inside named folders without changing their paint layer. Use
-  **+ Folder** to wrap the selected object(s) in a new folder, or to add a
-  child folder when a folder is selected. Select a folder by single-clicking
-  its title; double-click its title to rename it. Use **− Folder** in the
-  Objects toolbar to remove a selected folder while keeping its contents.
-  Drag rectangles, text, or nested folders onto a folder to reparent them, or onto
-  the root drop target to move them out. Clicking a canvas object selects
-  only that object, even if it belongs to a folder. Selecting a folder in
-  the Objects tree selects all its descendant objects, including primitives
-  on different paint layers. Its
-  Properties inspector can translate all those objects together. Removing
-  a folder promotes its children instead of deleting the artwork. Group and
-  Ungroup commands are no longer part of the editor.
+  arbitrarily inside named groups without changing their paint layer. Use
+  **+ Group** to wrap selected objects in a new group, or to add a nested
+  group when one is selected. Single-click a group title to select it and
+  double-click to rename. **− Group** removes the selected group without
+  deleting its contents. Drag objects or nested groups into another group or
+  to the root drop target to reparent them. Clicking an object on the canvas
+  selects only that object; selecting a group in the Objects tree selects its
+  descendants across paint layers. Groups move their contents together.
+  The tree lists objects in descending paint-layer order within each group.
+  No Group/Ungroup context commands or per-group action buttons are needed.
 
   The separate **Palette / Layers** inspector manages paint order and layer
   names/colors. Drag layers to reorder physical palette slots (the background
@@ -85,15 +82,15 @@ The browser has two distinct workspaces that share one editable JSON scene:
   to an adjacent layer rather than deleting them. Advanced scanline palette
   overrides remain in this inspector.
 
-  Scenes persist independent `objectFolders` (each with `id`, `name` and an
+  Scenes persist independent groups in the backward-compatible `objectFolders` (each with `id`, `name` and an
   optional `parentId`) and object `parentId` references. Paint layers remain
   a flat, bottom-to-top `layers` array with stable `id`, `name` and `color`;
   object `layerId` references do not depend on composition. At most 64 paint
   layers, including background, compile to physical palette slots. These
-  folders do not consume any slots or appear in the rasterized representation.
-  Legacy paint-layer folder structures are flattened on open, preserving
+  groups do not consume any slots or appear in the rasterized representation.
+  Legacy paint-layer grouping structures are flattened on open, preserving
   their layer ordering and colors; legacy `group_id` object memberships are
-  imported as independent object folders. The raster output is unchanged.
+  imported as independent object groups. The raster output is unchanged.
   All editing operations participate in undo/redo.
 
 The DOM canvas is an **editing approximation**: it uses CSS rounded corners

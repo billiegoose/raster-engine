@@ -295,7 +295,7 @@ export function folderMembers(scene,id){
   return sceneObjects(scene).filter(({object})=>ids.has(object.parentId))
     .map(({type,object})=>({type,id:object.id}));
 }
-export function addObjectFolder(scene,{name='New folder',parentId=null}={}){
+export function addObjectFolder(scene,{name='New group',parentId=null}={}){
   const folders=objectFolders(scene);
   if(folders.length>=256||(parentId!=null&&!getObjectFolder(scene,parentId)))return null;
   let n=1;

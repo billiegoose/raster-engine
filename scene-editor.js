@@ -96,8 +96,9 @@ export function createSceneEditor({getScene,history,onSimulate}){
   function renderList(){
     const data=scene(),active=selected(),folders=objectFolders(data);
     const filter=$('object-filter').value.trim().toLowerCase();
-    const objects=sceneObjects(data).sort((a,b)=>b.object.id-a.object.id);
-    $('object-count').textContent=`${objects.length} objects · ${folders.length} folders`;
+    const objects=sceneObjects(data).sort((a,b)=>
+      layerIndex(data,b.object.layerId)-layerIndex(data,a.object.layerId)||b.object.id-a.object.id);
+    $('object-count').textContent=`${objects.length} objects · ${folders.length} groups`;
     $('editor-stats').textContent=`${data.shapes.length} rectangles · ${data.texts.length} text`;
     $('add-folder').disabled=folders.length>=256;
     const byParent=new Map(),children=new Map();
@@ -120,9 +121,9 @@ export function createSceneEditor({getScene,history,onSimulate}){
       const thumb=type==='rect'?(()=>{
         const t=rectangleThumbnail(object,40,26);
         return `<span class="object-thumbnail-shape" style="width:${t.width}px;height:${t.height}px;border-radius:${t.borderRadius};background:${color}"></span>`;
-      })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(String(data.textBuffers[String(object.buffer_ptr)]??'').split('\n')[0].slice(0,6)||'TEXT')}</span>`;
+      })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(String(data.textBuffers[String(object.buffer_ptr)]??'').split('\n')[0].slice(0,32)||'TEXT')}</span>`;
       return `<button type="button" draggable="true" role="treeitem" class="object-row${chosen?' is-selected':''}" data-select-type="${type}" data-select-id="${object.id}" aria-pressed="${chosen}" title="${html(name)} · ${html(paint)}">
-        <span class="object-tile-preview">${thumb}</span><span class="object-name">${html(name)}</span><span class="object-paint-swatch" style="background:${color}"></span><span class="object-paint-name">${html(paint)}</span></button>`;
+        <span class="object-tile-preview">${thumb}</span><span class="object-paint-swatch" style="background:${color}"></span><span class="object-paint-name">${html(paint)}</span></button>`;
     };
     const renderChildren=(parent=null,depth=1,force=false)=>{
       const direct=(byParent.get(parent)||[]).map(item=>objectMarkup(item,force)).filter(Boolean).join('');
@@ -135,17 +136,17 @@ export function createSceneEditor({getScene,history,onSimulate}){
         const chosen=selectedFolderId===folder.id;
         return `<div class="object-folder" role="treeitem" aria-level="${depth}" aria-expanded="${!collapsed}" data-folder-drop="${html(folder.id)}">
           <div class="object-folder-header${chosen?' is-selected':''}" draggable="true" data-folder-drag="${html(folder.id)}">
-            <button type="button" data-folder-toggle="${html(folder.id)}" aria-label="${collapsed?'Expand':'Collapse'} folder">${collapsed?'▸':'▾'}</button>
-            <button type="button" class="folder-title" data-folder-select="${html(folder.id)}" title="Select folder (${members} objects). Double-click to rename">${html(folder.name||'New folder')}</button>
-            <input class="folder-rename" data-folder-name="${html(folder.id)}" maxlength="64" aria-label="Rename folder" value="${html(folder.name)}" hidden>
+            <button type="button" data-folder-toggle="${html(folder.id)}" aria-label="${collapsed?'Expand':'Collapse'} group">${collapsed?'▸':'▾'}</button>
+            <button type="button" class="folder-title" data-folder-select="${html(folder.id)}" title="Select group (${members} objects). Double-click to rename">${html(folder.name||'New group')}</button>
+            <input class="folder-rename" data-folder-name="${html(folder.id)}" maxlength="64" aria-label="Rename group" value="${html(folder.name)}" hidden>
           </div><div class="object-folder-contents"${collapsed?' hidden':''}>${inner||'<p class="layer-empty">Drop objects here</p>'}</div>
         </div>`;
       }).join('');
       return direct+nested;
     };
     const scrollTop=list.scrollTop;
-    list.innerHTML=renderChildren()+'<div class="object-root-drop" data-objects-root-drop="true">Drop here to move objects or folders to root</div>';
-    if(!objects.length&&!folders.length)list.innerHTML='<p class="empty">No objects yet. Add a rectangle, text, or folder.</p>';
+    list.innerHTML=renderChildren()+'<div class="object-root-drop" data-objects-root-drop="true">Drop here to move objects or groups to root</div>';
+    if(!objects.length&&!folders.length)list.innerHTML='<p class="empty">No objects yet. Add a rectangle, text, or group.</p>';
     list.scrollTop=scrollTop;
   }
 
@@ -173,15 +174,15 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const summary=$('selection-summary');
     if(!selection.length&&!selectedFolderId){
       summary.textContent='';
-      properties.innerHTML='<p class="empty">Select objects or a folder on the canvas or in the Objects list.</p>';
+      properties.innerHTML='<p class="empty">Select objects or a group on the canvas or in the Objects list.</p>';
       return;
     }
     if(selectedFolderId&&getObjectFolder(data,selectedFolderId)){
       const folder=getObjectFolder(data,selectedFolderId);
-      summary.textContent='FOLDER';
+      summary.textContent='GROUP';
       properties.innerHTML=`<div class="property-grid">
-        <label class="property-field property-full">Folder name<input data-selected-folder-name="${html(folder.id)}" type="text" maxlength="64" value="${html(folder.name)}"></label>
-        <p class="muted property-full">${folderMembers(data,folder.id).length} descendant objects · Moving the folder translates all its contents without changing paint layers.</p>
+        <label class="property-field property-full">Group name<input data-selected-folder-name="${html(folder.id)}" type="text" maxlength="64" value="${html(folder.name)}"></label>
+        <p class="muted property-full">${folderMembers(data,folder.id).length} descendant objects · Moving the group translates all its contents without changing paint layers.</p>
         ${numericField('folder-dx','Move X by (px)',0,-canvasSize(data).width,canvasSize(data).width)}
         ${numericField('folder-dy','Move Y by (px)',0,-canvasSize(data).height,canvasSize(data).height)}
       </div>`;
@@ -291,7 +292,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
     }
     renderStage();
     if(preserveList){
-      // Preserve folder title DOM across clicks so native dblclick still fires.
+      // Preserve group title DOM across clicks so native dblclick still fires.
       const active=selected();
       list.querySelectorAll('[data-select-type]').forEach(el=>{
         const chosen=active.has(`${el.dataset.selectType}:${el.dataset.selectId}`);
@@ -331,7 +332,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       const ref={type:el.dataset.objectType,id:Number(el.dataset.objectId)};
       if(modifier){select(ref,true);return;}
       // Preserve a selected set for dragging, but a simple click always
-      // drills down to the actual object clicked, not the whole folder/set.
+      // drills down to the actual object clicked, not the whole group/selection.
       const alreadySelected=selected().has(key(ref));
       const drillDown=alreadySelected&&(selectedFolderId!=null||selection.length>1);
       if(!alreadySelected)select(ref);
@@ -429,8 +430,8 @@ export function createSceneEditor({getScene,history,onSimulate}){
     $('show-objects').setAttribute('aria-selected','false');$('show-palette').setAttribute('aria-selected','true');
   });
   $('add-folder').addEventListener('click',()=>{
-    // When objects are selected, wrap them in a folder at their existing
-    // level. Selecting a folder instead creates an empty child folder.
+    // When objects are selected, wrap them in a group at their existing
+    // level. Selecting a group instead creates an empty child group.
     const refs=selectedFolderId?[]:[...selection];
     const parents=refs.map(ref=>getObject(scene(),ref.type,ref.id)?.parentId??null);
     const parentId=selectedFolderId??(parents.length&&parents.every(id=>id===parents[0])?parents[0]:null);
@@ -480,7 +481,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
     if(!input||!list.contains(input))return;
     const title=input.parentElement.querySelector('[data-folder-select]');
     input.hidden=true;
-    if(title){title.hidden=false;title.textContent=getObjectFolder(scene(),input.dataset.folderName)?.name||'New folder';}
+    if(title){title.hidden=false;title.textContent=getObjectFolder(scene(),input.dataset.folderName)?.name||'New group';}
   });
   list.addEventListener('keydown',event=>{
     const input=event.target.closest('[data-folder-name]');

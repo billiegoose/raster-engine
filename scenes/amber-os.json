@@ -17,7 +17,7 @@
       "h": 648,
       "radius": 18,
       "layerId": "layer-2",
-      "group_id": 4
+      "parentId": "folder-1"
     },
     {
       "id": 4,
@@ -27,7 +27,7 @@
       "h": 100,
       "radius": 18,
       "layerId": "layer-3",
-      "group_id": 2
+      "parentId": "folder-2"
     },
     {
       "id": 5,
@@ -37,7 +37,7 @@
       "h": 98,
       "radius": 18,
       "layerId": "layer-4",
-      "group_id": 2
+      "parentId": "folder-2"
     },
     {
       "id": 8,
@@ -65,7 +65,7 @@
       "h": 650,
       "radius": 18,
       "layerId": "layer-1",
-      "group_id": 4
+      "parentId": "folder-1"
     },
     {
       "id": 12,
@@ -75,7 +75,7 @@
       "h": 650,
       "radius": 18,
       "layerId": "layer-1",
-      "group_id": 3
+      "parentId": "folder-3"
     },
     {
       "id": 13,
@@ -85,7 +85,7 @@
       "h": 648,
       "radius": 18,
       "layerId": "layer-2",
-      "group_id": 3
+      "parentId": "folder-3"
     },
     {
       "id": 14,
@@ -109,7 +109,7 @@
       "h": 72,
       "buffer_ptr": 4096,
       "layerId": "layer-25",
-      "group_id": 2
+      "parentId": "folder-2"
     },
     {
       "id": 6,
@@ -119,7 +119,7 @@
       "h": 72,
       "buffer_ptr": 8192,
       "layerId": "layer-10",
-      "group_id": 4
+      "parentId": "folder-1"
     },
     {
       "id": 7,
@@ -164,91 +164,76 @@
       "color": "#060200"
     },
     {
-      "id": "group-3",
-      "kind": "group",
-      "name": "Dim"
-    },
-    {
       "id": "layer-1",
       "name": "Dim Border",
-      "color": "#5b2400",
-      "parentId": "group-3"
+      "color": "#5b2400"
     },
     {
       "id": "layer-2",
       "name": "Dim Screenfill",
-      "color": "#060200",
-      "parentId": "group-3"
+      "color": "#060200"
     },
     {
       "id": "layer-10",
       "name": "Dim Text",
-      "color": "#5b2400",
-      "parentId": "group-3"
-    },
-    {
-      "id": "group-2",
-      "kind": "group",
-      "name": "Active"
+      "color": "#5b2400"
     },
     {
       "id": "layer-3",
       "name": "Active Border",
-      "color": "#dd5800",
-      "parentId": "group-2"
+      "color": "#dd5800"
     },
     {
       "id": "layer-4",
       "name": "Active Screenfill",
-      "color": "#060200",
-      "parentId": "group-2"
+      "color": "#060200"
     },
     {
       "id": "layer-25",
       "name": "Active Text",
-      "color": "#dd5800",
-      "parentId": "group-2"
-    },
-    {
-      "id": "group-1",
-      "kind": "group",
-      "name": "Hot"
+      "color": "#dd5800"
     },
     {
       "id": "layer-27",
       "name": "Hot Border",
-      "color": "#ff3400",
-      "parentId": "group-1"
+      "color": "#ff3400"
     },
     {
       "id": "layer-28",
       "name": "Hot Screenfill",
-      "color": "#060200",
-      "parentId": "group-1"
+      "color": "#060200"
     },
     {
       "id": "layer-26",
       "name": "Hot Text",
-      "color": "#ff3400",
-      "parentId": "group-1"
-    },
-    {
-      "id": "group-4",
-      "kind": "group",
-      "name": "Hot Button",
-      "parentId": "group-1"
+      "color": "#ff3400"
     },
     {
       "id": "layer-29",
       "name": "Hot Button",
-      "color": "#ff3400",
-      "parentId": "group-4"
+      "color": "#ff3400"
     },
     {
       "id": "layer-30",
       "name": "Hot Button Text",
-      "color": "#050100",
-      "parentId": "group-4"
+      "color": "#050100"
+    }
+  ],
+  "width": 1280,
+  "height": 720,
+  "objectFolders": [
+    {
+      "id": "folder-1",
+      "name": "Left Window"
+    },
+    {
+      "id": "folder-2",
+      "name": "Active Message",
+      "parentId": "folder-1"
+    },
+    {
+      "id": "folder-3",
+      "name": "Right Window"
     }
   ]
 }

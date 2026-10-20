@@ -2,7 +2,7 @@ import {test,expect} from 'bun:test';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {blankScene} from './scene.js';
-import {prepareObjectEditorScene,addRectangle,addText,addObjectFolder,moveObjectsToFolder,drawingLayers,getObjectFolder} from './scene-model.js';
+import {prepareObjectEditorScene,addRectangle,addText,addObjectFolder,moveObjectsToFolder,drawingLayers,getObjectFolder,addLayer,updateObject} from './scene-model.js';
 import {createSceneHistory} from './scene-history.js';
 import {createSceneEditor} from './scene-editor.js';
 
@@ -112,7 +112,7 @@ test('nested object folders can contain different paint layers and move together
     expect(h.getScene().texts.find(s=>s.id===h.label.id).parentId).toBe(child.id);
     const before=h.getScene().shapes.find(s=>s.id===h.rect.id).x;
     h.click(h.$('object-list').querySelector(`[data-folder-select="${root.id}"]`));
-    expect(h.$('selection-summary').textContent).toBe('FOLDER');
+    expect(h.$('selection-summary').textContent).toBe('GROUP');
     h.change(h.$('object-properties').querySelector('[data-property="folder-dx"]'),'15');
     expect(h.getScene().shapes.find(s=>s.id===h.rect.id).x).toBe(before+15);
     expect(h.getScene().texts.find(s=>s.id===h.label.id).x).toBe(115);
@@ -127,7 +127,7 @@ test('folder deletion promotes children; empty folders still have editable prope
     h.click(h.$('add-folder'));
     const folder=h.getScene().objectFolders[0];
     h.click(h.$('object-list').querySelector(`[data-folder-select="${folder.id}"]`));
-    expect(h.$('selection-summary').textContent).toBe('FOLDER');
+    expect(h.$('selection-summary').textContent).toBe('GROUP');
     expect(h.$('object-properties').querySelector('[data-selected-folder-name]')).not.toBeNull();
     expect(h.$('remove-folder').disabled).toBe(false);
     h.click(h.$('remove-folder'));
@@ -150,7 +150,7 @@ test('clicking objects within a folder selects only the clicked primitive',()=>{
     expect(h.editor.getSelection()).toEqual([{type:'rect',id:h.rect.id}]);
     expect(h.$('selection-summary').textContent).toBe('RECTANGLE');
     h.click(h.$('object-list').querySelector(`[data-folder-select="${folder.id}"]`));
-    expect(h.$('selection-summary').textContent).toBe('FOLDER');
+    expect(h.$('selection-summary').textContent).toBe('GROUP');
     expect(h.$('object-list').querySelector('[data-add-child-folder]')).toBeNull();
     expect(h.$('object-list').querySelector('[data-folder-delete]')).toBeNull();
     h.click(h.$('object-list').querySelector(`[data-select-type="rect"][data-select-id="${h.rect.id}"]`));
@@ -166,12 +166,12 @@ test('adding a folder to a selected object wraps it; selecting a folder adds a c
     const root=h.getScene().objectFolders[0];
     expect(h.getScene().shapes[0].parentId).toBe(root.id);
     expect(h.getScene().texts[0].parentId).toBeUndefined();
-    expect(h.$('selection-summary').textContent).toBe('FOLDER');
+    expect(h.$('selection-summary').textContent).toBe('GROUP');
     h.click(h.$('add-folder'));
     expect(h.getScene().objectFolders).toHaveLength(2);
     expect(h.getScene().objectFolders[1].parentId).toBe(root.id);
     expect(h.getScene().shapes[0].parentId).toBe(root.id);
-    expect(h.$('selection-summary').textContent).toBe('FOLDER');
+    expect(h.$('selection-summary').textContent).toBe('GROUP');
     h.click(h.$('remove-folder'));
     expect(h.getScene().objectFolders).toHaveLength(1);
     expect(h.getScene().shapes).toHaveLength(1);
@@ -194,7 +194,7 @@ test('double-click rename requires double-click and remains undoable',()=>{
     expect(getObjectFolder(h.getScene(),folder.id).name).toBe('My control');
     expect(h.history.undo()).toBe(true);
     h.editor.render();
-    expect(getObjectFolder(h.getScene(),folder.id).name).toBe('New folder');
+    expect(getObjectFolder(h.getScene(),folder.id).name).toBe('New group');
   }finally{h.cleanup();}
 });
 
@@ -215,5 +215,29 @@ test('canvas click drills down from multi-object selection without losing drag s
     expect(h.editor.getSelection()).toHaveLength(2);
     fire('pointerup');
     expect(h.editor.getSelection()).toEqual([{type:'rect',id:h.rect.id}]);
+  }finally{h.cleanup();}
+});
+
+
+test('group members display highest paint layers first without object ID labels',()=>{
+  const h=harness();try{
+    const folder=addObjectFolder(h.getScene(),{name:'Paint order'});
+    moveObjectsToFolder(h.getScene(),[
+      {type:'rect',id:h.rect.id},{type:'text',id:h.label.id}
+    ],folder.id);
+    h.editor.render();
+    const rows=()=>[...h.$('object-list').querySelectorAll(`[data-folder-drop="${folder.id}"] > .object-folder-contents > [data-select-type]`)];
+    // Both primitives initially share the same layer; the larger ID is first.
+    expect(rows().map(el=>el.dataset.selectId)).toEqual([String(h.label.id),String(h.rect.id)]);
+    const added=addLayer(h.getScene(),{name:'Top paint',color:'#ff3400'});
+    updateObject(h.getScene(),'rect',h.rect.id,'layerId',added.id);
+    h.editor.render();
+    expect(rows().map(el=>el.dataset.selectType)).toEqual(['rect','text']);
+    expect(rows()[0].querySelector('.object-name')).toBeNull();
+    expect(rows()[1].querySelector('.object-name')).toBeNull();
+    expect(rows()[0].textContent).not.toContain(`Rectangle ${h.rect.id}`);
+    expect(rows()[1].textContent).not.toContain(`Text ${h.label.id}`);
+    expect(h.$('object-count').textContent).toContain('groups');
+    expect(h.$('add-folder').textContent).toContain('Group');
   }finally{h.cleanup();}
 });
