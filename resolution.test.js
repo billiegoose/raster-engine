@@ -98,12 +98,12 @@ test('scene validation uses the saved canvas height for palette events',()=>{
   }
 });
 
-test('Amber component atlas uses native 1080p pixels and four aligned vertical columns',()=>{
+test('Amber component atlas uses native 1080p pixels, aligned columns, tabs and lists',()=>{
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
   expect(validateScene(scene)).toBe(scene);
   expect(canvasSize(scene)).toEqual({width:1920,height:1080});
-  expect(scene.shapes).toHaveLength(59);
-  expect(scene.texts).toHaveLength(31);
+  expect(scene.shapes).toHaveLength(82);
+  expect(scene.texts).toHaveLength(46);
   const shapes=new Map(scene.shapes.map(o=>[o.id,o]));
   const texts=new Map(scene.texts.map(o=>[o.id,o]));
   const label=id=>scene.textBuffers[String(texts.get(id).buffer_ptr)];

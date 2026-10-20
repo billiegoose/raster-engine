@@ -212,10 +212,10 @@ test('amber-components has meaningful nested groups and no legacy object group I
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
   expect(validateScene(scene)).toBe(scene);
   const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
-  expect(scene.objectFolders).toHaveLength(33);
+  expect(scene.objectFolders).toHaveLength(46);
   expect(scene.objectFolders.filter(group=>group.parentId===undefined).map(group=>group.name)).toEqual([
     'Header','Palette Panel','Buttons Panel','Text Fields Panel',
-    'Choices Panel','Values Panel','Status Bar'
+    'Choices Panel','Values Panel','Status Bar','Tabs Panel','Lists Panel'
   ]);
   const children={
     'Base Swatch':'Palette Panel',
@@ -233,8 +233,63 @@ test('amber-components has meaningful nested groups and no legacy object group I
   }
   expect(folderMembers(scene,groups.get('Header').id)).toHaveLength(6);
   expect(folderMembers(scene,groups.get('Values Panel').id)).toHaveLength(12);
-  expect(scene.shapes).toHaveLength(59);
-  expect(scene.texts).toHaveLength(31);
+  expect(scene.shapes).toHaveLength(82);
+  expect(scene.texts).toHaveLength(46);
   expect([...scene.shapes,...scene.texts].every(object=>object.group_id===undefined)).toBe(true);
   expect(compileScene(prepareObjectEditorScene(structuredClone(scene)))).toEqual(compileScene(scene));
+});
+
+
+test('amber-components tabs use square geometry and inverse video on the active tab',()=>{
+  const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
+  const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
+  const tabs=groups.get('Tabs Panel');
+  expect(tabs).toBeDefined();
+  const labels=['OVERVIEW','FILES','TASKS','SETTINGS'];
+  const selected=groups.get('Tab: OVERVIEW (selected)');
+  expect(selected?.parentId).toBe(tabs.id);
+  for(const name of labels){
+    const group=groups.get(`Tab: ${name}${name==='OVERVIEW'?' (selected)':''}`);
+    expect(group?.parentId).toBe(tabs.id);
+    const rects=scene.shapes.filter(shape=>shape.parentId===group.id);
+    const texts=scene.texts.filter(text=>text.parentId===group.id);
+    expect(rects.length).toBe(name==='OVERVIEW'?1:2);
+    expect(rects.every(rect=>rect.radius===0)).toBe(true);
+    expect(texts).toHaveLength(1);
+    expect(scene.textBuffers[String(texts[0].buffer_ptr)]).toBe(name);
+    expect(texts[0].layerId).toBe(name==='OVERVIEW'?'layer-7':'layer-6');
+    expect(rects[0].layerId).toBe(name==='OVERVIEW'?'layer-6':'layer-3');
+  }
+  expect(groups.get('Overview Tab Content')?.parentId).toBe(tabs.id);
+});
+
+test('amber-components lists use inverse video for selected items and dim disabled entries',()=>{
+  const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
+  const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
+  const panel=groups.get('Lists Panel');
+  const list=groups.get('Selection List');
+  expect(list?.parentId).toBe(panel.id);
+  const items=[
+    ['SCENE EDITOR',false,false],
+    ['COMPONENTS',true,false],
+    ['FONT ATLAS',false,false],
+    ['PALETTE',false,false],
+    ['EXPORT',false,true]
+  ];
+  for(const [label,selected,disabled] of items){
+    const name=`List Item: ${label}${selected?' (selected)':disabled?' (disabled)':''}`;
+    const row=groups.get(name);
+    expect(row?.parentId).toBe(list.id);
+    const text=scene.texts.find(item=>item.parentId===row.id&&scene.textBuffers[String(item.buffer_ptr)]===label);
+    expect(text).toBeDefined();
+    expect(text.layerId).toBe(selected?'layer-7':disabled?'layer-3':'layer-6');
+    const rectangles=scene.shapes.filter(shape=>shape.parentId===row.id);
+    expect(rectangles.every(rect=>rect.radius===0)).toBe(true);
+    if(selected){
+      expect(rectangles.some(rect=>rect.layerId==='layer-6'&&rect.w>=800)).toBe(true);
+    }else{
+      expect(rectangles.some(rect=>rect.layerId==='layer-6'&&rect.w>=800)).toBe(false);
+    }
+  }
+  expect(validateScene(scene)).toBe(scene);
 });
