@@ -151,6 +151,11 @@ text). Its conventional file toolbar provides:
   becomes the newly saved file.
 - **Refresh:** discovers scene files added outside the browser.
 
+Opening or saving a named scene also updates the URL, for example
+`?scene=amber-components.json`. Reloading that URL automatically opens the
+same saved scene. **New** clears the scene parameter. This remembers the
+filename, not unsaved scene edits; save those before reloading.
+
 Scenes are stored as pretty-printed JSON under `./scenes/<name>.json` in the Bun
 server's repository. There is no browser download/upload, cloud storage,
 autosave, or database. The selector shows the current scene; unsaved changes

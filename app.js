@@ -4,6 +4,7 @@ import {prepareObjectEditorScene,setCanvasSize} from './scene-model.js';
 import {createSceneEditor} from './scene-editor.js';
 import {createSceneHistory} from './scene-history.js';
 import {createRasterSimulator} from './raster-simulator.js';
+import {requestedSceneName,hasSceneParameter,syncSceneUrl} from './scene-url.js';
 
 const $=id=>document.getElementById(id);
 let scene=prepareObjectEditorScene(blankScene());
@@ -70,6 +71,7 @@ function newScene(){
   if(sceneDirty&&!window.confirm('Discard unsaved changes and create a new blank scene?'))return false;
   scene=prepareObjectEditorScene(blankScene());
   savedName=null;
+  syncSceneUrl(window.location,window.history,null);
   savedSnapshot=snapshot();
   sceneDirty=false;
   sceneRevision++;
@@ -97,6 +99,7 @@ async function loadScene(name){
     }
     scene=prepareObjectEditorScene(result.scene);
     savedName=result.name;
+    syncSceneUrl(window.location,window.history,savedName);
     savedSnapshot=snapshot();
     sceneDirty=false;
     sceneRevision++;
@@ -117,6 +120,7 @@ async function writeScene(name){
       method:'PUT',headers:{'Content-Type':'application/json'},body:source
     });
     savedName=canonical;
+    syncSceneUrl(window.location,window.history,savedName);
     savedSnapshot=source;
     sceneDirty=snapshot()!==savedSnapshot;
     try{await refreshScenes();}
@@ -205,7 +209,18 @@ refreshButton.addEventListener('click',async()=>{
   catch(error){sceneStatus('Refresh failed: '+error.message,'error');}
   finally{setSceneFileBusy(false);}
 });
-void refreshScenes().catch(error=>sceneStatus('Unable to list scenes: '+error.message,'error'));
+// Restore the named scene on reload, once the selector is populated. Do not
+// overwrite a scene the user opened or started editing during startup.
+const startupScene=requestedSceneName(window.location.search);
+const invalidStartupScene=hasSceneParameter(window.location.search)&&startupScene===null;
+void refreshScenes().then(()=>{
+  if(invalidStartupScene){
+    sceneStatus('Invalid scene filename in URL','error');
+    return;
+  }
+  if(startupScene&&sceneRevision===0&&!sceneFileBusy&&!savedName&&!sceneDirty)
+    void loadScene(startupScene);
+}).catch(error=>sceneStatus('Unable to list scenes: '+error.message,'error'));
 $('mode-editor').addEventListener('click',()=>setMode('editor'));
 $('mode-simulator').addEventListener('click',()=>setMode('simulator'));
 syncResolutionUI();

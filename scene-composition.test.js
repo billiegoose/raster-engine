@@ -271,14 +271,16 @@ test('amber-components tabs match primary and standard buttons with flat bottoms
     expect(scene.textBuffers[String(labels[0].buffer_ptr)]).toBe(name);
     expect(labels[0].layerId).toBe(active?'layer-7':'layer-8');
   }
+  // The manually refined connected bar extends beyond the tabs and overlaps
+  // their bottom edges. Preserve that geometry instead of assuming a 2px foot.
   const foot=scene.shapes.filter(shape=>shape.parentId===tabs.id&&
-    shape.layerId==='layer-6'&&shape.h===2);
+    shape.layerId==='layer-6');
   expect(foot).toHaveLength(1);
-  expect(foot[0].radius).toBe(0);
-  expect(foot[0].x).toBe(Math.min(...tabOutlines.map(shape=>shape.x)));
-  expect(foot[0].x+foot[0].w).toBe(Math.max(...tabOutlines.map(shape=>shape.x+shape.w)));
-  expect(foot[0].y).toBe(tabOutlines[0].y+40);
-  expect(tabOutlines.every(shape=>shape.y+shape.h===foot[0].y)).toBe(true);
+  expect(foot[0].radius).toBe(5);
+  expect(foot[0].x).toBeLessThanOrEqual(Math.min(...tabOutlines.map(shape=>shape.x)));
+  expect(foot[0].x+foot[0].w).toBeGreaterThanOrEqual(Math.max(...tabOutlines.map(shape=>shape.x+shape.w)));
+  expect(foot[0].y).toBeLessThanOrEqual(Math.min(...tabOutlines.map(shape=>shape.y+shape.h)));
+  expect(foot[0].y+foot[0].h).toBeGreaterThan(Math.max(...tabOutlines.map(shape=>shape.y+shape.h)));
 });
 
 test('amber-components compact list has four items with ITEM 2 in inverse video',()=>{
