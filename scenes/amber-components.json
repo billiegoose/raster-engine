@@ -9,7 +9,8 @@
       "w": 1920,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-1"
+      "layerId": "layer-1",
+      "parentId": "folder-33"
     },
     {
       "id": 2,
@@ -18,7 +19,8 @@
       "w": 120,
       "h": 2,
       "radius": 0,
-      "layerId": "layer-9"
+      "layerId": "layer-9",
+      "parentId": "folder-33"
     },
     {
       "id": 6,
@@ -27,7 +29,8 @@
       "w": 10,
       "h": 10,
       "radius": 2,
-      "layerId": "layer-9"
+      "layerId": "layer-9",
+      "parentId": "folder-33"
     },
     {
       "id": 11,
@@ -37,7 +40,7 @@
       "h": 325,
       "radius": 18,
       "layerId": "layer-1",
-      "group_id": 3
+      "parentId": "folder-1"
     },
     {
       "id": 12,
@@ -47,7 +50,7 @@
       "h": 323,
       "radius": 17,
       "layerId": "layer-2",
-      "group_id": 3
+      "parentId": "folder-1"
     },
     {
       "id": 14,
@@ -57,7 +60,7 @@
       "h": 1,
       "radius": 0,
       "layerId": "layer-3",
-      "group_id": 3
+      "parentId": "folder-1"
     },
     {
       "id": 16,
@@ -67,7 +70,7 @@
       "h": 50,
       "radius": 8,
       "layerId": "layer-6",
-      "group_id": 5
+      "parentId": "folder-2"
     },
     {
       "id": 25,
@@ -77,7 +80,7 @@
       "h": 364,
       "radius": 18,
       "layerId": "layer-1",
-      "group_id": 12
+      "parentId": "folder-3"
     },
     {
       "id": 26,
@@ -87,7 +90,7 @@
       "h": 362,
       "radius": 17,
       "layerId": "layer-2",
-      "group_id": 12
+      "parentId": "folder-3"
     },
     {
       "id": 28,
@@ -97,7 +100,7 @@
       "h": 1,
       "radius": 0,
       "layerId": "layer-3",
-      "group_id": 12
+      "parentId": "folder-3"
     },
     {
       "id": 29,
@@ -110,7 +113,7 @@
         15
       ],
       "layerId": "layer-6",
-      "group_id": 13
+      "parentId": "folder-4"
     },
     {
       "id": 31,
@@ -123,7 +126,7 @@
         15
       ],
       "layerId": "layer-6",
-      "group_id": 14
+      "parentId": "folder-5"
     },
     {
       "id": 32,
@@ -136,7 +139,7 @@
         15
       ],
       "layerId": "layer-7",
-      "group_id": 14
+      "parentId": "folder-5"
     },
     {
       "id": 34,
@@ -149,7 +152,7 @@
         15
       ],
       "layerId": "layer-3",
-      "group_id": 15
+      "parentId": "folder-6"
     },
     {
       "id": 35,
@@ -162,7 +165,7 @@
         15
       ],
       "layerId": "layer-4",
-      "group_id": 15
+      "parentId": "folder-6"
     },
     {
       "id": 37,
@@ -175,7 +178,7 @@
         15
       ],
       "layerId": "layer-9",
-      "group_id": 16
+      "parentId": "folder-7"
     },
     {
       "id": 38,
@@ -188,7 +191,7 @@
         15
       ],
       "layerId": "layer-10",
-      "group_id": 16
+      "parentId": "folder-7"
     },
     {
       "id": 40,
@@ -198,7 +201,7 @@
       "h": 26,
       "radius": 2,
       "layerId": "layer-3",
-      "group_id": 17
+      "parentId": "folder-8"
     },
     {
       "id": 46,
@@ -208,7 +211,7 @@
       "h": 292,
       "radius": 18,
       "layerId": "layer-1",
-      "group_id": 19
+      "parentId": "folder-9"
     },
     {
       "id": 47,
@@ -218,7 +221,7 @@
       "h": 290,
       "radius": 17,
       "layerId": "layer-2",
-      "group_id": 19
+      "parentId": "folder-9"
     },
     {
       "id": 49,
@@ -228,7 +231,7 @@
       "h": 1,
       "radius": 0,
       "layerId": "layer-3",
-      "group_id": 19
+      "parentId": "folder-9"
     },
     {
       "id": 50,
@@ -238,7 +241,7 @@
       "h": 40,
       "radius": 7,
       "layerId": "layer-3",
-      "group_id": 20
+      "parentId": "folder-10"
     },
     {
       "id": 51,
@@ -248,7 +251,7 @@
       "h": 36,
       "radius": 6,
       "layerId": "layer-4",
-      "group_id": 20
+      "parentId": "folder-10"
     },
     {
       "id": 53,
@@ -258,7 +261,7 @@
       "h": 40,
       "radius": 7,
       "layerId": "layer-6",
-      "group_id": 21
+      "parentId": "folder-11"
     },
     {
       "id": 54,
@@ -268,7 +271,7 @@
       "h": 36,
       "radius": 5,
       "layerId": "layer-7",
-      "group_id": 21
+      "parentId": "folder-11"
     },
     {
       "id": 56,
@@ -278,7 +281,7 @@
       "h": 28,
       "radius": 0,
       "layerId": "layer-8",
-      "group_id": 22
+      "parentId": "folder-12"
     },
     {
       "id": 57,
@@ -288,7 +291,7 @@
       "h": 40,
       "radius": 7,
       "layerId": "layer-9",
-      "group_id": 23
+      "parentId": "folder-13"
     },
     {
       "id": 58,
@@ -298,7 +301,7 @@
       "h": 36,
       "radius": 5,
       "layerId": "layer-10",
-      "group_id": 23
+      "parentId": "folder-13"
     },
     {
       "id": 60,
@@ -308,7 +311,7 @@
       "h": 12,
       "radius": 2,
       "layerId": "layer-11",
-      "group_id": 24
+      "parentId": "folder-14"
     },
     {
       "id": 61,
@@ -318,7 +321,7 @@
       "h": 421,
       "radius": 18,
       "layerId": "layer-1",
-      "group_id": 25
+      "parentId": "folder-15"
     },
     {
       "id": 62,
@@ -328,7 +331,7 @@
       "h": 419,
       "radius": 17,
       "layerId": "layer-2",
-      "group_id": 25
+      "parentId": "folder-15"
     },
     {
       "id": 64,
@@ -338,7 +341,7 @@
       "h": 1,
       "radius": 0,
       "layerId": "layer-3",
-      "group_id": 25
+      "parentId": "folder-15"
     },
     {
       "id": 67,
@@ -348,7 +351,7 @@
       "h": 13,
       "radius": 6,
       "layerId": "layer-3",
-      "group_id": 26
+      "parentId": "folder-16"
     },
     {
       "id": 68,
@@ -358,7 +361,7 @@
       "h": 13,
       "radius": 6,
       "layerId": "layer-6",
-      "group_id": 26
+      "parentId": "folder-16"
     },
     {
       "id": 70,
@@ -368,7 +371,7 @@
       "h": 5,
       "radius": 2,
       "layerId": "layer-3",
-      "group_id": 27
+      "parentId": "folder-17"
     },
     {
       "id": 71,
@@ -378,7 +381,7 @@
       "h": 5,
       "radius": 2,
       "layerId": "layer-6",
-      "group_id": 27
+      "parentId": "folder-17"
     },
     {
       "id": 72,
@@ -388,7 +391,7 @@
       "h": 23,
       "radius": 2,
       "layerId": "layer-6",
-      "group_id": 27
+      "parentId": "folder-17"
     },
     {
       "id": 76,
@@ -398,7 +401,7 @@
       "h": 26,
       "radius": 13,
       "layerId": "layer-3",
-      "group_id": 29
+      "parentId": "folder-18"
     },
     {
       "id": 77,
@@ -408,7 +411,7 @@
       "h": 16,
       "radius": 8,
       "layerId": "layer-6",
-      "group_id": 29
+      "parentId": "folder-18"
     },
     {
       "id": 79,
@@ -418,7 +421,7 @@
       "h": 26,
       "radius": 13,
       "layerId": "layer-3",
-      "group_id": 30
+      "parentId": "folder-19"
     },
     {
       "id": 80,
@@ -428,7 +431,7 @@
       "h": 22,
       "radius": 11,
       "layerId": "layer-4",
-      "group_id": 30
+      "parentId": "folder-19"
     },
     {
       "id": 83,
@@ -438,7 +441,7 @@
       "h": 22,
       "radius": 2,
       "layerId": "layer-4",
-      "group_id": 31
+      "parentId": "folder-20"
     },
     {
       "id": 84,
@@ -448,7 +451,7 @@
       "h": 22,
       "radius": 2,
       "layerId": "layer-4",
-      "group_id": 32
+      "parentId": "folder-21"
     },
     {
       "id": 85,
@@ -458,7 +461,7 @@
       "h": 26,
       "radius": 2,
       "layerId": "layer-3",
-      "group_id": 33
+      "parentId": "folder-22"
     },
     {
       "id": 86,
@@ -468,7 +471,7 @@
       "h": 16,
       "radius": 2,
       "layerId": "layer-6",
-      "group_id": 34
+      "parentId": "folder-23"
     },
     {
       "id": 87,
@@ -478,7 +481,7 @@
       "h": 22,
       "radius": 11,
       "layerId": "layer-4",
-      "group_id": 35
+      "parentId": "folder-24"
     },
     {
       "id": 89,
@@ -488,7 +491,7 @@
       "h": 26,
       "radius": 2,
       "layerId": "layer-3",
-      "group_id": 36
+      "parentId": "folder-25"
     },
     {
       "id": 90,
@@ -498,7 +501,7 @@
       "h": 22,
       "radius": 1,
       "layerId": "layer-4",
-      "group_id": 36
+      "parentId": "folder-25"
     },
     {
       "id": 91,
@@ -508,7 +511,7 @@
       "h": 16,
       "radius": 1,
       "layerId": "layer-5",
-      "group_id": 36
+      "parentId": "folder-25"
     },
     {
       "id": 93,
@@ -518,7 +521,7 @@
       "h": 26,
       "radius": 2,
       "layerId": "layer-3",
-      "group_id": 37
+      "parentId": "folder-26"
     },
     {
       "id": 94,
@@ -528,7 +531,7 @@
       "h": 22,
       "radius": 1,
       "layerId": "layer-4",
-      "group_id": 37
+      "parentId": "folder-26"
     },
     {
       "id": 95,
@@ -538,7 +541,7 @@
       "h": 16,
       "radius": 1,
       "layerId": "layer-6",
-      "group_id": 37
+      "parentId": "folder-26"
     },
     {
       "id": 96,
@@ -547,7 +550,8 @@
       "w": 390,
       "h": 287,
       "radius": 18,
-      "layerId": "layer-1"
+      "layerId": "layer-1",
+      "parentId": "folder-32"
     },
     {
       "id": 97,
@@ -556,7 +560,8 @@
       "w": 388,
       "h": 285,
       "radius": 17,
-      "layerId": "layer-2"
+      "layerId": "layer-2",
+      "parentId": "folder-32"
     },
     {
       "id": 98,
@@ -565,7 +570,8 @@
       "w": 354,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-3"
+      "layerId": "layer-3",
+      "parentId": "folder-32"
     },
     {
       "id": 100,
@@ -574,7 +580,8 @@
       "w": 20,
       "h": 20,
       "radius": 2,
-      "layerId": "layer-7"
+      "layerId": "layer-7",
+      "parentId": "folder-2"
     },
     {
       "id": 101,
@@ -583,7 +590,8 @@
       "w": 20,
       "h": 20,
       "radius": 2,
-      "layerId": "layer-3"
+      "layerId": "layer-3",
+      "parentId": "folder-28"
     },
     {
       "id": 102,
@@ -592,7 +600,8 @@
       "w": 20,
       "h": 20,
       "radius": 2,
-      "layerId": "layer-6"
+      "layerId": "layer-6",
+      "parentId": "folder-29"
     },
     {
       "id": 103,
@@ -601,7 +610,8 @@
       "w": 20,
       "h": 20,
       "radius": 2,
-      "layerId": "layer-9"
+      "layerId": "layer-9",
+      "parentId": "folder-30"
     }
   ],
   "texts": [
@@ -612,7 +622,8 @@
       "w": 310,
       "h": 32,
       "layerId": "layer-6",
-      "buffer_ptr": 4096
+      "buffer_ptr": 4096,
+      "parentId": "folder-33"
     },
     {
       "id": 4,
@@ -621,7 +632,8 @@
       "w": 360,
       "h": 32,
       "layerId": "layer-6",
-      "buffer_ptr": 8192
+      "buffer_ptr": 8192,
+      "parentId": "folder-33"
     },
     {
       "id": 5,
@@ -630,7 +642,8 @@
       "w": 127,
       "h": 32,
       "layerId": "layer-1",
-      "buffer_ptr": 12288
+      "buffer_ptr": 12288,
+      "parentId": "folder-33"
     },
     {
       "id": 8,
@@ -640,7 +653,7 @@
       "h": 32,
       "layerId": "layer-1",
       "buffer_ptr": 16384,
-      "group_id": 2
+      "parentId": "folder-27"
     },
     {
       "id": 9,
@@ -650,7 +663,7 @@
       "h": 32,
       "layerId": "layer-1",
       "buffer_ptr": 20480,
-      "group_id": 2
+      "parentId": "folder-27"
     },
     {
       "id": 10,
@@ -660,7 +673,7 @@
       "h": 32,
       "layerId": "layer-6",
       "buffer_ptr": 24576,
-      "group_id": 2
+      "parentId": "folder-27"
     },
     {
       "id": 13,
@@ -670,7 +683,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 28672,
-      "group_id": 3
+      "parentId": "folder-1"
     },
     {
       "id": 15,
@@ -680,7 +693,7 @@
       "h": 38,
       "layerId": "layer-3",
       "buffer_ptr": 32768,
-      "group_id": 4
+      "parentId": "folder-28"
     },
     {
       "id": 17,
@@ -690,7 +703,7 @@
       "h": 38,
       "layerId": "layer-7",
       "buffer_ptr": 36864,
-      "group_id": 5
+      "parentId": "folder-2"
     },
     {
       "id": 18,
@@ -700,7 +713,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 40960,
-      "group_id": 6
+      "parentId": "folder-29"
     },
     {
       "id": 19,
@@ -710,7 +723,7 @@
       "h": 38,
       "layerId": "layer-11",
       "buffer_ptr": 45056,
-      "group_id": 7
+      "parentId": "folder-30"
     },
     {
       "id": 27,
@@ -720,7 +733,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 65536,
-      "group_id": 12
+      "parentId": "folder-3"
     },
     {
       "id": 30,
@@ -730,7 +743,7 @@
       "h": 31,
       "layerId": "layer-7",
       "buffer_ptr": 69632,
-      "group_id": 13
+      "parentId": "folder-4"
     },
     {
       "id": 33,
@@ -740,7 +753,7 @@
       "h": 31,
       "layerId": "layer-8",
       "buffer_ptr": 73728,
-      "group_id": 14
+      "parentId": "folder-5"
     },
     {
       "id": 36,
@@ -750,7 +763,7 @@
       "h": 31,
       "layerId": "layer-5",
       "buffer_ptr": 77824,
-      "group_id": 15
+      "parentId": "folder-6"
     },
     {
       "id": 39,
@@ -760,7 +773,7 @@
       "h": 31,
       "layerId": "layer-11",
       "buffer_ptr": 81920,
-      "group_id": 16
+      "parentId": "folder-7"
     },
     {
       "id": 42,
@@ -770,7 +783,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 86016,
-      "group_id": 17
+      "parentId": "folder-8"
     },
     {
       "id": 48,
@@ -780,7 +793,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 94208,
-      "group_id": 19
+      "parentId": "folder-9"
     },
     {
       "id": 52,
@@ -790,7 +803,7 @@
       "h": 31,
       "layerId": "layer-5",
       "buffer_ptr": 98304,
-      "group_id": 20
+      "parentId": "folder-10"
     },
     {
       "id": 55,
@@ -800,7 +813,7 @@
       "h": 31,
       "layerId": "layer-8",
       "buffer_ptr": 102400,
-      "group_id": 21
+      "parentId": "folder-11"
     },
     {
       "id": 59,
@@ -810,7 +823,7 @@
       "h": 31,
       "layerId": "layer-11",
       "buffer_ptr": 106496,
-      "group_id": 23
+      "parentId": "folder-13"
     },
     {
       "id": 63,
@@ -820,7 +833,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 110592,
-      "group_id": 25
+      "parentId": "folder-15"
     },
     {
       "id": 65,
@@ -830,7 +843,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 114688,
-      "group_id": 26
+      "parentId": "folder-16"
     },
     {
       "id": 66,
@@ -840,7 +853,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 118784,
-      "group_id": 26
+      "parentId": "folder-16"
     },
     {
       "id": 69,
@@ -850,7 +863,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 122880,
-      "group_id": 27
+      "parentId": "folder-17"
     },
     {
       "id": 75,
@@ -860,7 +873,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 126976,
-      "group_id": 28
+      "parentId": "folder-31"
     },
     {
       "id": 78,
@@ -870,7 +883,7 @@
       "h": 38,
       "layerId": "layer-6",
       "buffer_ptr": 131072,
-      "group_id": 29
+      "parentId": "folder-18"
     },
     {
       "id": 81,
@@ -880,7 +893,7 @@
       "h": 38,
       "layerId": "layer-3",
       "buffer_ptr": 135168,
-      "group_id": 30
+      "parentId": "folder-19"
     },
     {
       "id": 88,
@@ -890,7 +903,7 @@
       "h": 31,
       "layerId": "layer-3",
       "buffer_ptr": 139264,
-      "group_id": 36
+      "parentId": "folder-25"
     },
     {
       "id": 92,
@@ -900,7 +913,7 @@
       "h": 31,
       "layerId": "layer-6",
       "buffer_ptr": 143360,
-      "group_id": 37
+      "parentId": "folder-26"
     },
     {
       "id": 99,
@@ -909,12 +922,14 @@
       "w": 352,
       "h": 38,
       "layerId": "layer-6",
-      "buffer_ptr": 9900
+      "buffer_ptr": 9900,
+      "parentId": "folder-32"
     }
   ],
   "textBuffers": {
     "4096": "AMBER / OS",
     "8192": "COMPONENTS",
+    "9900": "VALUES",
     "12288": "UI / 01",
     "16384": "ESC  BACK",
     "20480": "RED2 / 1080P",
@@ -942,8 +957,7 @@
     "131072": "SELECTED",
     "135168": "UNSELECTED",
     "139264": "OFF",
-    "143360": "ON",
-    "9900": "VALUES"
+    "143360": "ON"
   },
   "paletteEvents": [],
   "layers": [
@@ -953,90 +967,219 @@
       "color": "#060200"
     },
     {
-      "id": "group-1",
-      "kind": "group",
-      "name": "01 / FRAME"
-    },
-    {
       "id": "layer-1",
       "name": "OUTLINES + CHROME",
-      "color": "#5b2400",
-      "parentId": "group-1"
+      "color": "#5b2400"
     },
     {
       "id": "layer-2",
       "name": "PANEL INSETS",
-      "color": "#060200",
-      "parentId": "group-1"
-    },
-    {
-      "id": "group-2",
-      "kind": "group",
-      "name": "02 / DIM + DISABLED"
+      "color": "#060200"
     },
     {
       "id": "layer-3",
       "name": "DIM SURFACES + LABELS",
-      "color": "#5b2400",
-      "parentId": "group-2"
+      "color": "#5b2400"
     },
     {
       "id": "layer-4",
       "name": "RECESSED CONTROLS",
-      "color": "#060200",
-      "parentId": "group-2"
+      "color": "#060200"
     },
     {
       "id": "layer-5",
       "name": "DISABLED FOREGROUND",
-      "color": "#5b2400",
-      "parentId": "group-2"
-    },
-    {
-      "id": "group-3",
-      "kind": "group",
-      "name": "03 / PRIMARY"
+      "color": "#5b2400"
     },
     {
       "id": "layer-6",
       "name": "ACTIVE SURFACES + TEXT",
-      "color": "#dd5800",
-      "parentId": "group-3"
+      "color": "#dd5800"
     },
     {
       "id": "layer-7",
       "name": "INVERSE CUTOUTS",
-      "color": "#060200",
-      "parentId": "group-3"
+      "color": "#060200"
     },
     {
       "id": "layer-8",
       "name": "PRIMARY FOREGROUND",
-      "color": "#dd5800",
-      "parentId": "group-3"
-    },
-    {
-      "id": "group-4",
-      "kind": "group",
-      "name": "04 / ALERT"
+      "color": "#dd5800"
     },
     {
       "id": "layer-9",
       "name": "ALERT SURFACES",
-      "color": "#ff3400",
-      "parentId": "group-4"
+      "color": "#ff3400"
     },
     {
       "id": "layer-10",
       "name": "ALERT CUTOUTS",
-      "color": "#060200",
-      "parentId": "group-4"
+      "color": "#060200"
     },
     {
       "id": "layer-11",
       "name": "ALERT FOREGROUND",
-      "color": "#ff3400",
-      "parentId": "group-4"
+      "color": "#ff3400"
+    }
+  ],
+  "objectFolders": [
+    {
+      "id": "folder-33",
+      "name": "Header"
+    },
+    {
+      "id": "folder-1",
+      "name": "Palette Panel"
+    },
+    {
+      "id": "folder-2",
+      "name": "Base Swatch",
+      "parentId": "folder-1"
+    },
+    {
+      "id": "folder-28",
+      "name": "Dim Swatch",
+      "parentId": "folder-1"
+    },
+    {
+      "id": "folder-29",
+      "name": "Primary Swatch",
+      "parentId": "folder-1"
+    },
+    {
+      "id": "folder-30",
+      "name": "Alert Swatch",
+      "parentId": "folder-1"
+    },
+    {
+      "id": "folder-3",
+      "name": "Buttons Panel"
+    },
+    {
+      "id": "folder-4",
+      "name": "Primary Button",
+      "parentId": "folder-3"
+    },
+    {
+      "id": "folder-5",
+      "name": "Standard Button",
+      "parentId": "folder-3"
+    },
+    {
+      "id": "folder-6",
+      "name": "Inactive Button",
+      "parentId": "folder-3"
+    },
+    {
+      "id": "folder-7",
+      "name": "Alert Button",
+      "parentId": "folder-3"
+    },
+    {
+      "id": "folder-9",
+      "name": "Text Fields Panel"
+    },
+    {
+      "id": "folder-10",
+      "name": "Inactive Text Field",
+      "parentId": "folder-9"
+    },
+    {
+      "id": "folder-11",
+      "name": "Standard Text Field",
+      "parentId": "folder-9"
+    },
+    {
+      "id": "folder-12",
+      "name": "Insertion Caret",
+      "parentId": "folder-11"
+    },
+    {
+      "id": "folder-13",
+      "name": "Required Text Field",
+      "parentId": "folder-9"
+    },
+    {
+      "id": "folder-14",
+      "name": "Required Marker",
+      "parentId": "folder-13"
+    },
+    {
+      "id": "folder-15",
+      "name": "Choices Panel"
+    },
+    {
+      "id": "folder-31",
+      "name": "Checked Checkbox",
+      "parentId": "folder-15"
+    },
+    {
+      "id": "folder-22",
+      "name": "Checked Checkbox Outline",
+      "parentId": "folder-31"
+    },
+    {
+      "id": "folder-21",
+      "name": "Checked Checkbox Inset",
+      "parentId": "folder-31"
+    },
+    {
+      "id": "folder-23",
+      "name": "Checked Checkmark",
+      "parentId": "folder-31"
+    },
+    {
+      "id": "folder-8",
+      "name": "Unchecked Checkbox",
+      "parentId": "folder-15"
+    },
+    {
+      "id": "folder-20",
+      "name": "Unchecked Checkbox Inset",
+      "parentId": "folder-8"
+    },
+    {
+      "id": "folder-18",
+      "name": "Selected Radio",
+      "parentId": "folder-15"
+    },
+    {
+      "id": "folder-24",
+      "name": "Selected Radio Inset",
+      "parentId": "folder-18"
+    },
+    {
+      "id": "folder-19",
+      "name": "Unselected Radio",
+      "parentId": "folder-15"
+    },
+    {
+      "id": "folder-25",
+      "name": "Toggle Off",
+      "parentId": "folder-15"
+    },
+    {
+      "id": "folder-26",
+      "name": "Toggle On",
+      "parentId": "folder-15"
+    },
+    {
+      "id": "folder-32",
+      "name": "Values Panel"
+    },
+    {
+      "id": "folder-16",
+      "name": "Progress Bar",
+      "parentId": "folder-32"
+    },
+    {
+      "id": "folder-17",
+      "name": "Volume Slider",
+      "parentId": "folder-32"
+    },
+    {
+      "id": "folder-27",
+      "name": "Status Bar"
     }
   ]
 }

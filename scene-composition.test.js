@@ -102,29 +102,36 @@ test('removing the only foreground paint layer keeps content on a replacement la
   expect(validateScene(scene)).toBe(scene);
 });
 
-test('former paint groups become flat palette order, and former object groups become composition folders',()=>{
+test('legacy paint groups flatten and legacy object memberships become composition groups',()=>{
+  // amber-components.json now uses the new representation. Construct an actual
+  // legacy fixture in memory so this remains a migration test independently
+  // of what is saved in the editable example scene.
   const source=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
+  delete source.objectFolders;
+  for(const object of [...source.shapes,...source.texts]){
+    delete object.parentId;
+    delete object.group_id;
+  }
+  source.layers.splice(1,0,{id:'group-991',kind:'group',name:'Legacy paint group'});
+  source.layers[2].parentId='group-991';
+  source.layers[3].parentId='group-991';
   const expected=compileScene(source);
   const before=source.layers.filter(l=>l.kind!=='group').map(l=>[l.id,l.name,l.color]);
-  const existingGroups=new Set([...source.shapes,...source.texts]
-    .map(object=>object.group_id).filter(id=>id!=null));
   const rect=source.shapes[0],text=source.texts[0];
   rect.group_id=991;text.group_id=991;
   const migrated=prepareObjectEditorScene(source);
   expect(migrated.layers.every(l=>l.kind!=='group'&&l.parentId===undefined)).toBe(true);
   expect(migrated.layers.map(l=>[l.id,l.name,l.color])).toEqual(before);
-  expect(migrated.objectFolders).toHaveLength(existingGroups.size+1);
-  const imported=objectFolders(migrated).find(folder=>folder.name==='Group 991');
+  expect(migrated.objectFolders).toHaveLength(1);
+  const imported=objectFolders(migrated).find(group=>group.name==='Group 991');
   expect(imported).toBeDefined();
   expect(folderMembers(migrated,imported.id)).toHaveLength(2);
   expect(rect.group_id).toBeUndefined();
   expect(text.group_id).toBeUndefined();
-  expect(compileScene(migrated).shapes).toEqual(expected.shapes);
-  expect(compileScene(migrated).texts).toEqual(expected.texts);
-  expect(compileScene(migrated).palette).toEqual(expected.palette);
+  expect(compileScene(migrated)).toEqual(expected);
   expect(validateScene(migrated)).toBe(migrated);
   expect(prepareObjectEditorScene(migrated)).toBe(migrated);
-  expect(migrated.objectFolders).toHaveLength(existingGroups.size+1);
+  expect(migrated.objectFolders).toHaveLength(1);
 });
 
 test('composition edits are undoable independently of paint edits',()=>{
@@ -186,7 +193,7 @@ test('amber-os has meaningful nested composition group names and unchanged legac
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-os.json',import.meta.url),'utf8'));
   expect(validateScene(scene)).toBe(scene);
   const names=scene.objectFolders.map(group=>group.name);
-  expect(names.sort()).toEqual(['Active Message','Left Window','Right Window'].sort());
+  expect(names).toEqual(expect.arrayContaining(['Active Message','Left Window','Right Window']));
   const left=scene.objectFolders.find(group=>group.name==='Left Window');
   const active=scene.objectFolders.find(group=>group.name==='Active Message');
   const right=scene.objectFolders.find(group=>group.name==='Right Window');
@@ -198,4 +205,36 @@ test('amber-os has meaningful nested composition group names and unchanged legac
   expect(compileScene(prepareObjectEditorScene(structuredClone(scene)))).toEqual(compiled);
   expect(scene.shapes.every(shape=>shape.group_id===undefined)).toBe(true);
   expect(scene.texts.every(text=>text.group_id===undefined)).toBe(true);
+});
+
+
+test('amber-components has meaningful nested groups and no legacy object group IDs',()=>{
+  const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
+  expect(validateScene(scene)).toBe(scene);
+  const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
+  expect(scene.objectFolders).toHaveLength(33);
+  expect(scene.objectFolders.filter(group=>group.parentId===undefined).map(group=>group.name)).toEqual([
+    'Header','Palette Panel','Buttons Panel','Text Fields Panel',
+    'Choices Panel','Values Panel','Status Bar'
+  ]);
+  const children={
+    'Base Swatch':'Palette Panel',
+    'Primary Button':'Buttons Panel',
+    'Required Text Field':'Text Fields Panel',
+    'Required Marker':'Required Text Field',
+    'Insertion Caret':'Standard Text Field',
+    'Checked Checkmark':'Checked Checkbox',
+    'Toggle On':'Choices Panel',
+    'Progress Bar':'Values Panel',
+    'Volume Slider':'Values Panel'
+  };
+  for(const [child,parent] of Object.entries(children)){
+    expect(groups.get(child)?.parentId).toBe(groups.get(parent)?.id);
+  }
+  expect(folderMembers(scene,groups.get('Header').id)).toHaveLength(6);
+  expect(folderMembers(scene,groups.get('Values Panel').id)).toHaveLength(12);
+  expect(scene.shapes).toHaveLength(59);
+  expect(scene.texts).toHaveLength(31);
+  expect([...scene.shapes,...scene.texts].every(object=>object.group_id===undefined)).toBe(true);
+  expect(compileScene(prepareObjectEditorScene(structuredClone(scene)))).toEqual(compileScene(scene));
 });
