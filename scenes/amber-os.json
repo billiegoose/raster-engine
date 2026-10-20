@@ -7,7 +7,8 @@
       "w": 1280,
       "h": 1,
       "radius": 0,
-      "layerId": "layer-1"
+      "layerId": "layer-1",
+      "parentId": "folder-4"
     },
     {
       "id": 2,
@@ -46,7 +47,8 @@
       "w": 400,
       "h": 100,
       "radius": 18,
-      "layerId": "layer-27"
+      "layerId": "layer-27",
+      "parentId": "folder-5"
     },
     {
       "id": 9,
@@ -55,7 +57,8 @@
       "w": 398,
       "h": 98,
       "radius": 18,
-      "layerId": "layer-28"
+      "layerId": "layer-28",
+      "parentId": "folder-5"
     },
     {
       "id": 11,
@@ -97,7 +100,8 @@
         5,
         15
       ],
-      "layerId": "layer-29"
+      "layerId": "layer-29",
+      "parentId": "folder-5"
     }
   ],
   "texts": [
@@ -128,16 +132,18 @@
       "w": 380,
       "h": 72,
       "buffer_ptr": 12288,
-      "layerId": "layer-26"
+      "layerId": "layer-26",
+      "parentId": "folder-5"
     },
     {
       "id": 10,
       "x": 5,
       "y": 1,
-      "w": 380,
-      "h": 72,
+      "w": 366,
+      "h": 28,
       "buffer_ptr": 16384,
-      "layerId": "layer-10"
+      "layerId": "layer-10",
+      "parentId": "folder-4"
     },
     {
       "id": 15,
@@ -146,7 +152,8 @@
       "w": 83,
       "h": 29,
       "buffer_ptr": 20480,
-      "layerId": "layer-30"
+      "layerId": "layer-30",
+      "parentId": "folder-5"
     }
   ],
   "textBuffers": {
@@ -234,6 +241,14 @@
     {
       "id": "folder-3",
       "name": "Right Window"
+    },
+    {
+      "id": "folder-4",
+      "name": "OS Chrome"
+    },
+    {
+      "id": "folder-5",
+      "name": "Dialog Box"
     }
   ]
 }
