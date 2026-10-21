@@ -38,6 +38,43 @@ function harness(){
   return {dom,$,getScene:()=>scene,rect,label,history,editor,click,change,drag,cleanup};
 }
 
+test('RED2 text previews show the source notdef box for unsupported Unicode, preserving scene text',()=>{
+  const h=harness();try{
+    const ptr=String(h.label.buffer_ptr);
+    const raw='UTF-8: ◀ ▶ ▲ ▼\nA★b🌼B';
+    h.getScene().textBuffers[ptr]=raw;
+    h.editor.render();
+    const element=h.$('editor-stage').querySelector(`[data-object-id="${h.label.id}"] .text-content`);
+    const tile=h.$('object-list').querySelector(`[data-select-type="text"][data-select-id="${h.label.id}"] .object-thumbnail-text`);
+    expect(element.textContent).toBe('UTF-8: ◀ ▶ ▲ ▼\nA\uE000\uE000\uE000B');
+    expect(element.title).toContain('U+2605');
+    expect(element.title).toContain('U+0062');
+    expect(element.title).toContain('U+1F33C');
+    expect(tile.textContent).toBe('UTF-8: ◀ ▶ ▲ ▼');
+    expect(h.getScene().textBuffers[ptr]).toBe(raw);
+    h.click(h.$('object-list').querySelector(`[data-select-type="text"][data-select-id="${h.label.id}"]`));
+    expect(h.$('text-value').value).toBe(raw);
+    const updated='ABC ★ ▶';
+    const textarea=h.$('text-value');
+    textarea.value=updated;
+    textarea.dispatchEvent(new h.dom.window.Event('input',{bubbles:true}));
+    expect(h.$('editor-stage').querySelector(`[data-object-id="${h.label.id}"] .text-content`).textContent).toBe('ABC \uE000 ▶');
+    expect(h.getScene().textBuffers[ptr]).toBe(updated);
+  }finally{h.cleanup();}
+});
+
+test('RED2 scene preview decodes byte-array buffers as UTF-8',()=>{
+  const h=harness();try{
+    const ptr=String(h.label.buffer_ptr), content='UTF-8: ◀ ▶ ▲ ▼';
+    const bytes=[...new TextEncoder().encode(content)];
+    h.getScene().textBuffers[ptr]=bytes;
+    h.editor.render();
+    const rendered=h.$('editor-stage').querySelector(`[data-object-id="${h.label.id}"] .text-content`);
+    expect(rendered.textContent).toBe(content);
+    expect(h.getScene().textBuffers[ptr]).toEqual(bytes);
+  }finally{h.cleanup();}
+});
+
 test('Objects and Palette are independent views; objects no longer nest under paint layers',()=>{
   const h=harness();try{
     expect(h.$('object-list').querySelectorAll('[data-select-type]')).toHaveLength(2);

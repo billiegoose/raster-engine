@@ -1,6 +1,7 @@
 /* Visual scene editor. Composition folders organize objects independently of
    paint layers; only the raster simulator generates pixels. */
 import {LAYERS,canvasSize} from './scene.js';
+import {red2Text,red2PreviewText,unsupportedRED2Characters} from './red2-text.js';
 import {prepareObjectEditorScene,sceneObjects,getObject,getLayerName,setLayerName,getLayer,drawingLayers,layerIndex,addLayer,reorderLayer,setLayerColor,addRectangle,addText,updateObject,
   moveObject,resizeObject,radiusCss,paletteColor,rectangleThumbnail,
   resolveSelection,selectionUnits,objectsFullyInsideRect,moveSelectionToLayer,alignSelection,distributeSelection,
@@ -46,8 +47,11 @@ export function createSceneEditor({getScene,history,onSimulate}){
     if(type==='text'){
       const raw=data.textBuffers[String(obj.buffer_ptr)];
       const content=element.querySelector('.text-content');
-      if(content)content.textContent=typeof raw==='string'?raw:
-        Array.isArray(raw)?String.fromCharCode(...raw):'';
+      if(content){
+        content.textContent=red2PreviewText(raw);
+        const unsupported=unsupportedRED2Characters(raw);
+        content.title=unsupported.length ? `Unsupported RED2 glyphs: ${unsupported.map(char=>`U+${char.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')}`).join(', ')}` : '';
+      }
     }
   }
 
@@ -121,7 +125,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       const thumb=type==='rect'?(()=>{
         const t=rectangleThumbnail(object,40,26);
         return `<span class="object-thumbnail-shape" style="width:${t.width}px;height:${t.height}px;border-radius:${t.borderRadius};background:${color}"></span>`;
-      })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(String(data.textBuffers[String(object.buffer_ptr)]??'').split('\n')[0].slice(0,32)||'TEXT')}</span>`;
+      })():`<span class="object-thumbnail-text red2" style="color:${color}">${html(red2PreviewText(data.textBuffers[String(object.buffer_ptr)]).split('\n')[0].slice(0,32)||'TEXT')}</span>`;
       return `<button type="button" draggable="true" role="treeitem" class="object-row${chosen?' is-selected':''}" data-select-type="${type}" data-select-id="${object.id}" aria-pressed="${chosen}" title="${html(name)} · ${html(paint)}">
         <span class="object-tile-preview">${thumb}</span><span class="object-paint-swatch" style="background:${color}"></span><span class="object-paint-name">${html(paint)}</span></button>`;
     };
@@ -217,7 +221,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
       ${text}</div>`;
     if(type==='text'){
       const raw=data.textBuffers[String(obj.buffer_ptr)];
-      $('text-value').value=typeof raw==='string'?raw:Array.isArray(raw)?String.fromCharCode(...raw):'';
+      $('text-value').value=red2Text(raw);
     }
   }
 

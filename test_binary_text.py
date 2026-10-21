@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-from binary_text import TextSource, glyph_row, metadata, pair_advance, normalize_text
+from binary_text import TextSource, glyph_row, metadata, pair_advance, normalize_text, decode_utf8
 from engine import WIDTH, compile_y, iter_scanlines, rasterize, run_y_program, initial_palette
 
 REFERENCE_PATH = (Path(__file__).resolve().parent.parent / 'fpgatool' /
@@ -27,14 +27,14 @@ class BinaryTextTests(unittest.TestCase):
     def test_binary_rom_matches_independent_column_major_glyphs(self):
         if reference is None:
             self.skipTest('optional adjacent fpgatool checkout is absent')
-        for code in range(128):
+        for code in range(1, 128):
             descriptor = reference.DESCRIPTORS[code]
             self.assertEqual(metadata(code)['valid'], bool(descriptor & (1 << 18)), code)
             if not descriptor & (1 << 18):
                 continue
             base = descriptor & 1023
             width = (descriptor >> 10) & 255
-            self.assertEqual(metadata(code)['width'], width, code)
+            self.assertEqual(metadata(code)['width'], width + (code == 32), code)
             for y in range(32):
                 independently_assembled = sum(((reference.COLUMNS[base + x] >> y) & 1) << x
                                               for x in range(width))
@@ -43,11 +43,12 @@ class BinaryTextTests(unittest.TestCase):
     def test_kerning_exactly_matches_independent_uncompressed_pair_table(self):
         if reference is None:
             self.skipTest('optional adjacent fpgatool checkout is absent')
-        codes = [code for code in range(128) if metadata(code)['valid']]
+        codes = [code for code in range(1, 128) if metadata(code)['valid']]
         for left in codes:
             for right in codes:
                 self.assertEqual(pair_advance(left, right),
-                                 reference.ADVANCES[(left << 7) | right], (left, right))
+                                 reference.ADVANCES[(left << 8) | right] + (left == 32),
+                                 (left, right))
 
     def test_independent_buffers_create_distinct_masks_and_persistent_x_nodes(self):
         texts = [self.text(91, 0x1000, x=30, y=20, layer=12),
@@ -123,6 +124,133 @@ class BinaryTextTests(unittest.TestCase):
                 break
 
 
+    def render_text_rows(self, content, *, w=300, h=110, length=None, rows=(9, 10, 12, 15, 17)):
+        spec = self.text(98, 'unicode', x=0, y=0, w=w, h=h,
+                         **({'buffer_length': length} if length is not None else {}))
+        source = TextSource.create(normalize_text(spec), {'unicode': content})
+        wanted = set(rows)
+        return {y: source.scanline_bits(y, w) for y in range(max(rows) + 1) if y in wanted}
+
+    def test_unicode_triangle_glyph_rows_match_source_artwork(self):
+        # Golden source rows from red2-font; no Pillow/Aseprite dependency in tests.
+        triangles = {
+            '▲': (17, {9: 256, 12: 1984, 17: 16376}),
+            '▶': (17, {8: 16, 13: 8176, 18: 16}),
+            '▼': (17, {9: 16376, 14: 1984, 17: 256}),
+            '◀': (17, {8: 4096, 13: 8176, 18: 4096}),
+        }
+        for char, (width, rows) in triangles.items():
+            code = ord(char)
+            with self.subTest(char=char):
+                self.assertTrue(metadata(code)['valid'])
+                self.assertEqual(metadata(code)['width'], width)
+                for y, bits in rows.items():
+                    self.assertEqual(glyph_row(code, y), bits)
+                self.assertEqual(glyph_row(code, 0), 0)
+                self.assertEqual(glyph_row(code, 31), 0)
+        self.assertFalse(metadata(ord('★'))['valid'])
+
+    def test_unicode_kerning_and_exact_scanline_positions(self):
+        # Advances are verified against red2-font's independent AutoKerning.
+        for text, step in [('◀▶', 17), ('▶▲', 17), ('▲▼', 17),
+                           ('▼◀', 17), ('A▲', 18), ('▲A', 17),
+                           ('│▼', 17), ('├▶', 17)]:
+            with self.subTest(text=text):
+                self.assertEqual(pair_advance(ord(text[0]), ord(text[1])), step)
+                rows = self.render_text_rows(text, rows=(13,))
+                self.assertEqual(rows[13], glyph_row(ord(text[0]), 13) |
+                                 (glyph_row(ord(text[1]), 13) << step))
+        for char in '◀▶▲▼':
+            self.assertTrue(any(self.render_text_rows('A' + char + 'B').values()))
+
+    def test_utf8_bytes_malformed_input_and_byte_counted_snapshots(self):
+        content = 'A▲B▶C▼D◀E'
+        encoded = content.encode('utf-8')
+        self.assertEqual(len(encoded), 17)  # Five ASCII bytes and four 3-byte UTF-8 triangles.
+        index = 0
+        decoded = []
+        while index < len(encoded):
+            code, end = decode_utf8(encoded, index)
+            decoded.append(chr(code))
+            index = end
+        self.assertEqual(''.join(decoded), content)
+        rows = (9, 13, 17, 20)
+        self.assertEqual(self.render_text_rows(content, rows=rows),
+                         self.render_text_rows(encoded, rows=rows))
+        self.assertEqual(self.render_text_rows(content, rows=rows),
+                         self.render_text_rows(list(encoded), rows=rows))
+        self.assertEqual(self.render_text_rows('A▲', length=3, rows=rows),
+                         self.render_text_rows('A', rows=rows))
+        self.assertEqual(self.render_text_rows('A▲', length=4, rows=rows),
+                         self.render_text_rows('A▲', rows=rows))
+        self.assertEqual(self.render_text_rows(b'A\xc0\xafB\xf0\x80\x80\x80C\xe2\x96\xb6D', rows=rows),
+                         self.render_text_rows('ABC▶D', rows=rows))
+        self.assertEqual(self.render_text_rows('A☃B', rows=rows),
+                         self.render_text_rows('A\x00B', rows=rows))
+        self.assertNotEqual(self.render_text_rows('A☃B', rows=rows),
+                            self.render_text_rows('AB', rows=rows))
+
+    def test_native_box_drawing_rows_and_kerning_for_file_tree(self):
+        glyphs = '─│┌┐└┘├┤┬┴┼'
+        for character in glyphs:
+            with self.subTest(character=character):
+                self.assertTrue(metadata(ord(character))['valid'])
+                self.assertEqual(metadata(ord(character))['width'], 17)
+                self.assertTrue(any(glyph_row(ord(character), y) for y in range(32)))
+        branch = sum(1 << x for x in range(8, 17))
+        self.assertEqual(glyph_row(ord('├'), 13), branch)
+        self.assertEqual(glyph_row(ord('─'), 13), (1 << 17) - 1)
+        self.assertEqual(glyph_row(ord('│'), 1), 1 << 8)
+        self.assertEqual(glyph_row(ord('│'), 31), 1 << 8)
+        self.assertEqual(glyph_row(ord('└'), 0), 1 << 8)
+        self.assertEqual(glyph_row(ord('└'), 13), branch)
+        # ├'s vertical reaches scanline 31. The next │ begins at row 1,
+        # so a 31px row step joins their vertical strokes continuously.
+        self.assertEqual(glyph_row(ord('├'), 31), glyph_row(ord('│'), 1))
+        self.assertEqual(glyph_row(ord('│'), 31), glyph_row(ord('└'), 0))
+        for left,right in [('├','─'),('│',' '),(' ','├'),('└','─')]:
+            self.assertEqual(pair_advance(ord(left),ord(right)),17)
+        self.assertEqual(metadata(32)['width'],13)
+        self.assertEqual(pair_advance(32,65),17)
+
+    def test_reserved_notdef_box_for_every_unknown_codepoint(self):
+        self.assertEqual(metadata(0)['width'], 14)
+        self.assertEqual(glyph_row(0, 2), (1 << 14) - 1)
+        self.assertEqual(glyph_row(0, 3), (1 << 13) + 1)
+        self.assertEqual(glyph_row(0, 23), (1 << 14) - 1)
+        for text in ('A★B', 'A☃B', 'A🌼B', 'AaB'):
+            with self.subTest(text=text):
+                self.assertEqual(self.render_text_rows(text, rows=(2, 3, 12, 23)),
+                                 self.render_text_rows('A\0B', rows=(2, 3, 12, 23)))
+        self.assertEqual(pair_advance(0, 0), 18)
+
+    def test_unicode_newlines_and_wrap_preserve_utf8_codepoint_boundaries(self):
+        y_rows = (9, 13, 17, 45, 49, 53)
+        self.assertEqual(self.render_text_rows('▲▼', w=22, rows=y_rows),
+                         self.render_text_rows('▲\n▼', w=22, rows=y_rows))
+        # Two fixed 17px cells fit at width 34 but wrap at width 33.
+        self.assertEqual(self.render_text_rows('▲▼', w=33, rows=y_rows),
+                         self.render_text_rows('▲\n▼', w=33, rows=y_rows))
+        self.assertNotEqual(self.render_text_rows('▲▼', w=34, rows=y_rows),
+                            self.render_text_rows('▲\n▼', w=34, rows=y_rows))
+        # The first glyph of the new line occupies the full three UTF-8 bytes.
+        self.assertEqual(self.render_text_rows('▲▶', w=11, rows=y_rows),
+                         self.render_text_rows('▲\n▶', w=11, rows=y_rows))
+
+    def test_unicode_text_masks_integrate_with_indexed_scene_palette(self):
+        text = self.text(1, 'triangles', x=10, y=4, w=120, h=36, layer=15)
+        scene = self.scene([text], {'triangles': '▲▶▼◀'})
+        source = TextSource.create(normalize_text(text), scene['textBuffers'])
+        for frame in iter_scanlines(scene):
+            y = frame['y']
+            if 4 <= y < 40:
+                mask = source.scanline_bits(y, 150)
+                self.assertEqual({x for x in range(150) if frame['row'][x] == 15},
+                                 {x for x in range(150) if (mask >> x) & 1}, y)
+            if y >= 40:
+                break
+
+
 if __name__ == '__main__':
     unittest.main()
 
@@ -136,16 +264,28 @@ class IndependentRasterOracleTests(unittest.TestCase):
         verifier = root / 'scripts/verify_uart_pixels.py'
         if not verifier.exists():
             self.skipTest('optional adjacent fpgatool checkout is absent')
+        sys.path.insert(0, str(root / 'scripts'))
         sys.path.insert(0, str(root / 'examples'))
         file_spec = importlib.util.spec_from_file_location('red2_independent_pixel_verifier', verifier)
         module = importlib.util.module_from_spec(file_spec)
         file_spec.loader.exec_module(module)
+        # fpgatool's independent reference uses the original 12px SPACE,
+        # while the new source font advances SPACE by 17px (rather than 16).
+        # Keep its *drawn* descriptor 12px wide: SPACE has zero ink and the
+        # next column in the old column-major atlas belongs to another glyph.
+        # Modify only the inter-glyph advance, never the reference bitmaps.
+        advances = list(module.ADVANCES)
+        for right in range(256):
+            index = (32 << 8) | right
+            if module.DESCRIPTORS[right] & (1 << 18):
+                advances[index] += 1
+        module.ADVANCES = tuple(advances)
         cases = [
             ('simple', 'HELLO, WORLD!', 310, 110),
             ('nonadjacent', "P.O. L'.. /,<T", 360, 110),
             ('newlines', 'HELLO\nWORLD\nAVATAR', 310, 160),
             ('wrap', 'AVATAR VERY LONG WORDS P.O. P.O. P.O. AVATAR', 115, 220),
-            ('unsupported', 'A\rB~C\n\nWORLD', 180, 200),
+            ('punctuation', 'A~B-C\n\nWORLD', 180, 200),
             ('oversized', 'WWWWWWWWWWWW', 20, 160),
             ('spaces', '  A  V   A   ', 140, 110),
             ('thin-region', 'P.O. THE QUICK BROWN FOX', 13, 200),

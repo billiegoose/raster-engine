@@ -162,7 +162,7 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
   box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset;
   border-radius: inherit;
 }
-.scene-text { font-family: "RED2", monospace; font-weight: 400; font-size: 32px; line-height: 36px; white-space: pre-wrap; overflow: visible; word-break: break-all; }
+.scene-text { font-family: "RED2"; font-weight: 400; font-size: 32px; line-height: 36px; white-space: pre-wrap; overflow: visible; word-break: break-all; }
 /* Keep the scene preview at the RED2 font's native artwork scale. */
 .scene-text .text-content.red2 {
   font-size: 32px;
@@ -198,8 +198,11 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
 .layer-show-empty { display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
   font-size: 11px; color: var(--muted); cursor: pointer; }
 .layer-show-empty input { width: auto; margin: 0; accent-color: var(--accent); }
+/* Give the scrollable object hierarchy its own visible boundary, distinct
+   from the inspector panel and its search/actions above. */
 .object-list { display: block; flex: 1 1 0; min-height: 0; overflow: auto;
-  max-height: none; padding: 0 3px 0 0; }
+  max-height: none; padding: 4px; border: 1px solid #304255;
+  border-radius: 6px; background: #0d1927; }
 .layer-section { position: relative; border: 0; border-bottom: 1px solid #304255;
   border-radius: 0; background: transparent; min-width: 0; }
 .layer-section:first-child { border-top: 1px solid #304255; }

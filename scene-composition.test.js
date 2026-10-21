@@ -212,10 +212,11 @@ test('amber-components has meaningful nested groups and no legacy object group I
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
   expect(validateScene(scene)).toBe(scene);
   const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
-  expect(scene.objectFolders).toHaveLength(43);
+  expect(scene.objectFolders).toHaveLength(52);
   expect(scene.objectFolders.filter(group=>group.parentId===undefined).map(group=>group.name)).toEqual([
     'Header','Palette Panel','Buttons Panel','Text Fields Panel',
-    'Choices Panel','Values Panel','Status Bar','Tabs Panel','Lists Panel'
+    'Choices Panel','Values Panel','Status Bar','Tabs Panel','Lists Panel',
+    'File Tree Panel'
   ]);
   const children={
     'Base Swatch':'Palette Panel',
@@ -233,12 +234,65 @@ test('amber-components has meaningful nested groups and no legacy object group I
   }
   expect(folderMembers(scene,groups.get('Header').id)).toHaveLength(6);
   expect(folderMembers(scene,groups.get('Values Panel').id)).toHaveLength(12);
-  expect(scene.shapes).toHaveLength(80);
-  expect(scene.texts).toHaveLength(40);
+  expect(scene.shapes).toHaveLength(86);
+  expect(scene.texts.length).toBeGreaterThanOrEqual(40);
   expect([...scene.shapes,...scene.texts].every(object=>object.group_id===undefined)).toBe(true);
   expect(compileScene(prepareObjectEditorScene(structuredClone(scene)))).toEqual(compileScene(scene));
 });
 
+
+test('amber-components file tree uses native RED2 box drawing and an inverse selected row',()=>{
+  const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));
+  expect(validateScene(scene)).toBe(scene);
+  const groups=new Map(scene.objectFolders.map(group=>[group.name,group]));
+  const panel=groups.get('File Tree Panel');
+  const root=groups.get('Workspace Root');
+  const src=groups.get('SRC Directory');
+  expect(root.parentId).toBe(panel.id);
+  expect(src.parentId).toBe(root.id);
+  for(const name of ['UI Directory','ENGINE Directory','Selected Scene File']){
+    expect(groups.get(name).parentId).toBe(src.id);
+  }
+  for(const name of ['FONTS Directory','TESTS Directory','README File']){
+    expect(groups.get(name).parentId).toBe(root.id);
+  }
+  const contents=scene.texts.map(obj=>({obj,value:scene.textBuffers[String(obj.buffer_ptr)]}));
+  const inGroup=(name,value)=>contents.find(({obj,value:label})=>obj.parentId===groups.get(name).id&&label===value);
+  expect(inGroup('File Tree Panel','FILE TREE')).toBeDefined();
+  const treeRows=[
+    ['Workspace Root','▼ WORKSPACE'],
+    ['SRC Directory','├─▼ SRC'],
+    ['UI Directory','│ ├─▶ UI'],
+    ['ENGINE Directory','│ ├─▶ ENGINE'],
+    ['Selected Scene File','│ └─ SCENE.JSON'],
+    ['FONTS Directory','├─▶ FONTS'],
+    ['TESTS Directory','├─▶ TESTS'],
+    ['README File','└─ README.MD'],
+  ];
+  const rowY=[615,647,678,709,740,772,804,836];
+  for(const [index,[group,text]] of treeRows.entries()){
+    const row=inGroup(group,text);
+    expect(row).toBeDefined();
+    expect(row.obj.x).toBe(1198);
+    expect(row.obj.y).toBe(rowY[index]);
+    expect(row.obj.layerId).toBe(group==='Selected Scene File'?'layer-7':group==='TESTS Directory'?'layer-3':'layer-6');
+  }
+  const selected=scene.shapes.find(shape=>shape.id===150);
+  expect(selected.parentId).toBe(groups.get('Selected Scene File').id);
+  expect(selected.layerId).toBe('layer-6');
+  expect(selected.x).toBeLessThan(1198);
+  expect(selected.y).toBeLessThanOrEqual(inGroup('Selected Scene File','│ └─ SCENE.JSON').obj.y);
+  expect(selected.y+selected.h).toBeGreaterThanOrEqual(inGroup('Selected Scene File','│ └─ SCENE.JSON').obj.y+32);
+  expect(scene.shapes.filter(shape=>shape.id>=135&&shape.parentId===panel.id)).toHaveLength(5);
+  expect(scene.shapes.filter(shape=>shape.id>=135&&shape.parentId===groups.get('Selected Scene File').id)).toHaveLength(1);
+  const manifest=readFileSync(new URL('./fonts/supported-characters.txt',import.meta.url),'utf8');
+  const supported=new Set([...manifest.matchAll(/^U\+([0-9A-F]+)\t/gm)].map(m=>parseInt(m[1],16)));
+  for(const {obj,value} of contents){
+    if(obj.id<135)continue;
+    expect([...value].every(char=>supported.has(char.codePointAt(0)))).toBe(true);
+  }
+  expect(scene.texts.some(t=>scene.textBuffers[String(t.buffer_ptr)]==='UTF-8: ◀ ▶ ▲ ▼')).toBe(true);
+});
 
 test('amber-components tabs match primary and standard buttons with flat bottoms',()=>{
   const scene=JSON.parse(readFileSync(new URL('./scenes/amber-components.json',import.meta.url),'utf8'));

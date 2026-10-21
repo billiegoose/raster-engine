@@ -847,6 +847,66 @@
       "radius": 0,
       "layerId": "layer-2",
       "parentId": "folder-43"
+    },
+    {
+      "id": 135,
+      "x": 1160,
+      "y": 525,
+      "w": 725,
+      "h": 465,
+      "radius": 18,
+      "layerId": "layer-1",
+      "parentId": "folder-44"
+    },
+    {
+      "id": 136,
+      "x": 1161,
+      "y": 526,
+      "w": 723,
+      "h": 463,
+      "radius": 17,
+      "layerId": "layer-2",
+      "parentId": "folder-44"
+    },
+    {
+      "id": 138,
+      "x": 1178,
+      "y": 583,
+      "w": 688,
+      "h": 1,
+      "radius": 0,
+      "layerId": "layer-3",
+      "parentId": "folder-44"
+    },
+    {
+      "id": 139,
+      "x": 1179,
+      "y": 604,
+      "w": 687,
+      "h": 337,
+      "radius": 8,
+      "layerId": "layer-1",
+      "parentId": "folder-44"
+    },
+    {
+      "id": 140,
+      "x": 1180,
+      "y": 605,
+      "w": 685,
+      "h": 335,
+      "radius": 7,
+      "layerId": "layer-2",
+      "parentId": "folder-44"
+    },
+    {
+      "id": 150,
+      "x": 1191,
+      "y": 738,
+      "w": 654,
+      "h": 36,
+      "radius": 4,
+      "layerId": "layer-6",
+      "parentId": "folder-49"
     }
   ],
   "texts": [
@@ -1249,6 +1309,115 @@
       "buffer_ptr": 180224,
       "layerId": "layer-6",
       "parentId": "folder-43"
+    },
+    {
+      "id": 134,
+      "x": 672,
+      "y": 405,
+      "w": 380,
+      "h": 72,
+      "layerId": "layer-6",
+      "buffer_ptr": 184320
+    },
+    {
+      "id": 137,
+      "x": 1179,
+      "y": 537,
+      "w": 676,
+      "h": 38,
+      "layerId": "layer-6",
+      "buffer_ptr": 188416,
+      "parentId": "folder-44"
+    },
+    {
+      "id": 160,
+      "x": 1198,
+      "y": 615,
+      "w": 642,
+      "h": 36,
+      "layerId": "layer-6",
+      "buffer_ptr": 196608,
+      "parentId": "folder-45"
+    },
+    {
+      "id": 162,
+      "x": 1198,
+      "y": 647,
+      "w": 642,
+      "h": 36,
+      "layerId": "layer-6",
+      "buffer_ptr": 204800,
+      "parentId": "folder-46"
+    },
+    {
+      "id": 164,
+      "x": 1198,
+      "y": 678,
+      "w": 642,
+      "h": 36,
+      "layerId": "layer-6",
+      "buffer_ptr": 212992,
+      "parentId": "folder-47"
+    },
+    {
+      "id": 166,
+      "x": 1198,
+      "y": 709,
+      "w": 642,
+      "h": 36,
+      "layerId": "layer-6",
+      "buffer_ptr": 221184,
+      "parentId": "folder-48"
+    },
+    {
+      "id": 167,
+      "x": 1198,
+      "y": 740,
+      "w": 642,
+      "h": 36,
+      "layerId": "layer-7",
+      "buffer_ptr": 225280,
+      "parentId": "folder-49"
+    },
+    {
+      "id": 169,
+      "x": 1198,
+      "y": 772,
+      "w": 642,
+      "h": 36,
+      "layerId": "layer-6",
+      "buffer_ptr": 233472,
+      "parentId": "folder-50"
+    },
+    {
+      "id": 171,
+      "x": 1198,
+      "y": 804,
+      "w": 642,
+      "h": 36,
+      "layerId": "layer-6",
+      "buffer_ptr": 241664,
+      "parentId": "folder-51"
+    },
+    {
+      "id": 172,
+      "x": 1198,
+      "y": 836,
+      "w": 642,
+      "h": 36,
+      "layerId": "layer-6",
+      "buffer_ptr": 245760,
+      "parentId": "folder-52"
+    },
+    {
+      "id": 173,
+      "x": 1180,
+      "y": 951,
+      "w": 620,
+      "h": 34,
+      "layerId": "layer-3",
+      "buffer_ptr": 249856,
+      "parentId": "folder-44"
     }
   ],
   "textBuffers": {
@@ -1291,7 +1460,18 @@
     "167936": "ITEM 1",
     "172032": "ITEM 2",
     "176128": "ITEM 3",
-    "180224": "ITEM 4"
+    "180224": "ITEM 4",
+    "184320": "UTF-8: ◀ ▶ ▲ ▼",
+    "188416": "FILE TREE",
+    "196608": "▼ WORKSPACE",
+    "204800": "├─▼ SRC",
+    "212992": "│ ├─▶ UI",
+    "221184": "│ ├─▶ ENGINE",
+    "225280": "│ └─ SCENE.JSON",
+    "233472": "├─▶ FONTS",
+    "241664": "├─▶ TESTS",
+    "245760": "└─ README.MD",
+    "249856": "08 ITEMS / 02 OPEN"
   },
   "paletteEvents": [],
   "layers": [
@@ -1562,6 +1742,50 @@
       "id": "folder-43",
       "name": "List Item: ITEM 4",
       "parentId": "folder-39"
+    },
+    {
+      "id": "folder-44",
+      "name": "File Tree Panel"
+    },
+    {
+      "id": "folder-45",
+      "name": "Workspace Root",
+      "parentId": "folder-44"
+    },
+    {
+      "id": "folder-46",
+      "name": "SRC Directory",
+      "parentId": "folder-45"
+    },
+    {
+      "id": "folder-47",
+      "name": "UI Directory",
+      "parentId": "folder-46"
+    },
+    {
+      "id": "folder-48",
+      "name": "ENGINE Directory",
+      "parentId": "folder-46"
+    },
+    {
+      "id": "folder-49",
+      "name": "Selected Scene File",
+      "parentId": "folder-46"
+    },
+    {
+      "id": "folder-50",
+      "name": "FONTS Directory",
+      "parentId": "folder-45"
+    },
+    {
+      "id": "folder-51",
+      "name": "TESTS Directory",
+      "parentId": "folder-45"
+    },
+    {
+      "id": "folder-52",
+      "name": "README File",
+      "parentId": "folder-45"
     }
   ]
 }

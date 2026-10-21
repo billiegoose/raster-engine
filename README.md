@@ -96,13 +96,25 @@ The browser has two distinct workspaces that share one editable JSON scene:
 The DOM canvas is an **editing approximation**: it uses CSS rounded corners
 and RED2's own OpenType web font (32px artwork scale, 36px line height, with
 OpenType `calt` and `kern` enabled). The Objects-pane text thumbnails also use
-that font at a reduced size. The web-font assets in `fonts/` are copied from
-`../red2-font/dist/` (exported from `red2-font` commit `ddbe095`): regenerate
-with `python export_web_font.py` in that repository and copy the generated
-WOFF2, TTF, and stylesheet here after changing the artwork. Unlike the old
-system-font preview, the RED2 font's glyph shapes and contextual kerning now
-match the font source. Browser anti-aliasing and CSS text wrapping can still
-differ from the pixel-accurate renderer.
+that font at a reduced size. The web-font assets originate from `../red2-font/dist/`. After exporting
+updated artwork with `python export_web_font.py` in that repository, run
+`../red2-font/.venv/bin/python scripts/sync_red2_font.py` here. The script
+copies the WOFF2, TTF, and `supported-characters.txt`, generates
+`red2-supported-characters.js`, adds an internal U+E000 mapping to a copy of
+the source `.notdef` pixel-art box (without changing the upstream font), and
+cache-busts the font URLs and CSS link. The supported-characters manifest
+represents actual source Unicode characters; U+E000 is **not** listed as
+supported. Glyphs and contextual kerning match RED2, including Unicode
+▲ (U+25B2), ▶ (U+25B6), ▼ (U+25BC), and ◀ (U+25C0), along with all 11 light
+box-drawing characters (`─│┌┐└┘├┤┬┴┼`). Browser anti-aliasing
+and CSS text wrapping can still differ from the pixel-accurate renderer.
+
+The scene editor and Objects-list previews render only RED2 glyphs: unsupported
+codepoints are shown as the source pixel-art missing-glyph box, **not** by
+letting the browser substitute a system font. The editor tooltip lists missing
+Unicode codepoints; the original scene text remains unchanged. The text buffer
+may contain UTF-8 strings or byte arrays. Font coverage comes from the
+generated manifest so updating the font also updates preview validation.
 
 The simulator renders authoritative palette pixels and exact 1-bit RED2 glyphs,
 with differing corner-pixel details where CSS and the rasterizer's integer
@@ -202,16 +214,32 @@ The X interpreter chooses the highest covered palette layer, respecting
 overlapping rectangles and other text objects. The buffer's contents are
 snapshotted at source activation, and `buffer_length` can limit the snapshot.
 
-The Python model uses the exact binary compressed ROM and kerning class data
-from `fpgatool/examples/hardware/red2_row_data.py`, vendored as
-`red2_font_data.py`, without runtime Aseprite/Pillow dependencies.
+The Python model decodes UTF-8 text-buffer bytes (including the four
+triangles and 11 box-drawing characters above). `buffer_length` is a **byte count**, and truncated or invalid
+UTF-8 sequences are ignored without swallowing subsequent valid bytes.
+Unsupported code points are rendered as RED2's source `.notdef` box,
+with matching pixel rows and advance metrics. Malformed UTF-8 bytes are
+ignored; the original ASCII font remains in its
+2048-byte hardware-compatible compressed ROM, vendored from
+`fpgatool/examples/hardware/red2_row_data.py` as `red2_font_data.py`.
+The triangle bitmaps, 11 box-drawing glyphs, `.notdef` box, and kerning
+extensions are stored separately in `red2_unicode_data.py`, generated from
+`../red2-font/RED2 Font.aseprite` by
+`../red2-font/.venv/bin/python scripts/generate_red2_unicode.py`. Generation
+asserts that all original ASCII glyphs, positions, and kerning classes remain
+unchanged. The 11 box glyphs use sparse pair-kerning overrides, keeping the original
+six-bit hardware kerning classes and compressed ASCII ROM untouched. SPACE's
+new 13-pixel advance width is applied as a metadata override; the original
+reference ROM still stores its previous 12-pixel width. The file-tree scene
+uses native RED2 `├─`, `│`, and `└─` glyphs rather than rectangle connectors.
+Rendering requires no Aseprite/Pillow dependency.
 `test_binary_text.py` compares glyph rows, every supported kerning pair,
 whole multiline/wrapped images, and clipped oversized glyphs with
 `fpgatool`'s independently generated column-major font and reference renderer
 when that checkout is available. The Python backend is selectable from the
 browser, and its API accepts `texts` and `textBuffers`; **JavaScript currently
 rejects scenes containing text** rather than silently omitting them. The
-browser editor does not yet expose text object editing.
+browser scene editor supports editing text objects.
 
 This is a functional **scanline reference model**, not a cycle-accurate FPGA
 implementation. Its masks are temporarily represented by Python integers;
