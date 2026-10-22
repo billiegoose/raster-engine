@@ -47,6 +47,21 @@ def compare(binary, screenshot):
     return f'All {WIDTH*HEIGHT:,} HDL pixels match the exported RGB444 image'
 
 
+def compare_dynamic(screenshot, *, stripes=False):
+    from fpga.dynamic_reference import palette, row_indices
+    captured = read_capture(screenshot)
+    colors = tuple(bytes((((c >> 8) & 15)*17, ((c >> 4) & 15)*17, (c & 15)*17))
+                   for c in palette())
+    for y in range(HEIGHT):
+        expected = b''.join(colors[i] for i in row_indices(y, stripes=stripes))
+        actual = captured[y*WIDTH*3:(y+1)*WIDTH*3]
+        if actual != expected:
+            first = next(x for x in range(WIDTH) if actual[x*3:x*3+3] != expected[x*3:x*3+3])
+            raise AssertionError(f'Dynamic HDL capture differs at x={first}, y={y}: '
+                                 f'{tuple(actual[first*3:first*3+3])} vs {tuple(expected[first*3:first*3+3])}')
+    return f'All {WIDTH*HEIGHT:,} runtime-generated HDL pixels match the procedural reference'
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('binary', type=Path)

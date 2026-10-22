@@ -10,7 +10,7 @@ from engine import initial_palette, iter_scanlines
 from fpga.backend import program
 from fpga.format import FLASH_BASE, HEIGHT, RUNS_OFFSET, WIDTH
 from fpga.image import RomImage, bake, decode
-from fpga.tool import read_timing, verify_data_lanes
+from fpga.tool import read_timing, verify_data_lanes, verify_dynamic_build
 
 
 class ImageTests(unittest.TestCase):
@@ -86,6 +86,10 @@ class ImageTests(unittest.TestCase):
                 path.write_text(json.dumps({'modules': {'top': {'cells': cells}}}))
             write()
             self.assertEqual(verify_data_lanes(path)['parity_payload_bits'], 0)
+            # The two 2K-entry dynamic buffers can map to 18K primitives.
+            cells['core.run_high_ram']['type'] = 'RAMB18E1'
+            write()
+            self.assertEqual(verify_data_lanes(path)['parity_payload_bits'], 0)
             cells['core.run_low_ram']['connections']['DIPADIP'][0] = 42
             write()
             with self.assertRaisesRegex(ValueError, 'parity input'):
@@ -100,6 +104,23 @@ class ImageTests(unittest.TestCase):
             write()
             with self.assertRaisesRegex(ValueError, 'native BRAM cascade'):
                 verify_data_lanes(path)
+
+    def test_dynamic_programming_requires_the_verified_producer_and_bitstream(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            with self.assertRaisesRegex(ValueError, 'Build and verify'):
+                verify_dynamic_build(directory, 'stripes')
+            bitstream = directory/'raster_dynamic.bit'
+            bitstream.write_bytes(b'verified bitstream')
+            (directory/'producer.json').write_text(json.dumps({
+                'producer': 'stripes', 'bitstream_sha256': hashlib.sha256(bitstream.read_bytes()).hexdigest()}))
+            verify_dynamic_build(directory, 'stripes')
+            with self.assertRaisesRegex(ValueError, 'differs'):
+                verify_dynamic_build(directory, 'rectangle')
+            bitstream.write_bytes(b'different bitstream')
+            with self.assertRaisesRegex(ValueError, 'differs'):
+                verify_dynamic_build(directory, 'stripes')
 
 
 if __name__ == '__main__':

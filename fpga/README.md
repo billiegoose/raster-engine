@@ -1,5 +1,9 @@
 # Baked ROM X-program engine for Basys 3
 
+The first runtime two-buffer implementation is documented in
+[PINGPONG.md](PINGPONG.md). It is a separate development target with procedural
+Y producers; the Amber flash engine described below remains the default.
+
 This folder contains the Pypeline implementation, binary compiler, simulator
 controls and upload endpoint. The few changes outside it connect the controls
 to the existing simulator and API. Hardware sources contain no Amber scene

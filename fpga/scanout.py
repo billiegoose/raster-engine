@@ -23,7 +23,7 @@ class scanout_t(NamedTuple):
     debug: debug_t
 
 
-def make_scanout(run_init=None, row_init=None, palette_init=None):
+def make_scanout(run_init=None, row_init=None, palette_init=None, *, buffered=False):
     # This OpenXC7 mapping loses run bit 8 on a physical 9-bit BRAM port's
     # parity lane. Byte-wide banks keep every stored bit on a data lane.
     low_init = None if run_init is None else tuple(word & 255 for word in run_init)
@@ -31,7 +31,8 @@ def make_scanout(run_init=None, row_init=None, palette_init=None):
     high_init = None if run_init is None else tuple((word >> 16) & 3 for word in run_init)
     # Limit every bank to 32K entries so the mapper cannot use the native
     # 64K-depth BRAM cascade, which this OpenXC7 router cannot connect.
-    half = RUN_CAPACITY // 2
+    half = 2048 if buffered else RUN_CAPACITY // 2
+    bank_bit = half.bit_length() - 1
     run_low_a, _ = make_ram(uint8_t, half, ports=('w', 'r'), read_latency=1,
                            init=None if low_init is None else low_init[:half])
     run_low_b, _ = make_ram(uint8_t, half, ports=('w', 'r'), read_latency=1,
@@ -109,26 +110,26 @@ def make_scanout(run_init=None, row_init=None, palette_init=None):
 
         request: uint1_t = ((phase == 2) & load.ready & (~first_blank) &
                             (~ended) & (~outstanding[3]) & (~limit_reached) & (~old_stream_error))
-        write_upper: uint1_t = load.index[15]
-        read_upper: uint1_t = pointer[15]
-        low_a = run_low_a(run_low_a.p0_in_t(addr=load.index[14:0], wr_data=uint8_t(load.data),
+        write_upper: uint1_t = uint1_t(load.index >> bank_bit)
+        read_upper: uint1_t = uint1_t(pointer >> bank_bit)
+        low_a = run_low_a(run_low_a.p0_in_t(addr=load.index[bank_bit-1:0], wr_data=uint8_t(load.data),
                                           wr_en=load.run_write & (~write_upper), valid=1),
-                          run_low_a.p1_in_t(addr=pointer[14:0], valid=request & (~read_upper)))
-        low_b = run_low_b(run_low_b.p0_in_t(addr=load.index[14:0], wr_data=uint8_t(load.data),
+                          run_low_a.p1_in_t(addr=pointer[bank_bit-1:0], valid=request & (~read_upper)))
+        low_b = run_low_b(run_low_b.p0_in_t(addr=load.index[bank_bit-1:0], wr_data=uint8_t(load.data),
                                           wr_en=load.run_write & write_upper, valid=1),
-                          run_low_b.p1_in_t(addr=pointer[14:0], valid=request & read_upper))
-        mid_a = run_mid_a(run_mid_a.p0_in_t(addr=load.index[14:0], wr_data=uint8_t(load.data >> 8),
+                          run_low_b.p1_in_t(addr=pointer[bank_bit-1:0], valid=request & read_upper))
+        mid_a = run_mid_a(run_mid_a.p0_in_t(addr=load.index[bank_bit-1:0], wr_data=uint8_t(load.data >> 8),
                                           wr_en=load.run_write & (~write_upper), valid=1),
-                          run_mid_a.p1_in_t(addr=pointer[14:0], valid=request & (~read_upper)))
-        mid_b = run_mid_b(run_mid_b.p0_in_t(addr=load.index[14:0], wr_data=uint8_t(load.data >> 8),
+                          run_mid_a.p1_in_t(addr=pointer[bank_bit-1:0], valid=request & (~read_upper)))
+        mid_b = run_mid_b(run_mid_b.p0_in_t(addr=load.index[bank_bit-1:0], wr_data=uint8_t(load.data >> 8),
                                           wr_en=load.run_write & write_upper, valid=1),
-                          run_mid_b.p1_in_t(addr=pointer[14:0], valid=request & read_upper))
-        high_a = run_high_a(run_high_a.p0_in_t(addr=load.index[14:0], wr_data=uint2_t(load.data >> 16),
+                          run_mid_b.p1_in_t(addr=pointer[bank_bit-1:0], valid=request & read_upper))
+        high_a = run_high_a(run_high_a.p0_in_t(addr=load.index[bank_bit-1:0], wr_data=uint2_t(load.data >> 16),
                                              wr_en=load.run_write & (~write_upper), valid=1),
-                            run_high_a.p1_in_t(addr=pointer[14:0], valid=request & (~read_upper)))
-        high_b = run_high_b(run_high_b.p0_in_t(addr=load.index[14:0], wr_data=uint2_t(load.data >> 16),
+                            run_high_a.p1_in_t(addr=pointer[bank_bit-1:0], valid=request & (~read_upper)))
+        high_b = run_high_b(run_high_b.p0_in_t(addr=load.index[bank_bit-1:0], wr_data=uint2_t(load.data >> 16),
                                              wr_en=load.run_write & write_upper, valid=1),
-                            run_high_b.p1_in_t(addr=pointer[14:0], valid=request & read_upper))
+                            run_high_b.p1_in_t(addr=pointer[bank_bit-1:0], valid=request & read_upper))
         low_word: uint8_t = 0
         mid_word: uint8_t = 0
         high_word: uint2_t = 0
@@ -137,7 +138,7 @@ def make_scanout(run_init=None, row_init=None, palette_init=None):
             low_word = low_a.p1.rd_data
         if low_b.p1.valid:
             low_word = low_b.p1.rd_data
-            response_address = uint16_t(low_b.p1.addr) | uint16_t(32768)
+            response_address = uint16_t(low_b.p1.addr) | uint16_t(half)
         if mid_a.p1.valid:
             mid_word = mid_a.p1.rd_data
         if mid_b.p1.valid:
@@ -181,7 +182,17 @@ def make_scanout(run_init=None, row_init=None, palette_init=None):
                 stream_error = 0
                 previous_end = 0
             elif row_request:
-                phase = 1
+                if buffered:
+                    # No row-pointer table: parity selects a committed linear
+                    # scanline buffer. The scheduler owns load.ready.
+                    pointer = uint16_t(next_y[0]) << bank_bit
+                    program_y = next_y
+                    ended = 0
+                    limit_reached = 0
+                    previous_end = 0
+                    phase = 2
+                else:
+                    phase = 1
             elif (phase == 1) & row_result.p1.valid:
                 pointer = row_result.p1.rd_data
                 program_y = row_result.p1.addr
