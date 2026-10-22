@@ -28,6 +28,22 @@ test('real Python export writes a downloadable binary with the fixed ROM ABI',as
   }finally{await unlink(data.path);}
 },10000);
 
+test('dynamic TEXT/RECT export produces a downloadable Y program',async()=>{
+  const handle=createFpgaApi();
+  const response=await handle(new Request('http://localhost/api/fpga/export',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({scene:scene(),engine:'scene'})
+  }),'/api/fpga/export');
+  expect(response.status).toBe(200);
+  const data=await response.json();
+  try{
+    expect(data.engine).toBe('scene');
+    expect(data.primitives).toBe(0);
+    const download=await handle(new Request('http://localhost'+data.downloadUrl),data.downloadUrl);
+    expect(Buffer.from(await download.arrayBuffer()).subarray(0,4).toString()).toBe('RY02');
+  }finally{await unlink(data.path);}
+});
+
 test('upload failure retains a download link and unsupported scenes never invoke Python',async()=>{
   const calls=[];
   const handle=createFpgaApi({runPython:async(action,source)=>{
@@ -82,5 +98,29 @@ test('simulator upload snapshots unsaved edits, reports changes and restores the
     expect(document.getElementById('fpga-status').textContent).toContain('Scene changed');
     expect(document.getElementById('fpga-download').hidden).toBe(false);
     current=blankScene();controls.markDirty();expect(button.disabled).toBe(true);
+  }finally{globalThis.document=previous.document;globalThis.fetch=previous.fetch;dom.window.close();}
+});
+
+test('dynamic selector snapshots its format and accepts palette events',async()=>{
+  const dom=new JSDOM('<button id="fpga-program"></button><span id="fpga-status"></span><a id="fpga-download" hidden></a>');
+  const previous={document:globalThis.document,fetch:globalThis.fetch};
+  globalThis.document=dom.window.document;
+  let captured;
+  globalThis.fetch=async(_path,options)=>{
+    captured=JSON.parse(options.body);
+    return {ok:true,json:async()=>({ok:true,engine:'scene',primitives:3,glyphs:2,bytes:1234})};
+  };
+  try{
+    const source=scene();source.paletteEvents=[{y:10,layer:1,color:'#ff0000'}];
+    createFpgaControls({getScene:()=>source,defaultEngine:'scene'});
+    const button=document.getElementById('fpga-program');
+    expect(button.disabled).toBe(false);
+    button.click();
+    for(let n=0;n<20&&button.disabled;n++)await new Promise(resolve=>setTimeout(resolve,0));
+    expect(captured.engine).toBe('scene');
+    expect(document.getElementById('fpga-status').textContent).toContain('3 RECT/glyph records');
+    const selector=document.getElementById('fpga-engine');selector.value='baked';
+    selector.dispatchEvent(new dom.window.Event('change'));
+    expect(button.disabled).toBe(true);
   }finally{globalThis.document=previous.document;globalThis.fetch=previous.fetch;dom.window.close();}
 });

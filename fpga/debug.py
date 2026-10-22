@@ -39,6 +39,26 @@ def packets(data):
         cursor = start+PACKET_SIZE
 
 
+def scene_packets(data):
+    cursor = 0
+    while (start := data.find(b'RYD2', cursor)) >= 0:
+        cursor = start+1
+        frame = data[start:start+32]
+        if len(frame) < 32:
+            break
+        if frame[30:] != b'\r\n' or frame[4] > 31 or frame[5] or any(frame[26:30]):
+            continue
+        record = {name: bool(frame[4] & (1 << bit)) for bit, name in enumerate(
+            ('ready', 'load_error', 'producer_error', 'deadline', 'scanout_fault'))}
+        for name, offset in (('event_count', 6), ('font_count', 8), ('max_y_cycles', 10),
+                             ('max_y_row', 12), ('event_bytes', 14), ('font_bytes', 16),
+                             ('palette_writes', 18), ('row_writes', 20)):
+            record[name] = int.from_bytes(frame[offset:offset+2], 'little')
+        record['write_checksum'] = int.from_bytes(frame[22:26], 'little')
+        yield record
+        cursor = start+32
+
+
 def compare(record, image):
     result = dict(record)
     expected_checksum = (sum(image.palette)+sum(image.rows)+sum(image.runs)) & 0xffffffff
@@ -83,17 +103,28 @@ def main():
     parser.add_argument('--port', required=True)
     parser.add_argument('--seconds', type=float, default=3)
     parser.add_argument('--binary', type=Path, default=Path(__file__).with_name('build')/'amber-components.bin')
+    parser.add_argument('--scene', action='store_true', help='decode RECT/TEXT RYD2 diagnostics; supply its RY02 --binary')
     parser.add_argument('--output', type=Path, default=Path(__file__).with_name('build')/'uart-diagnostics.json')
     args = parser.parse_args()
     raw = read_serial(args.port, args.seconds)
     records = []
-    for record in packets(raw):
+    for record in (scene_packets(raw) if args.scene else packets(raw)):
         if record not in records:
             records.append(record)
     if not records:
         raise SystemExit(f'No valid diagnostic packets in {len(raw)} UART bytes')
-    image = decode(args.binary.read_bytes())
-    result = dict(port=args.port, bytes_received=len(raw), records=[compare(record, image) for record in records])
+    if args.scene:
+        from fpga.scene_compile import decode_scene
+        data = args.binary.read_bytes()
+        _, _, events, font = decode_scene(data)
+        expected = dict(event_count=len(events), font_count=len(font), event_bytes=len(events)*10,
+                        font_bytes=len(font)*3, palette_writes=64, row_writes=1081,
+                        write_checksum=int.from_bytes(data[16:20], 'little'))
+        checked = [dict(record, expected=expected, writes_match=all(record[k] == v for k, v in expected.items())) for record in records]
+    else:
+        image = decode(args.binary.read_bytes())
+        checked = [compare(record, image) for record in records]
+    result = dict(port=args.port, bytes_received=len(raw), records=checked)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(result, indent=2))

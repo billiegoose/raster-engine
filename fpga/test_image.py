@@ -104,6 +104,20 @@ class ImageTests(unittest.TestCase):
             write()
             with self.assertRaisesRegex(ValueError, 'native BRAM cascade'):
                 verify_data_lanes(path)
+            del cells['core.run_low_ram']['connections']['CASCADEINA']
+            cells['core.y_rows_ram'] = {'type': 'RAMB36E1',
+                'connections': {'DIPADIP': [42], 'DOPBDOP': [200]},
+                'port_directions': {'DIPADIP': 'input', 'DOPBDOP': 'output'}}
+            write()
+            self.assertEqual(verify_data_lanes(path)['audit_scope'], 'run_banks')
+            with self.assertRaisesRegex(ValueError, 'parity input'):
+                verify_data_lanes(path, all_memories=True)
+            cells['core.y_rows_ram']['connections']['DIPADIP'] = ['0']
+            cells['consumer'] = {'type': 'LUT1', 'connections': {'I0': [200]},
+                                 'port_directions': {'I0': 'input'}}
+            write()
+            with self.assertRaisesRegex(ValueError, 'parity output'):
+                verify_data_lanes(path, all_memories=True)
 
     def test_dynamic_programming_requires_the_verified_producer_and_bitstream(self):
         import hashlib

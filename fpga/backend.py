@@ -36,21 +36,31 @@ def run_programmer(command):
     return subprocess.CompletedProcess(command, child.returncode, stdout, stderr)
 
 
-def export(scene, directory=OUTPUT):
-    image = bake(scene)
+def export(scene, directory=OUTPUT, *, engine='baked'):
+    if engine == 'scene':
+        from fpga.scene_compile import compile_scene
+        image = compile_scene(scene)
+    elif engine == 'baked':
+        image = bake(scene)
+    else:
+        raise ValueError('Unknown FPGA engine')
     data = image.to_bytes()
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     # Unique exports also make simultaneous requests and retained failure files safe.
-    fd, filename = tempfile.mkstemp(prefix='x-programs-', suffix='.bin', dir=directory)
+    fd, filename = tempfile.mkstemp(prefix='y-programs-' if engine == 'scene' else 'x-programs-', suffix='.bin', dir=directory)
     with os.fdopen(fd, 'wb') as stream:
         stream.write(data)
-    return dict(path=filename, filename=Path(filename).name, bytes=len(data),
-                runs=len(image.runs), flashAddress=FLASH_BASE)
+    result = dict(path=filename, filename=Path(filename).name, bytes=len(data), flashAddress=FLASH_BASE)
+    if engine == 'scene':
+        result.update(engine=engine, **image.metrics)
+    else:
+        result['runs'] = len(image.runs)
+    return result
 
 
-def program(scene, directory=OUTPUT):
-    result = export(scene, directory)
+def program(scene, directory=OUTPUT, *, engine='baked'):
+    result = export(scene, directory, engine=engine)
     command = ['fpgatool', 'program-data', result['path'], '--board', 'basys3',
                '--offset', hex(FLASH_BASE)]
     try:
@@ -69,10 +79,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('action', choices=('export', 'program'))
     parser.add_argument('--scene', type=Path, help='Compiled scene JSON; stdin if omitted')
+    parser.add_argument('--engine', choices=('baked', 'scene'), default='baked')
     args = parser.parse_args()
     try:
         scene = json.loads(args.scene.read_text()) if args.scene else json.load(sys.stdin)['scene']
-        result = program(scene) if args.action == 'program' else dict(**export(scene), ok=True)
+        result = program(scene, engine=args.engine) if args.action == 'program' else dict(**export(scene, engine=args.engine), ok=True)
         print(json.dumps(result))
     except (ValueError, KeyError, TypeError) as error:
         print(json.dumps(dict(ok=False, error=str(error))))

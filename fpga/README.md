@@ -1,8 +1,8 @@
 # Baked ROM X-program engine for Basys 3
 
-The first runtime two-buffer implementation is documented in
-[PINGPONG.md](PINGPONG.md). It is a separate development target with procedural
-Y producers; the Amber flash engine described below remains the default.
+The runtime **RECT + TEXT** target is documented in [SCENE.md](SCENE.md),
+with its two-buffer scheduler in [PINGPONG.md](PINGPONG.md). The baked Amber
+flash engine described below remains available as a separate target.
 
 This folder contains the Pypeline implementation, binary compiler, simulator
 controls and upload endpoint. The few changes outside it connect the controls
@@ -45,6 +45,9 @@ fpgatool's pinned toolchain and examples.
 
 ## Export and upload a scene
 
+For the baked firmware, select **Baked X programs** beside the upload button.
+The simulator defaults to **Dynamic RECT + TEXT**, matching the currently
+installed firmware described in [SCENE.md](SCENE.md).
 Open `amber-components.json`, switch to **Raster simulator**, and click
 **Export .bin & upload FPGA**. The button snapshots the current scene, including
 unsaved edits, then the Python backend:

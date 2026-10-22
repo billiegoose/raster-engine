@@ -12,6 +12,12 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+HARDWARE_SOURCES = {'__init__.py', 'board.py', 'format.py', 'image.py', 'loader.py', 'scanout.py',
+    'diagnostics.py', 'top.py', 'capture.py', 'boot_capture.py', 'pingpong.py',
+    'dynamic.py', 'dynamic_config.py', 'procedural_y.py', 'dynamic_top.py', 'dynamic_capture.py',
+    'compositor.py', 'scene_compile.py', 'scene_memory.py', 'scene_loader.py', 'scene_y.py',
+    'scene_dynamic.py', 'scene_top.py', 'scene_capture.py', 'scene_boot_capture.py', 'scene_diagnostics.py'}
+
 
 def read_timing(path):
     clocks={name:{'achieved_mhz':float(rate),'required_mhz':float(required),'status':status}
@@ -27,34 +33,49 @@ def read_timing(path):
     return clocks
 
 
-def verify_data_lanes(path):
-    """Reject a mapped run memory that puts payload bits on BRAM parity pins."""
+def verify_data_lanes(path, *, all_memories=False):
+    """Audit run banks, or every BRAM for the new scene target.
+
+    The already verified RX01 target retains its original run-bank audit.
+    Scene assets must also avoid parity, including the Y row-pointer table.
+    """
     design = json.loads(Path(path).read_text())
     found = set()
     blocks = 0
+    bram18 = 0
+    bram36 = 0
     for module in design['modules'].values():
         parity_outputs = set()
         for name, cell in module.get('cells', {}).items():
             bank = next((bank for bank in ('run_low', 'run_mid', 'run_high') if bank+'_' in name), None)
-            if cell['type'] not in ('RAMB36E1', 'RAMB18E1') or bank is None:
+            if cell['type'] not in ('RAMB36E1', 'RAMB18E1'):
                 continue
-            found.add(bank)
-            blocks += 1
+            if bank is not None:
+                found.add(bank)
+                blocks += 1
+            if cell['type'] == 'RAMB18E1':
+                bram18 += 1
+            else:
+                bram36 += 1
+            if bank is None and not all_memories:
+                continue
             for port in ('DIPADIP', 'DIPBDIP'):
                 if any(isinstance(bit, int) for bit in cell['connections'].get(port, ())):
-                    raise ValueError('Run memory uses a BRAM parity input: '+name)
+                    raise ValueError('Memory uses a BRAM parity input: '+name)
             for port in ('CASCADEINA', 'CASCADEINB'):
                 if any(isinstance(bit, int) for bit in cell['connections'].get(port, ())):
-                    raise ValueError('Run memory uses an unsupported native BRAM cascade: '+name)
+                    raise ValueError('Memory uses an unsupported native BRAM cascade: '+name)
             for port in ('DOPADOP', 'DOPBDOP'):
                 parity_outputs.update(bit for bit in cell['connections'].get(port, ()) if isinstance(bit, int))
         for name, cell in module.get('cells', {}).items():
             for port, direction in cell.get('port_directions', {}).items():
                 if direction == 'input' and parity_outputs.intersection(cell['connections'][port]):
-                    raise ValueError('Run memory uses a BRAM parity output: '+name)
+                    raise ValueError('Memory uses a BRAM parity output: '+name)
     if found != {'run_low', 'run_mid', 'run_high'}:
         raise ValueError('Mapped design does not contain all three data-only run banks')
-    return {'run_bram_blocks': blocks, 'parity_payload_bits': 0, 'native_cascades': 0}
+    return {'audit_scope': 'all_memories' if all_memories else 'run_banks',
+            'run_bram_blocks': blocks, 'bram18_blocks': bram18, 'bram36_blocks': bram36,
+            'parity_payload_bits': 0, 'native_cascades': 0}
 
 
 def verify_dynamic_build(directory, producer):
@@ -63,7 +84,7 @@ def verify_dynamic_build(directory, producer):
     if not manifest.is_file():
         raise ValueError('Build and verify the dynamic producer before loading it')
     info = json.loads(manifest.read_text())
-    bitstream = directory/'raster_dynamic.bit'
+    bitstream = directory/('raster_scene.bit' if producer == 'scene' else 'raster_dynamic.bit')
     if info['producer'] != producer or info['bitstream_sha256'] != hashlib.sha256(bitstream.read_bytes()).hexdigest():
         raise ValueError('Dynamic bitstream differs from the requested/verified producer; rebuild it')
 
@@ -83,14 +104,17 @@ def stage(action):
     digest=hashlib.sha256()
     for source in sorted((ROOT/'fpga').glob('*.py')):
         shutil.copy2(source, package/source.name)
-        if not source.name.startswith('test_'):
+        if source.name in HARDWARE_SOURCES:
             digest.update(source.name.encode()+source.read_bytes())
     setup = ('import sys\nfrom pathlib import Path\n'
              'sys.path.insert(0, str(Path(__file__).resolve().parents[3]/"examples"))\n')
     for filename, module in [('raster_rom.py', 'top'), ('raster_capture.py', 'capture'),
                              ('raster_boot_capture.py', 'boot_capture'),
                              ('raster_dynamic.py', 'dynamic_top'),
-                             ('raster_dynamic_capture.py', 'dynamic_capture')]:
+                             ('raster_dynamic_capture.py', 'dynamic_capture'),
+                             ('raster_scene.py', 'scene_top'),
+                             ('raster_scene_capture.py', 'scene_capture'),
+                             ('raster_scene_boot_capture.py', 'scene_boot_capture')]:
         (directory/filename).write_text(setup+f'from fpga.{module} import *\n# source: {digest.hexdigest()}\n')
     return tool_root, directory
 
@@ -101,34 +125,43 @@ def main():
     parser.add_argument('--scene', type=Path, default=ROOT/'scenes/amber-components.json')
     parser.add_argument('--boot', action='store_true', help='simulate loading into empty RAM (sim only)')
     parser.add_argument('--binary', type=Path, help='capture an existing exported binary (sim only)')
-    parser.add_argument('--dynamic', choices=('rectangle', 'stripes'),
+    parser.add_argument('--dynamic', choices=('rectangle', 'stripes', 'scene'),
                         help='development two-buffer Y producer; independent of the baked scene engine')
     args = parser.parse_args()
     if (args.boot or args.binary) and args.action != 'sim':
         parser.error('--boot and --binary require sim')
-    if args.dynamic and (args.boot or args.binary or args.action == 'export'):
+    if args.dynamic and args.dynamic != 'scene' and (args.boot or args.binary or args.action == 'export'):
         parser.error('--dynamic does not use a binary, boot loader, or export')
     try:
         scene=None
-        if args.action in ('sim','export') and not args.binary and not args.dynamic:
+        if args.action in ('sim','export') and not args.binary and args.dynamic in (None, 'scene'):
             script = ('import {compileScene} from "./scene-model.js"; '
                       'console.log(JSON.stringify(compileScene(await Bun.file(process.argv[1]).json())));')
             scene = json.loads(subprocess.check_output(['bun', '-e', script, str(args.scene.resolve())],
                                                        cwd=ROOT, text=True))
         if args.action == 'export':
             from fpga.backend import export
-            print(json.dumps(export(scene),indent=2))
+            print(json.dumps(export(scene, engine='scene' if args.dynamic == 'scene' else 'baked'),indent=2))
             return 0
         staging = 'sim-boot' if args.boot else args.action
         tool_root, directory = stage(staging+'-dynamic' if args.dynamic else staging)
-        target = 'raster_dynamic' if args.dynamic else 'raster_rom'
+        target = 'raster_scene' if args.dynamic == 'scene' else 'raster_dynamic' if args.dynamic else 'raster_rom'
         build_directory = tool_root/'build/basys3'/target
         if args.dynamic:
             (directory/'fpga/dynamic_config.py').write_text('STRIPES = '+str(args.dynamic == 'stripes')+'\n')
             for name in ('raster_dynamic.py', 'raster_dynamic_capture.py'):
                 entry = directory/name
                 entry.write_text(entry.read_text()+'# producer: '+args.dynamic+'\n')
-        if args.action == 'sim' and args.dynamic:
+        if args.action == 'sim' and args.dynamic == 'scene':
+            from fpga.scene_compile import compile_scene, decode_scene
+            image = args.binary.read_bytes() if args.binary else compile_scene(scene).to_bytes()
+            decode_scene(image)
+            (directory/'fpga/scene.bin').write_bytes(image)
+            entry = directory/('raster_scene_boot_capture.py' if args.boot else 'raster_scene_capture.py')
+            entry.write_text(entry.read_text()+f'# image: {hashlib.sha256(image).hexdigest()}\n')
+            screenshot = ROOT/'fpga/build'/('scene-boot-simulation.png' if args.boot else 'scene-simulation.png')
+            command = ['fpgatool', 'sim', str(entry), '--no-open', '--frames', '1', '--screenshot', str(screenshot)]
+        elif args.action == 'sim' and args.dynamic:
             entry = directory/'raster_dynamic_capture.py'
             screenshot = ROOT/'fpga/build'/('dynamic-'+args.dynamic+'.png')
             command = ['fpgatool', 'sim', str(entry), '--no-open', '--frames', '1',
@@ -152,29 +185,37 @@ def main():
             if args.dynamic:
                 verify_dynamic_build(build_directory, args.dynamic)
             read_timing(tool_root/'build/basys3'/target/'pipelinec/top/open_tools_final.log')
-            verify_data_lanes(tool_root/'build/basys3'/target/'pipelinec/top/top.json')
+            verify_data_lanes(tool_root/'build/basys3'/target/'pipelinec/top/top.json',
+                              all_memories=args.dynamic == 'scene')
             command = ['fpgatool', args.action,
                        str(tool_root/'build/basys3'/target/(target+'.bit'))]
-        subprocess.run(command, check=True)
+        if args.action == 'sim' and args.dynamic == 'scene':
+            from fpga.hdl_capture import capture
+            capture(tool_root, entry, screenshot)
+        else:
+            subprocess.run(command, check=True)
         if args.action == 'sim':
-            from fpga.verify_capture import compare, compare_dynamic
-            print(compare_dynamic(screenshot, stripes=args.dynamic == 'stripes') if args.dynamic
-                  else compare(directory/'fpga/simulation.bin', screenshot))
+            from fpga.verify_capture import compare, compare_dynamic, compare_scene
+            if args.dynamic == 'scene':
+                print(compare_scene(directory/'fpga/scene.bin', screenshot, scene=scene))
+            else:
+                print(compare_dynamic(screenshot, stripes=args.dynamic == 'stripes') if args.dynamic
+                      else compare(directory/'fpga/simulation.bin', screenshot))
         if args.action == 'build':
             report=tool_root/'build/basys3'/target/'pipelinec/top/open_tools_final.log'
             read_timing(report)
-            memory = verify_data_lanes(report.parent/'top.json')
+            memory = verify_data_lanes(report.parent/'top.json', all_memories=args.dynamic == 'scene')
             print(memory)
             destination = ROOT/'fpga/build'
             destination.mkdir(exist_ok=True)
             shutil.copy2(tool_root/'build/basys3'/target/(target+'.bit'), destination/(target+'.bit'))
-            shutil.copy2(report,destination/('dynamic-timing.log' if args.dynamic else 'timing.log'))
+            shutil.copy2(report,destination/('scene-timing.log' if args.dynamic == 'scene' else 'dynamic-timing.log' if args.dynamic else 'timing.log'))
             if args.dynamic:
                 info = {'producer': args.dynamic,
                         'bitstream_sha256': hashlib.sha256((destination/(target+'.bit')).read_bytes()).hexdigest(),
                         'clocks': read_timing(report), 'memory': memory}
                 (build_directory/'producer.json').write_text(json.dumps(info, indent=2)+'\n')
-                (destination/'dynamic-build.json').write_text(json.dumps(info, indent=2)+'\n')
+                (destination/('scene-build.json' if args.dynamic == 'scene' else 'dynamic-build.json')).write_text(json.dumps(info, indent=2)+'\n')
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         print(error, file=sys.stderr)
         return 1

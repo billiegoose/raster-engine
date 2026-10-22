@@ -1,10 +1,13 @@
 # Runtime X programs: first two-buffer implementation
 
-The working Amber RX01 flash engine remains the default. This development
+The scene-driven RECT + TEXT implementation is now in [SCENE.md](SCENE.md).
+The procedural producers below remain useful independent stress targets.
+
+The working Amber RX01 flash engine remains available separately. This development
 target implements the producer/consumer pipeline for dynamic X programs. Its
 procedural producers compute runs in hardware from Y and X coordinates;
-they do not read baked row programs. The scene Y bytecode interpreter,
-rounded-rectangle stepping, compositing and RED2 text are still to be ported.
+they do not read baked row programs. The separate scene target adds RECT,
+RED2 glyph rasterization and layer composition; rounded corners remain future work.
 
 Everything runs on the same 148.5 MHz pixel clock, including both RAM ports.
 The VGA timing bundle is registered before scheduling to separate counter
@@ -101,8 +104,8 @@ the eight existing hardware tests, seven host checks and four UI/API tests
 pass. The dense cycle test measures publication at start+1922 and earliest
 claim at start+1923. Build details are retained in the ignored
 `fpga/build/dynamic-build.json`, logs and captures. This development target
-has been routed and simulated; the physical board continues running the
-verified Amber ROM engine.
+has been routed and simulated. The scene-driven RECT/TEXT target is now
+installed on the physical board; see [SCENE.md](SCENE.md) for its verification.
 
 For an explicit board test, `load --dynamic stripes` loads it into volatile
 SRAM; `program --dynamic stripes` installs it persistently. Use the same
@@ -111,7 +114,6 @@ the bitstream hash before loading. Development LEDs are LD0=clock lock,
 LD12=display enabled, LD13=invalid producer output, LD14=X consumer fault,
 LD15=missed Y deadline. This target does not load scene assets from flash.
 
-The next stage plugs the real scene Y interpreter into this job/result
-interface. Geometry and active-edge state can live upstream; emitted X
-programs stay linear. Palette events will need their own per-buffer version
+The scene Y interpreter plugs into this job/result interface. Geometry state
+lives upstream; emitted X programs stay linear. Palette events will need their own per-buffer version
 so generating the next row cannot change colors in the row being displayed.
