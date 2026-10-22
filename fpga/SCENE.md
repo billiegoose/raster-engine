@@ -143,6 +143,10 @@ Build, capture and board evidence is retained in the ignored
 `fpga/build/scene-verification.json`, `scene-build.json`, `scene-uart-*.json`
 and `scene-upload-confirmation.png`.
 
+The user also visually confirmed that the physical monitor displays the
+complete Amber scene correctly, with square corners and no missing content
+or black streaks.
+
 ## Install and use the simulator button
 
 The scene bitstream is `fpga/build/raster_scene.bit`. `load --dynamic scene`
