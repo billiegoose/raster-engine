@@ -2,6 +2,7 @@ import {rasterize} from './engine.js';
 import {canvasSize} from './scene.js';
 import {createSceneStore, SceneStoreError, MAX_SCENE_BYTES} from './scene-store.js';
 import {compileScene} from './scene-model.js';
+import {handleFpgaRequest} from './fpga/api.js';
 
 // Register future Pypeline or FPGA adapters here. The browser never imports a VM.
 const backends = new Map([
@@ -63,6 +64,8 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
 const defaultSceneStore = createSceneStore();
 
 export async function handleApiRequest(request, pathname, sceneStore = defaultSceneStore) {
+  const fpgaResponse=await handleFpgaRequest(request,pathname);
+  if(fpgaResponse)return fpgaResponse;
   if (pathname === '/api/scenes' || pathname.startsWith('/api/scenes/')) {
     try {
       if (pathname === '/api/scenes') {

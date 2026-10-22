@@ -3,6 +3,7 @@
 import {LAYERS,canvasSize} from './scene.js';
 import {paletteView} from './palette-view.js';
 import {compileScene} from './scene-model.js';
+import {createFpgaControls} from './fpga/controls.js';
 
 const $=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -20,6 +21,7 @@ function formatY(ins){
 }
 
 export function createRasterSimulator({getScene,onEditor}){
+  const fpga=createFpgaControls({getScene});
   const screen=$('screen'),ctx=screen.getContext('2d');
   const timeline=$('timeline'),timelineCtx=timeline.getContext('2d');
   let result=null,selectedY=330,runGeneration=0,revision=0,renderedRevision=-1;
@@ -47,6 +49,7 @@ export function createRasterSimulator({getScene,onEditor}){
   }
 
   function markDirty(){
+    fpga.markDirty();
     revision++;
     const stale=renderedRevision!==revision;
     $('simulation-dirty').hidden=!stale;

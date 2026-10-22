@@ -155,8 +155,11 @@
             <select id="backend"><option value="javascript">JavaScript reference</option><option value="python">Python reference</option></select>
           </label>
           <button id="rerun" type="button">Run simulation</button>
+          <button id="fpga-program" type="button">Export .bin &amp; upload FPGA</button>
+          <a id="fpga-download" class="muted" hidden download style="color:var(--accent)">Download .bin</a>
         </div>
         <span id="stats" class="muted" role="status" aria-live="polite">Select Raster simulator to execute the scene.</span>
+        <span id="fpga-status" class="muted" role="status" aria-live="polite"></span>
       </div>
       <section class="panel preview">
         <div class="panel-heading"><h2>Simulated raster output</h2><span>Pixels and palette indices from the selected backend</span></div>

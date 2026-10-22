@@ -1,0 +1,2077 @@
+{
+  "encoding": "18-bit word: zero[17], exclusive_end_x[16:6], layer[5:0]; row ends at scene width; each row pointer is one 18-bit word",
+  "assumptions": "Storage includes run ROM and row pointers (18-bit words, or 36 bits when the program exceeds 18 address bits); excludes palettes, FIFO and logic. Shared programs use exact whole-row deduplication only. Raw edges still require text generation. No cycle costs are assumed.",
+  "timing": {
+    "720p60": {
+      "width": 1280,
+      "height": 720,
+      "pixel_hz": 74250000,
+      "total_width": 1650,
+      "total_height": 750,
+      "h_front": 110,
+      "h_sync": 40,
+      "h_back": 220,
+      "v_front": 5,
+      "v_sync": 5,
+      "v_back": 20,
+      "clocks_per_line": 1650,
+      "hblank_clocks": 370,
+      "vblank_lines": 30,
+      "vblank_clocks": 49500,
+      "active_line_hblank_clocks": 266400,
+      "total_blank_clocks": 315900,
+      "frame_clocks": 1237500,
+      "hblank_us": 4.983164983164983,
+      "vblank_us": 666.6666666666666,
+      "refresh_hz": 60.0
+    },
+    "1080p60": {
+      "width": 1920,
+      "height": 1080,
+      "pixel_hz": 148500000,
+      "total_width": 2200,
+      "total_height": 1125,
+      "h_front": 88,
+      "h_sync": 44,
+      "h_back": 148,
+      "v_front": 4,
+      "v_sync": 5,
+      "v_back": 36,
+      "clocks_per_line": 2200,
+      "hblank_clocks": 280,
+      "vblank_lines": 45,
+      "vblank_clocks": 99000,
+      "active_line_hblank_clocks": 302400,
+      "total_blank_clocks": 401400,
+      "frame_clocks": 2475000,
+      "hblank_us": 1.8855218855218854,
+      "vblank_us": 666.6666666666666,
+      "refresh_hz": 60.0
+    }
+  },
+  "scene": "scenes/amber-components.json",
+  "source_sha256": "2d366f5531161475963b0ed2286500c8db04a067047d5d92c7e94d097706b3e2",
+  "representative": {
+    "width": 1920,
+    "height": 1080,
+    "rectangles": 86,
+    "texts": 51,
+    "text_buffer_bytes": 448,
+    "palette_events": 0,
+    "palette_versions": 1,
+    "raw_edge_op_totals": {
+      "START_MASK": 1804,
+      "STOP_MASK": 1804,
+      "PAINT": 15806
+    },
+    "max_same_layer_solid_overlap": 3,
+    "unique_visible_programs": 655,
+    "pixel_sha256": "05d5fd87da2b42cd08abce1672e219910cf73732b72a1988272e84f925c315a0",
+    "metrics": {
+      "edges": {
+        "total": 19414,
+        "mean": 17.975925925925925,
+        "p95": 42,
+        "max": 48,
+        "peak_rows": [
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          175,
+          176
+        ]
+      },
+      "runs": {
+        "total": 36570,
+        "mean": 33.861111111111114,
+        "p95": 103,
+        "max": 179,
+        "peak_rows": [
+          170,
+          172
+        ]
+      },
+      "paint_edges": {
+        "total": 15806,
+        "mean": 14.635185185185184,
+        "p95": 32,
+        "max": 36,
+        "peak_rows": [
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          175,
+          176
+        ]
+      },
+      "mask_edges": {
+        "total": 3608,
+        "mean": 3.3407407407407406,
+        "p95": 10,
+        "max": 12,
+        "peak_rows": [
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170
+        ]
+      },
+      "active_texts": {
+        "total": 1804,
+        "mean": 1.6703703703703703,
+        "p95": 5,
+        "max": 6,
+        "peak_rows": [
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170
+        ]
+      },
+      "edits": {
+        "total": 1726,
+        "mean": 1.598148148148148,
+        "p95": 8,
+        "max": 20,
+        "peak_rows": [
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          78,
+          80,
+          83
+        ]
+      },
+      "added": {
+        "total": 274,
+        "mean": 0.2537037037037037,
+        "p95": 2,
+        "max": 10,
+        "peak_rows": [
+          69,
+          70,
+          81,
+          126,
+          158
+        ]
+      },
+      "removed": {
+        "total": 274,
+        "mean": 0.2537037037037037,
+        "p95": 2,
+        "max": 10,
+        "peak_rows": [
+          119,
+          127
+        ]
+      },
+      "moved": {
+        "total": 1178,
+        "mean": 1.0907407407407408,
+        "p95": 5,
+        "max": 20,
+        "peak_rows": [
+          71,
+          72,
+          73,
+          74,
+          75,
+          78,
+          80,
+          83
+        ]
+      },
+      "same_x": {
+        "total": 1002,
+        "mean": 0.9277777777777778,
+        "p95": 1,
+        "max": 2,
+        "peak_rows": [
+          207,
+          208,
+          209,
+          210,
+          211,
+          212,
+          213,
+          214,
+          215,
+          216,
+          217,
+          218
+        ]
+      },
+      "edges_per_64px": {
+        "total": 4842,
+        "mean": 4.483333333333333,
+        "p95": 7,
+        "max": 8,
+        "peak_rows": [
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          175,
+          176
+        ]
+      },
+      "run_starts_per_64px": {
+        "total": 8083,
+        "mean": 7.484259259259259,
+        "p95": 16,
+        "max": 23,
+        "peak_rows": [
+          848
+        ]
+      }
+    },
+    "flat_visible_storage": {
+      "run_words": 36570,
+      "row_pointer_words": 1080,
+      "address_bits": 16,
+      "row_pointer_word_bits": 18,
+      "payload_bits": 677700,
+      "payload_bytes": 84712.5,
+      "ramb18_blocks": 38,
+      "bram_reserved_bytes": 87552,
+      "board_bram_percent": 38
+    },
+    "shared_visible_storage": {
+      "run_words": 33028,
+      "row_pointer_words": 1080,
+      "address_bits": 16,
+      "row_pointer_word_bits": 18,
+      "payload_bits": 613944,
+      "payload_bytes": 76743.0,
+      "ramb18_blocks": 35,
+      "bram_reserved_bytes": 80640,
+      "board_bram_percent": 35
+    }
+  },
+  "stress": {
+    "coincident-overlap": {
+      "width": 1920,
+      "height": 1080,
+      "rectangles": 128,
+      "texts": 0,
+      "text_buffer_bytes": 0,
+      "palette_events": 0,
+      "palette_versions": 1,
+      "raw_edge_op_totals": {
+        "PAINT": 276480
+      },
+      "max_same_layer_solid_overlap": 128,
+      "unique_visible_programs": 1,
+      "pixel_sha256": "70952cca81d1ed3851d8ec5cb0ce4fc57b510de4bd5bc9c152f5f5b17a1503a2",
+      "metrics": {
+        "edges": {
+          "total": 276480,
+          "mean": 256.0,
+          "p95": 256,
+          "max": 256,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "runs": {
+          "total": 1080,
+          "mean": 1.0,
+          "p95": 1,
+          "max": 1,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "paint_edges": {
+          "total": 276480,
+          "mean": 256.0,
+          "p95": 256,
+          "max": 256,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "mask_edges": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "active_texts": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edits": {
+          "total": 256,
+          "mean": 0.23703703703703705,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0
+          ]
+        },
+        "added": {
+          "total": 256,
+          "mean": 0.23703703703703705,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0
+          ]
+        },
+        "removed": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "moved": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "same_x": {
+          "total": 138240,
+          "mean": 128.0,
+          "p95": 128,
+          "max": 128,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edges_per_64px": {
+          "total": 138240,
+          "mean": 128.0,
+          "p95": 128,
+          "max": 128,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "run_starts_per_64px": {
+          "total": 1080,
+          "mean": 1.0,
+          "p95": 1,
+          "max": 1,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "flat_visible_storage": {
+        "run_words": 1080,
+        "row_pointer_words": 1080,
+        "address_bits": 11,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 38880,
+        "payload_bytes": 4860.0,
+        "ramb18_blocks": 4,
+        "bram_reserved_bytes": 9216,
+        "board_bram_percent": 4
+      },
+      "shared_visible_storage": {
+        "run_words": 1,
+        "row_pointer_words": 1080,
+        "address_bits": 1,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 19458,
+        "payload_bytes": 2432.25,
+        "ramb18_blocks": 3,
+        "bram_reserved_bytes": 6912,
+        "board_bram_percent": 3
+      }
+    },
+    "one-pixel-stripes": {
+      "width": 1920,
+      "height": 1080,
+      "rectangles": 960,
+      "texts": 0,
+      "text_buffer_bytes": 0,
+      "palette_events": 0,
+      "palette_versions": 1,
+      "raw_edge_op_totals": {
+        "PAINT": 2073600
+      },
+      "max_same_layer_solid_overlap": 1,
+      "unique_visible_programs": 1,
+      "pixel_sha256": "5c32fc95bdec333355f945c6b872890b6d9c2bfc155fd1441675f404307b7529",
+      "metrics": {
+        "edges": {
+          "total": 2073600,
+          "mean": 1920.0,
+          "p95": 1920,
+          "max": 1920,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "runs": {
+          "total": 2073600,
+          "mean": 1920.0,
+          "p95": 1920,
+          "max": 1920,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "paint_edges": {
+          "total": 2073600,
+          "mean": 1920.0,
+          "p95": 1920,
+          "max": 1920,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "mask_edges": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "active_texts": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edits": {
+          "total": 1920,
+          "mean": 1.7777777777777777,
+          "p95": 0,
+          "max": 1920,
+          "peak_rows": [
+            0
+          ]
+        },
+        "added": {
+          "total": 1920,
+          "mean": 1.7777777777777777,
+          "p95": 0,
+          "max": 1920,
+          "peak_rows": [
+            0
+          ]
+        },
+        "removed": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "moved": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "same_x": {
+          "total": 1080,
+          "mean": 1.0,
+          "p95": 1,
+          "max": 1,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edges_per_64px": {
+          "total": 69120,
+          "mean": 64.0,
+          "p95": 64,
+          "max": 64,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "run_starts_per_64px": {
+          "total": 69120,
+          "mean": 64.0,
+          "p95": 64,
+          "max": 64,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "flat_visible_storage": {
+        "run_words": 2073600,
+        "row_pointer_words": 1080,
+        "address_bits": 21,
+        "row_pointer_word_bits": 36,
+        "payload_bits": 37363680,
+        "payload_bytes": 4670460.0,
+        "ramb18_blocks": 2028,
+        "bram_reserved_bytes": 4672512,
+        "board_bram_percent": 2028
+      },
+      "shared_visible_storage": {
+        "run_words": 1920,
+        "row_pointer_words": 1080,
+        "address_bits": 11,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 54000,
+        "payload_bytes": 6750.0,
+        "ramb18_blocks": 4,
+        "bram_reserved_bytes": 9216,
+        "board_bram_percent": 4
+      }
+    },
+    "dense-unique-rows": {
+      "width": 1920,
+      "height": 1080,
+      "rectangles": 2040,
+      "texts": 0,
+      "text_buffer_bytes": 0,
+      "palette_events": 0,
+      "palette_versions": 1,
+      "raw_edge_op_totals": {
+        "PAINT": 2075760
+      },
+      "max_same_layer_solid_overlap": 1,
+      "unique_visible_programs": 1080,
+      "pixel_sha256": "18d59587de196f3fb25e41a5a767bfc1c0e2522ed0c97107c4444595921c10d4",
+      "metrics": {
+        "edges": {
+          "total": 2075760,
+          "mean": 1922.0,
+          "p95": 1922,
+          "max": 1922,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "runs": {
+          "total": 2073600,
+          "mean": 1920.0,
+          "p95": 1920,
+          "max": 1920,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "paint_edges": {
+          "total": 2075760,
+          "mean": 1922.0,
+          "p95": 1922,
+          "max": 1922,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "mask_edges": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "active_texts": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edits": {
+          "total": 6238,
+          "mean": 5.775925925925926,
+          "p95": 4,
+          "max": 1922,
+          "peak_rows": [
+            0
+          ]
+        },
+        "added": {
+          "total": 4080,
+          "mean": 3.7777777777777777,
+          "p95": 2,
+          "max": 1922,
+          "peak_rows": [
+            0
+          ]
+        },
+        "removed": {
+          "total": 2158,
+          "mean": 1.9981481481481482,
+          "p95": 2,
+          "max": 2,
+          "peak_rows": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        "moved": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "same_x": {
+          "total": 2160,
+          "mean": 2.0,
+          "p95": 2,
+          "max": 2,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edges_per_64px": {
+          "total": 71280,
+          "mean": 66.0,
+          "p95": 66,
+          "max": 66,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "run_starts_per_64px": {
+          "total": 69120,
+          "mean": 64.0,
+          "p95": 64,
+          "max": 64,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "flat_visible_storage": {
+        "run_words": 2073600,
+        "row_pointer_words": 1080,
+        "address_bits": 21,
+        "row_pointer_word_bits": 36,
+        "payload_bits": 37363680,
+        "payload_bytes": 4670460.0,
+        "ramb18_blocks": 2028,
+        "bram_reserved_bytes": 4672512,
+        "board_bram_percent": 2028
+      },
+      "shared_visible_storage": {
+        "run_words": 2073600,
+        "row_pointer_words": 1080,
+        "address_bits": 21,
+        "row_pointer_word_bits": 36,
+        "payload_bits": 37363680,
+        "payload_bytes": 4670460.0,
+        "ramb18_blocks": 2028,
+        "bram_reserved_bytes": 4672512,
+        "board_bram_percent": 2028
+      }
+    },
+    "row-replacement-burst": {
+      "width": 1920,
+      "height": 1080,
+      "rectangles": 2048,
+      "texts": 0,
+      "text_buffer_bytes": 0,
+      "palette_events": 0,
+      "palette_versions": 1,
+      "raw_edge_op_totals": {
+        "PAINT": 4096
+      },
+      "max_same_layer_solid_overlap": 1,
+      "unique_visible_programs": 3,
+      "pixel_sha256": "151a00142b9942e0a86fa75974f94cea5da734872784962ee6df3a0da4af1dd5",
+      "metrics": {
+        "edges": {
+          "total": 4096,
+          "mean": 3.7925925925925927,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "runs": {
+          "total": 5160,
+          "mean": 4.777777777777778,
+          "p95": 1,
+          "max": 256,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "paint_edges": {
+          "total": 4096,
+          "mean": 3.7925925925925927,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "mask_edges": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "active_texts": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edits": {
+          "total": 8192,
+          "mean": 7.5851851851851855,
+          "p95": 0,
+          "max": 512,
+          "peak_rows": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        "added": {
+          "total": 4096,
+          "mean": 3.7925925925925927,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "removed": {
+          "total": 4096,
+          "mean": 3.7925925925925927,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        "moved": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "same_x": {
+          "total": 16,
+          "mean": 0.014814814814814815,
+          "p95": 0,
+          "max": 1,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edges_per_64px": {
+          "total": 1024,
+          "mean": 0.9481481481481482,
+          "p95": 0,
+          "max": 64,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "run_starts_per_64px": {
+          "total": 2088,
+          "mean": 1.9333333333333333,
+          "p95": 1,
+          "max": 64,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "flat_visible_storage": {
+        "run_words": 5160,
+        "row_pointer_words": 1080,
+        "address_bits": 13,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 112320,
+        "payload_bytes": 14040.0,
+        "ramb18_blocks": 8,
+        "bram_reserved_bytes": 18432,
+        "board_bram_percent": 8
+      },
+      "shared_visible_storage": {
+        "run_words": 513,
+        "row_pointer_words": 1080,
+        "address_bits": 10,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 28674,
+        "payload_bytes": 3584.25,
+        "ramb18_blocks": 3,
+        "bram_reserved_bytes": 6912,
+        "board_bram_percent": 3
+      }
+    },
+    "moving-rounded-edges": {
+      "width": 1920,
+      "height": 1080,
+      "rectangles": 128,
+      "texts": 0,
+      "text_buffer_bytes": 0,
+      "palette_events": 0,
+      "palette_versions": 1,
+      "raw_edge_op_totals": {
+        "PAINT": 65536
+      },
+      "max_same_layer_solid_overlap": 1,
+      "unique_visible_programs": 320,
+      "pixel_sha256": "0b6f6d0e7a845a6250f47ad94d7409fab4739d2978ad5fef99d2ca6cdbff261d",
+      "metrics": {
+        "edges": {
+          "total": 65536,
+          "mean": 60.681481481481484,
+          "p95": 256,
+          "max": 256,
+          "peak_rows": [
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74
+          ]
+        },
+        "runs": {
+          "total": 27801,
+          "mean": 25.741666666666667,
+          "p95": 102,
+          "max": 115,
+          "peak_rows": [
+            61
+          ]
+        },
+        "paint_edges": {
+          "total": 65536,
+          "mean": 60.681481481481484,
+          "p95": 256,
+          "max": 256,
+          "peak_rows": [
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74
+          ]
+        },
+        "mask_edges": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "active_texts": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edits": {
+          "total": 38400,
+          "mean": 35.55555555555556,
+          "p95": 200,
+          "max": 232,
+          "peak_rows": [
+            63,
+            256
+          ]
+        },
+        "added": {
+          "total": 256,
+          "mean": 0.23703703703703705,
+          "p95": 4,
+          "max": 4,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "removed": {
+          "total": 256,
+          "mean": 0.23703703703703705,
+          "p95": 4,
+          "max": 4,
+          "peak_rows": [
+            256,
+            257,
+            258,
+            259,
+            260,
+            261,
+            262,
+            263,
+            264,
+            265,
+            266,
+            267
+          ]
+        },
+        "moved": {
+          "total": 37888,
+          "mean": 35.08148148148148,
+          "p95": 196,
+          "max": 228,
+          "peak_rows": [
+            63,
+            64,
+            65,
+            254,
+            255,
+            256
+          ]
+        },
+        "same_x": {
+          "total": 634,
+          "mean": 0.587037037037037,
+          "p95": 2,
+          "max": 2,
+          "peak_rows": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ]
+        },
+        "edges_per_64px": {
+          "total": 6952,
+          "mean": 6.437037037037037,
+          "p95": 26,
+          "max": 29,
+          "peak_rows": [
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            255,
+            256,
+            257,
+            258
+          ]
+        },
+        "run_starts_per_64px": {
+          "total": 4134,
+          "mean": 3.827777777777778,
+          "p95": 14,
+          "max": 16,
+          "peak_rows": [
+            254,
+            255,
+            256,
+            257,
+            258,
+            259,
+            260,
+            261,
+            262,
+            263,
+            264,
+            265
+          ]
+        }
+      },
+      "flat_visible_storage": {
+        "run_words": 27801,
+        "row_pointer_words": 1080,
+        "address_bits": 15,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 519858,
+        "payload_bytes": 64982.25,
+        "ramb18_blocks": 30,
+        "bram_reserved_bytes": 69120,
+        "board_bram_percent": 30
+      },
+      "shared_visible_storage": {
+        "run_words": 27041,
+        "row_pointer_words": 1080,
+        "address_bits": 15,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 506178,
+        "payload_bytes": 63272.25,
+        "ramb18_blocks": 29,
+        "bram_reserved_bytes": 66816,
+        "board_bram_percent": 29
+      }
+    },
+    "overlapping-text-sources": {
+      "width": 1920,
+      "height": 1080,
+      "rectangles": 0,
+      "texts": 128,
+      "text_buffer_bytes": 37632,
+      "palette_events": 0,
+      "palette_versions": 1,
+      "raw_edge_op_totals": {
+        "START_MASK": 4608,
+        "STOP_MASK": 4608
+      },
+      "max_same_layer_solid_overlap": 0,
+      "unique_visible_programs": 23,
+      "pixel_sha256": "5fd35170d4821fbb9278638978e159f6ee26b46009714a21ec89d8ebcaa22591",
+      "metrics": {
+        "edges": {
+          "total": 9216,
+          "mean": 8.533333333333333,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "runs": {
+          "total": 16972,
+          "mean": 15.714814814814815,
+          "p95": 1,
+          "max": 1211,
+          "peak_rows": [
+            2
+          ]
+        },
+        "paint_edges": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "mask_edges": {
+          "total": 9216,
+          "mean": 8.533333333333333,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "active_texts": {
+          "total": 4608,
+          "mean": 4.266666666666667,
+          "p95": 0,
+          "max": 128,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edits": {
+          "total": 512,
+          "mean": 0.4740740740740741,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0,
+            36
+          ]
+        },
+        "added": {
+          "total": 256,
+          "mean": 0.23703703703703705,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            0
+          ]
+        },
+        "removed": {
+          "total": 256,
+          "mean": 0.23703703703703705,
+          "p95": 0,
+          "max": 256,
+          "peak_rows": [
+            36
+          ]
+        },
+        "moved": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "same_x": {
+          "total": 4608,
+          "mean": 4.266666666666667,
+          "p95": 0,
+          "max": 128,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edges_per_64px": {
+          "total": 4608,
+          "mean": 4.266666666666667,
+          "p95": 0,
+          "max": 128,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "run_starts_per_64px": {
+          "total": 1812,
+          "mean": 1.6777777777777778,
+          "p95": 1,
+          "max": 64,
+          "peak_rows": [
+            2
+          ]
+        }
+      },
+      "flat_visible_storage": {
+        "run_words": 16972,
+        "row_pointer_words": 1080,
+        "address_bits": 15,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 324936,
+        "payload_bytes": 40617.0,
+        "ramb18_blocks": 19,
+        "bram_reserved_bytes": 43776,
+        "board_bram_percent": 19
+      },
+      "shared_visible_storage": {
+        "run_words": 15915,
+        "row_pointer_words": 1080,
+        "address_bits": 14,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 305910,
+        "payload_bytes": 38238.75,
+        "ramb18_blocks": 18,
+        "bram_reserved_bytes": 41472,
+        "board_bram_percent": 18
+      }
+    },
+    "palette-every-row": {
+      "width": 1920,
+      "height": 1080,
+      "rectangles": 1,
+      "texts": 0,
+      "text_buffer_bytes": 0,
+      "palette_events": 69120,
+      "palette_versions": 1080,
+      "raw_edge_op_totals": {
+        "PAINT": 2160
+      },
+      "max_same_layer_solid_overlap": 1,
+      "unique_visible_programs": 1,
+      "pixel_sha256": "70952cca81d1ed3851d8ec5cb0ce4fc57b510de4bd5bc9c152f5f5b17a1503a2",
+      "metrics": {
+        "edges": {
+          "total": 2160,
+          "mean": 2.0,
+          "p95": 2,
+          "max": 2,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "runs": {
+          "total": 1080,
+          "mean": 1.0,
+          "p95": 1,
+          "max": 1,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "paint_edges": {
+          "total": 2160,
+          "mean": 2.0,
+          "p95": 2,
+          "max": 2,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "mask_edges": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "active_texts": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edits": {
+          "total": 2,
+          "mean": 0.001851851851851852,
+          "p95": 0,
+          "max": 2,
+          "peak_rows": [
+            0
+          ]
+        },
+        "added": {
+          "total": 2,
+          "mean": 0.001851851851851852,
+          "p95": 0,
+          "max": 2,
+          "peak_rows": [
+            0
+          ]
+        },
+        "removed": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "moved": {
+          "total": 0,
+          "mean": 0.0,
+          "p95": 0,
+          "max": 0,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "same_x": {
+          "total": 1080,
+          "mean": 1.0,
+          "p95": 1,
+          "max": 1,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "edges_per_64px": {
+          "total": 1080,
+          "mean": 1.0,
+          "p95": 1,
+          "max": 1,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "run_starts_per_64px": {
+          "total": 1080,
+          "mean": 1.0,
+          "p95": 1,
+          "max": 1,
+          "peak_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "flat_visible_storage": {
+        "run_words": 1080,
+        "row_pointer_words": 1080,
+        "address_bits": 11,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 38880,
+        "payload_bytes": 4860.0,
+        "ramb18_blocks": 4,
+        "bram_reserved_bytes": 9216,
+        "board_bram_percent": 4
+      },
+      "shared_visible_storage": {
+        "run_words": 1,
+        "row_pointer_words": 1080,
+        "address_bits": 1,
+        "row_pointer_word_bits": 18,
+        "payload_bits": 19458,
+        "payload_bytes": 2432.25,
+        "ramb18_blocks": 3,
+        "bram_reserved_bytes": 6912,
+        "board_bram_percent": 3
+      }
+    }
+  }
+}
