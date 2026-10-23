@@ -103,7 +103,7 @@ def main():
     parser.add_argument('--port', required=True)
     parser.add_argument('--seconds', type=float, default=3)
     parser.add_argument('--binary', type=Path, default=Path(__file__).with_name('build')/'amber-components.bin')
-    parser.add_argument('--scene', action='store_true', help='decode RECT/TEXT RYD2 diagnostics; supply its RY02 --binary')
+    parser.add_argument('--scene', action='store_true', help='decode RECT/TEXT RYD2 diagnostics; supply its RY03 --binary')
     parser.add_argument('--output', type=Path, default=Path(__file__).with_name('build')/'uart-diagnostics.json')
     args = parser.parse_args()
     raw = read_serial(args.port, args.seconds)
@@ -118,7 +118,7 @@ def main():
         data = args.binary.read_bytes()
         _, _, events, font = decode_scene(data)
         expected = dict(event_count=len(events), font_count=len(font), event_bytes=len(events)*10,
-                        font_bytes=len(font)*3, palette_writes=64, row_writes=1081,
+                        font_bytes=len(font)*2, palette_writes=64, row_writes=1081,
                         write_checksum=int.from_bytes(data[16:20], 'little'))
         checked = [dict(record, expected=expected, writes_match=all(record[k] == v for k, v in expected.items())) for record in records]
     else:

@@ -63,7 +63,7 @@ def compare_dynamic(screenshot, *, stripes=False):
 
 
 def compare_scene(binary, screenshot, *, scene=None):
-    from fpga.scene_compile import decode_scene, square_scene
+    from fpga.scene_compile import decode_scene, square_scene, font_row
     palette, rows, events, font = decode_scene(Path(binary).read_bytes())
     if scene is not None:
         from engine import iter_scanlines
@@ -81,7 +81,7 @@ def compare_scene(binary, screenshot, *, scene=None):
                         continue
                     left, right, layer = word & 2047, (word >> 11) & 2047, (word >> 44) & 63
                     solid = (word >> 50) & 1
-                    ink = 0 if solid else font[((word >> 51) & 8191)+y-top] >> ((word >> 64) & 31)
+                    ink = 0 if solid else font_row(font, ((word >> 51) & 8191)+y-top) >> ((word >> 64) & 31)
                     for x in range(left, right):
                         if (solid or (ink >> (x-left)) & 1) and layer > row[x]:
                             row[x] = layer

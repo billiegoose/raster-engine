@@ -40,7 +40,7 @@ test('dynamic TEXT/RECT export produces a downloadable Y program',async()=>{
     expect(data.engine).toBe('scene');
     expect(data.primitives).toBe(0);
     const download=await handle(new Request('http://localhost'+data.downloadUrl),data.downloadUrl);
-    expect(Buffer.from(await download.arrayBuffer()).subarray(0,4).toString()).toBe('RY02');
+    expect(Buffer.from(await download.arrayBuffer()).subarray(0,4).toString()).toBe('RY03');
   }finally{await unlink(data.path);}
 });
 

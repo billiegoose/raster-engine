@@ -1,11 +1,12 @@
 import unittest
+from dataclasses import replace
 from fpga.test_hardware import AVAILABLE, HardwareTests as _HardwareTests
 
 if AVAILABLE:
     from pypeline import sim_call, sim_zero
     from fpga.scene_y import make_scene_y
     from fpga.scene_loader import load_scene, assets_t
-    from fpga.scene_compile import Primitive, SceneProgram, decode_scene
+    from fpga.scene_compile import Primitive, SceneProgram, decode_scene, compress_font, font_row
     from fpga.pingpong import y_job_t
     from fpga.format import FLASH_BASE, WIDTH
 
@@ -22,12 +23,14 @@ class SceneHardwareTests(unittest.TestCase):
         events = tuple(enumerate(primitives))
         rows = (0, 2, 3, 4)+(4,)*1077
         font = (0x155555, 0xaaaaa, 0x1fffff)+(0,)*29
-        return SceneProgram(tuple(range(64)), primitives, events, rows, font, 4, {})
+        font, base = compress_font(font)
+        primitives = tuple(replace(p, glyph=base) if not p.solid else p for p in primitives)
+        return SceneProgram(tuple(range(64)), primitives, tuple(enumerate(primitives)), rows, font, 4, {}, base)
 
     def test_y_generates_rect_text_overlap_and_advances_glyph_rows(self):
         program = self.fixture()
         producer = make_scene_y(decode_scene(program.to_bytes()))
-        assets = sim_zero(assets_t)._replace(ready=1, event_count=4, font_count=32)
+        assets = sim_zero(assets_t)._replace(ready=1, event_count=4, font_count=len(program.font), font_index_base=program.font_index_base)
         for row in range(4):
             sim_call(producer, y_job_t(start=1, cancel=1, row=row, epoch=1), assets)
             words = []
@@ -49,7 +52,7 @@ class SceneHardwareTests(unittest.TestCase):
             expected = []
             for x in range(WIDTH):
                 layer = 2 if row < 3 else 0
-                if row < 3 and 3 <= x < 24 and (program.font[row] >> (x-3+1)) & 1:
+                if row < 3 and 3 <= x < 24 and (font_row(program.font, program.font_index_base+row) >> (x-3+1)) & 1:
                     layer = 8
                 if row == 1 and 10 <= x < 20:
                     layer = 9
@@ -83,7 +86,7 @@ class SceneHardwareTests(unittest.TestCase):
         self.assertEqual([v for _, _, v in writes['palette']], list(program.palette))
         self.assertEqual([v for _, _, v in writes['row']], list(program.rows))
         self.assertEqual(len(writes['event']), 40)
-        self.assertEqual(len(writes['font']), 96)
+        self.assertEqual(len(writes['font']), len(program.font)*2)
         sim_call(load_scene, 1, 0, 0, 1)
         broken = bytearray(data)
         broken[0xb000] ^= 1
@@ -101,24 +104,34 @@ class SceneHardwareTests(unittest.TestCase):
         for part in range(10):
             sim_call(memory, idle._replace(event_write=1, index=4095, part=part,
                                           data=(event >> (part*8)) & 255), 0, 0, 0, 0, 0, 0)
-        for part in range(3):
-            sim_call(memory, idle._replace(font_write=1, index=8191, part=part,
-                                          data=(font >> (part*8)) & 255), 0, 0, 0, 0, 0, 0)
-        sim_call(memory, idle, 1080, 1, 4095, 1, 8191, 1)
+        # Dictionary row 511 straddles two words; its row ID is at the
+        # final address. Verify high data bits and every byte independently.
+        words = ((font & 255) << 8, font >> 8)
+        for index, word in [(766, words[0]), (767, words[1]), (2047, 511)]:
+            for part in range(2):
+                sim_call(memory, idle._replace(font_write=1, index=index, part=part,
+                                              data=(word >> (part*8)) & 255), 0, 0, 0, 0, 0, 0)
+        idle = idle._replace(font_index_base=768)
+        sim_call(memory, idle, 1080, 1, 4095, 1, 2047, 1)
         out = sim_call(memory, idle, 0, 0, 0, 0, 0, 0)
-        self.assertTrue(out.row_valid and out.event_valid and out.font_valid)
-        self.assertEqual((int(out.row_address), int(out.row), int(out.event), int(out.font)),
-                         (1080, 4096, event, font))
+        self.assertTrue(out.row_valid and out.event_valid)
+        self.assertEqual((int(out.row_address), int(out.row), int(out.event)), (1080, 4096, event))
+        sim_call(memory, idle, 0, 0, 0, 0, 0, 0)
+        sim_call(memory, idle, 0, 0, 0, 0, 0, 0)
+        out = sim_call(memory, idle, 0, 0, 0, 0, 0, 0)
+        self.assertTrue(out.font_valid)
+        self.assertFalse(out.font_error)
+        self.assertEqual(int(out.font), font)
 
     def test_invalid_geometry_and_glyph_range_fault_during_setup(self):
         from fpga.scene_compile import pack_event
         # Bypass the host validator deliberately to exercise the hardware guard.
         for primitive in (Primitive(0, 2, 0, WIDTH+1, 2, True),
                           Primitive(1, 2, 0, 10, 2, True),
-                          Primitive(0, 33, 0, 21, 2, False)):
+                          Primitive(0, 33, 0, 21, 2, False, 2)):
             producer = make_scene_y(((0,)*64, (0,)+(1,)*1080,
                                      (pack_event(0, primitive),), (0,)*32))
-            assets = sim_zero(assets_t)._replace(ready=1, event_count=1, font_count=32)
+            assets = sim_zero(assets_t)._replace(ready=1, event_count=1, font_count=32, font_index_base=2)
             sim_call(producer, y_job_t(start=1, cancel=1, row=0, epoch=1), assets)
             for cycle in range(160):
                 out = sim_call(producer, sim_zero(y_job_t), assets)
@@ -144,12 +157,17 @@ class SceneHardwareTests(unittest.TestCase):
         events = tuple(enumerate(rectangles))+tuple(enumerate(glyphs))
         program = SceneProgram(tuple(range(64)), primitives, events,
                                (0, 64)+(128,)*1079, (0x155555,)+(0,)*31, 64, {})
+        font, base = compress_font(program.font)
+        primitives = tuple(replace(p, glyph=base) if not p.solid else p for p in primitives)
+        program = replace(program, primitives=primitives, events=tuple(enumerate(primitives[:64]))+
+                          tuple(enumerate(primitives[64:])), font=font, font_index_base=base)
         producer = make_scene_y(decode_scene(program.to_bytes()))
-        assets = sim_zero(assets_t)._replace(ready=1, event_count=128, font_count=32)
+        assets = sim_zero(assets_t)._replace(ready=1, event_count=128, font_count=len(font), font_index_base=base)
         for row in range(2):
             sim_call(producer, y_job_t(start=1, cancel=1, row=row, epoch=2), assets)
             actual = []
-            for cycle in range(2200):
+            # Row zero is built during vertical blank; later rows get 2200 clocks.
+            for cycle in range(3000 if row == 0 else 2200):
                 out = sim_call(producer, y_job_t(start=0, cancel=0, row=0, epoch=0), assets)
                 self.assertFalse(out.error)
                 if out.valid:
@@ -173,6 +191,28 @@ class SceneHardwareTests(unittest.TestCase):
                     for x in range(glyph.left, glyph.right):
                         expected[x] = 8 if (x-glyph.left) % 2 == 0 else 0
                 self.assertEqual(pixels, expected)
+
+    def test_invalid_dictionary_ids_fault_before_pixels_and_cancel_cleanly(self):
+        from fpga.scene_compile import pack_event
+        # A high reserved row-ID bit, and a legal nine-bit ID outside the
+        # uploaded dictionary. Bypass the host validator to test hardware.
+        for row_id in (512, 511):
+            primitive = Primitive(0, 1, 0, 21, 2, False, 2)
+            producer = make_scene_y(((0,)*64, (0,)+(1,)*1080,
+                                     (pack_event(0, primitive),), (0x5555, 0x15, row_id)))
+            assets = sim_zero(assets_t)._replace(ready=1, event_count=1, font_count=3, font_index_base=2)
+            sim_call(producer, y_job_t(start=1, cancel=1, row=0, epoch=1), assets)
+            for _ in range(160):
+                out = sim_call(producer, sim_zero(y_job_t), assets)
+                self.assertFalse(out.valid)
+                if out.error:
+                    break
+            else:
+                self.fail('Invalid row dictionary ID was not rejected')
+            sim_call(producer, y_job_t(start=0, cancel=1, row=0, epoch=1), assets)
+            for _ in range(8):
+                out = sim_call(producer, sim_zero(y_job_t), assets)
+                self.assertFalse(out.error or out.valid)
 
     def test_scene_uart_packet_decodes_from_the_serial_bits(self):
         from pypeline import hw_func
@@ -215,13 +255,13 @@ class SceneHardwareTests(unittest.TestCase):
         import struct
         from fpga.scene_compile import MAGIC
         for event_count, font_count, lanes, accepted in [
-            (4096, 8192, 64, True), (0, 0, 1, True), (4095, 8191, 63, True),
-            (4097, 0, 1, False), (8192, 0, 1, False), (0, 8193, 1, False),
+            (4096, 2048, 64, True), (0, 0, 1, True), (4095, 2047, 63, True),
+            (4097, 0, 1, False), (8192, 0, 1, False), (0, 2049, 1, False),
             (0, 16384, 1, False), (0, 0, 65, False), (0, 0, 0, False),
         ]:
             with self.subTest(events=event_count, font=font_count, lanes=lanes):
                 sim_call(load_scene, 1, 0, 0, 1)
-                header = struct.pack('<8I', MAGIC, 1920 | (1080 << 16), event_count, font_count, 0, lanes, 0, 0)
+                header = struct.pack('<8I', MAGIC, 1920 | (1080 << 16), event_count, font_count, 0, lanes, min(768, font_count), 0)
                 pending, passed = None, False
                 for _ in range(100):
                     done = pending is not None

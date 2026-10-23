@@ -1,5 +1,5 @@
 # pyright: reportInvalidTypeForm=none
-"""RY02 flash loader: fixed palette, Y event table, descriptors and glyph ROM."""
+"""RY03 flash loader: fixed palette, Y event table, descriptors and glyph ROM."""
 from pypeline import *
 from fpga.format import FLASH_BASE, WIDTH, HEIGHT
 from fpga.scene_compile import (MAGIC, PALETTE_OFFSET, ROWS_OFFSET, EVENTS_OFFSET,
@@ -21,6 +21,7 @@ class assets_t(NamedTuple):
     data: uint16_t
     event_count: uint13_t
     font_count: uint14_t
+    font_index_base: uint11_t
 
 
 @hw_func
@@ -37,8 +38,9 @@ def load_scene(byte_ready: uint1_t, byte_done: uint1_t, byte_data: uint8_t,
     expected: Reg[uint32_t] = 0
     event_count: Reg[uint13_t] = 0
     font_count: Reg[uint14_t] = 0
+    font_index_base: Reg[uint11_t] = 0
     last_event: Reg[uint12_t] = 0
-    last_font: Reg[uint13_t] = 0
+    last_font: Reg[uint11_t] = 0
     previous_row: Reg[uint16_t] = 0
     finishing: Reg[uint1_t] = 0
     ready: Reg[uint1_t] = 0
@@ -64,8 +66,8 @@ def load_scene(byte_ready: uint1_t, byte_done: uint1_t, byte_data: uint8_t,
         address = FLASH_BASE+EVENTS_OFFSET+uint32_t(index)*10+part
         last_part = 9
     elif phase == 4:
-        address = FLASH_BASE+FONT_OFFSET+uint32_t(index)*3+part
-        last_part = 2
+        address = FLASH_BASE+FONT_OFFSET+(uint32_t(index) << 1)+part
+        last_part = 1
 
     if reload:
         phase = 0
@@ -80,6 +82,7 @@ def load_scene(byte_ready: uint1_t, byte_done: uint1_t, byte_data: uint8_t,
         previous_row = 0
         event_count = 0
         font_count = 0
+        font_index_base = 0
         last_event = 0
         last_font = 0
         finishing = 0
@@ -108,15 +111,19 @@ def load_scene(byte_ready: uint1_t, byte_done: uint1_t, byte_data: uint8_t,
                 event_count = uint13_t(word)
                 last_event = uint12_t(word) - 1
             elif header_index == 3:
-                if ((word >> 14) != 0) | (word[13] & (word[12:0] != 0)):
+                if word > FONT_CAPACITY:
                     error = 1
                 font_count = uint14_t(word)
-                last_font = uint13_t(word) - 1
+                last_font = uint11_t(word) - 1
             elif header_index == 4:
                 expected = word
             elif (header_index == 5) & ((word == 0) | ((word >> 7) != 0) | (word[6] & (word[5:0] != 0))):
                 error = 1
-            elif ((header_index == 6) | (header_index == 7)) & (word != 0):
+            elif header_index == 6:
+                if (word > 768) | (word > font_count) | ((font_count != 0) & (word == 0)):
+                    error = 1
+                font_index_base = uint11_t(word)
+            elif (header_index == 7) & (word != 0):
                 error = 1
             if header_index == 7:
                 phase = 1
@@ -162,8 +169,7 @@ def load_scene(byte_ready: uint1_t, byte_done: uint1_t, byte_data: uint8_t,
             elif phase == 4:
                 data = byte_data
                 font_write = 1
-                if (part == 2) & ((byte_data & 224) != 0):
-                    error = 1
+
             if part == last_part:
                 part = 0
                 assembled = 0
@@ -179,7 +185,7 @@ def load_scene(byte_ready: uint1_t, byte_done: uint1_t, byte_data: uint8_t,
                             if font_count == 0:
                                 finishing = 1
                     elif phase == 4:
-                        if uint13_t(write_index) == last_font:
+                        if uint11_t(write_index) == last_font:
                             finishing = 1
             else:
                 part = part + 1
@@ -189,4 +195,4 @@ def load_scene(byte_ready: uint1_t, byte_done: uint1_t, byte_data: uint8_t,
                     palette_write=palette_write, row_write=row_write,
                     event_write=event_write, font_write=font_write,
                     index=write_index, part=write_part, data=data,
-                    event_count=event_count, font_count=font_count)
+                    event_count=event_count, font_count=font_count, font_index_base=font_index_base)

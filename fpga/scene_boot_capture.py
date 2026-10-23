@@ -1,5 +1,5 @@
 # pyright: reportInvalidTypeForm=none
-"""Empty memories -> hardware RY02 loader -> Y compositor -> X interpreter."""
+"""Empty memories -> hardware RY03 loader -> Y compositor -> X interpreter."""
 from pathlib import Path
 from pypeline import *
 from ram import make_ram

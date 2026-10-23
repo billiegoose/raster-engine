@@ -3,6 +3,7 @@
 from pypeline import *
 from ram import make_ram
 from fpga.scene_loader import assets_t
+from fpga.packed_font import make_packed_font
 
 uint80_t = make_uint_t(80)
 
@@ -16,6 +17,7 @@ class reads_t(NamedTuple):
     event: uint80_t
     font_valid: uint1_t
     font: uint21_t
+    font_error: uint1_t
 
 
 def make_scene_memory(program=None):
@@ -46,12 +48,7 @@ def make_scene_memory(program=None):
                          init=None if events is None else tuple((w >> 64) & 255 for w in events))
     event9, _ = make_ram(uint8_t, 4096, ports=('w', 'r'), read_latency=1,
                          init=None if events is None else tuple((w >> 72) & 255 for w in events))
-    font0, _ = make_ram(uint8_t, 8192, ports=('w', 'r'), read_latency=1,
-                         init=None if font is None else tuple((w >> 0) & 255 for w in font))
-    font1, _ = make_ram(uint8_t, 8192, ports=('w', 'r'), read_latency=1,
-                         init=None if font is None else tuple((w >> 8) & 255 for w in font))
-    font2, _ = make_ram(uint8_t, 8192, ports=('w', 'r'), read_latency=1,
-                         init=None if font is None else tuple((w >> 16) & 255 for w in font))
+    font_memory = make_packed_font(font)
 
     @hw_func
     def memory(load: assets_t, row_address: uint11_t, row_read: uint1_t,
@@ -95,17 +92,8 @@ def make_scene_memory(program=None):
                        wr_en=load.event_write & (load.part == 9), valid=1),
                        event9.p1_in_t(addr=event_address, valid=event_read))
         event_word: uint80_t = (uint80_t(event_r0.p1.rd_data) << 0) | (uint80_t(event_r1.p1.rd_data) << 8) | (uint80_t(event_r2.p1.rd_data) << 16) | (uint80_t(event_r3.p1.rd_data) << 24) | (uint80_t(event_r4.p1.rd_data) << 32) | (uint80_t(event_r5.p1.rd_data) << 40) | (uint80_t(event_r6.p1.rd_data) << 48) | (uint80_t(event_r7.p1.rd_data) << 56) | (uint80_t(event_r8.p1.rd_data) << 64) | (uint80_t(event_r9.p1.rd_data) << 72)
-        font_r0 = font0(font0.p0_in_t(addr=load.index[12:0], wr_data=uint8_t(load.data),
-                       wr_en=load.font_write & (load.part == 0), valid=1),
-                       font0.p1_in_t(addr=font_address, valid=font_read))
-        font_r1 = font1(font1.p0_in_t(addr=load.index[12:0], wr_data=uint8_t(load.data),
-                       wr_en=load.font_write & (load.part == 1), valid=1),
-                       font1.p1_in_t(addr=font_address, valid=font_read))
-        font_r2 = font2(font2.p0_in_t(addr=load.index[12:0], wr_data=uint8_t(load.data),
-                       wr_en=load.font_write & (load.part == 2), valid=1),
-                       font2.p1_in_t(addr=font_address, valid=font_read))
-        font_word: uint24_t = (uint24_t(font_r0.p1.rd_data) << 0) | (uint24_t(font_r1.p1.rd_data) << 8) | (uint24_t(font_r2.p1.rd_data) << 16)
+        pattern = font_memory(load, font_address, font_read)
         return reads_t(row_valid=row_low.p1.valid, row_address=row_low.p1.addr, row=row,
                        event_valid=event_r0.p1.valid, event=event_word,
-                       font_valid=font_r0.p1.valid, font=uint21_t(font_word))
+                       font_valid=pattern.valid, font=pattern.bits, font_error=pattern.error)
     return memory

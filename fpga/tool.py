@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 HARDWARE_SOURCES = {'__init__.py', 'board.py', 'format.py', 'image.py', 'loader.py', 'scanout.py',
     'diagnostics.py', 'top.py', 'capture.py', 'boot_capture.py', 'pingpong.py',
     'dynamic.py', 'dynamic_config.py', 'procedural_y.py', 'dynamic_top.py', 'dynamic_capture.py',
-    'compositor.py', 'scene_compile.py', 'scene_memory.py', 'scene_loader.py', 'scene_y.py',
+    'compositor.py', 'packed_font.py', 'scene_compile.py', 'scene_memory.py', 'scene_loader.py', 'scene_y.py',
     'scene_dynamic.py', 'scene_top.py', 'scene_capture.py', 'scene_boot_capture.py', 'scene_diagnostics.py'}
 
 

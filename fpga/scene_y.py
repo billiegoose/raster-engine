@@ -27,9 +27,10 @@ def make_scene_y(program=None):
         drain: Reg[uint3_t] = 0
         event_word: Reg[uint80_t] = 0
         event_valid: Reg[uint1_t] = 0
-        prepared: Reg[uint69_t] = 0
-        prepared_lane: Reg[uint6_t] = 0
-        prepared_valid: Reg[uint1_t] = 0
+        prepared: Reg[uint69_t[4]]
+        prepared_lane: Reg[uint6_t[4]]
+        prepared_valid: Reg[uint4_t] = 0
+        refresh: Reg[uint2_t] = 0
         lane_write: Reg[lane_write_t]
         x: Reg[uint11_t] = 0
         previous_layer: Reg[uint6_t] = 0
@@ -47,9 +48,9 @@ def make_scene_y(program=None):
         checked_solid: Reg[uint1_t] = 0
         checked_limit: Reg[uint14_t] = 0
         old_phase: uint4_t = phase
-        old_prepared: uint69_t = prepared
-        old_prepared_lane: uint6_t = prepared_lane
-        old_prepared_valid: uint1_t = prepared_valid
+        old_prepared: uint69_t = prepared[3]
+        old_prepared_lane: uint6_t = prepared_lane[3]
+        old_prepared_valid: uint1_t = prepared_valid[3]
         old_write: lane_write_t = lane_write
         valid: uint1_t = 0
         end_x: uint11_t = 0
@@ -75,14 +76,15 @@ def make_scene_y(program=None):
         check_limit = load.font_count
         check_bad = ((event_word[10:0] >= event_word[21:11]) | (event_word[21:11] > WIDTH) |
                      (event_word[32:22] != row) | (event_word[43:33] <= row) |
-                     (event_word[43:33] > HEIGHT) | (event_word[49:44] == 0) | (event_word[68:64] > 20))
+                     (event_word[43:33] > HEIGHT) | (event_word[49:44] == 0) | (event_word[68:64] > 20) |
+                     ((~event_word[50]) & (event_word[63:51] < load.font_index_base)))
         if old_phase == 1:
             descriptor_write = 1
             descriptor_address = lane_index
             descriptor_word = 0
         desc = descriptors(descriptors.p0_in_t(addr=descriptor_address, wr_data=descriptor_word,
                                               wr_en=descriptor_write, valid=1),
-                           descriptors.p1_in_t(addr=lane_index, valid=(old_phase == 7) & (~clear)))
+                           descriptors.p1_in_t(addr=lane_index, valid=(old_phase == 7) & (refresh == 0) & (~clear)))
         glyph_address: uint13_t = uint13_t(desc.p1.rd_data[63:51]) + uint13_t(row) - uint13_t(desc.p1.rd_data[32:22])
         table_address: uint11_t = row
         if old_phase == 3:
@@ -90,9 +92,14 @@ def make_scene_y(program=None):
         resources = memory(load, table_address, ((old_phase == 2) | (old_phase == 3)) & (~clear),
                            uint12_t(pointer), (old_phase == 5) & (~clear),
                            glyph_address, desc.p1.valid & (~clear))
-        prepared = desc.p1.rd_data
-        prepared_lane = desc.p1.addr
-        prepared_valid = desc.p1.valid & (~clear)
+        for i in range(3):
+            prepared[3-i] = prepared[2-i]
+            prepared_lane[3-i] = prepared_lane[2-i]
+        prepared[0] = desc.p1.rd_data
+        prepared_lane[0] = desc.p1.addr
+        prepared_valid = (prepared_valid << 1) | uint4_t(desc.p1.valid & (~clear))
+        if clear:
+            prepared_valid = 0
         lane_layer: uint6_t = old_prepared[49:44]
         if (row < old_prepared[32:22]) | (row >= old_prepared[43:33]):
             lane_layer = 0
@@ -157,12 +164,16 @@ def make_scene_y(program=None):
             elif old_phase == 6:
                 if drain == 3:
                     lane_index = 0
+                    refresh = 0
                     phase = 7
                 drain = drain + 1
             elif old_phase == 7:
-                lane_index = lane_index + 1
-                if lane_index == 0:
-                    phase = 8
+                refresh = refresh + 1
+                if refresh == 3:
+                    refresh = 0
+                    lane_index = lane_index + 1
+                    if lane_index == 0:
+                        phase = 8
             elif old_phase == 8:
                 if old_write.valid & (old_write.lane == 63):
                     x = 0
@@ -172,7 +183,7 @@ def make_scene_y(program=None):
                 if x == WIDTH:
                     phase = 10
 
-            if event_fault:
+            if event_fault | (resources.font_error & old_prepared_valid & (~old_prepared[50]) & (lane_layer != 0)):
                 fault = 1
             if final:
                 valid = 1
