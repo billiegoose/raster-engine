@@ -3,15 +3,15 @@ import {demoScene,WIDTH,HEIGHT} from './scene.js';
 import {rasterize} from './engine.js';
 import {listBackends,runBackend,handleApiRequest} from './api.js';
 
-test('JavaScript backend is discoverable',()=>{
-  expect(listBackends()).toContainEqual({id:'javascript',label:'JavaScript reference'});
+test('Python is the only available simulation backend',()=>{
+  expect(listBackends()).toEqual([{id:'python',label:'Python reference'}]);
 });
 
 test('server response preserves program, X trace, palettes, and pixel data',()=>{
   const scene=demoScene();
   const expected=rasterize(scene);
-  const result=runBackend({backend:'javascript',scene});
-  expect(result.backend).toBe('javascript');
+  const result=runBackend({scene});
+  expect(result.backend).toBe('python');
   expect(result.width).toBe(WIDTH);
   expect(result.height).toBe(HEIGHT);
   expect(result.program).toEqual(expected.program);
@@ -33,12 +33,12 @@ test('API exposes backends and returns a JSON execution result',async()=>{
   expect((await response.json()).backends).toEqual(listBackends());
   const request=new Request('http://localhost/api/run',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({backend:'javascript',scene:demoScene()})
+    body:JSON.stringify({scene:demoScene()})
   });
   const runResponse=await handleApiRequest(request,'/api/run');
   expect(runResponse.status).toBe(200);
   const run=await runResponse.json();
-  expect(run.backend).toBe('javascript');
+  expect(run.backend).toBe('python');
   expect(run.scanlines).toHaveLength(HEIGHT);
   expect(run.program.some(ins=>ins.op==='ROUND_RECT')).toBe(true);
   expect(run.scanlines[111].row[250]).toBe(19);
@@ -59,11 +59,11 @@ test('API rejects invalid requests and unsupported backends',async()=>{
 });
 
 
-test('JavaScript backend rejects TEXT explicitly; Python resolves its buffer pointer',()=>{
+test('removed JavaScript backend is rejected; Python resolves TEXT buffer pointers',()=>{
   const scene=demoScene();
   scene.texts=[{id:94,x:350,y:220,w:300,h:36,layer:30,buffer_ptr:8192}];
   scene.textBuffers={'8192':'HELLO'};
-  expect(()=>runBackend({backend:'javascript',scene})).toThrow('TEXT requires the Python backend');
+  expect(()=>runBackend({backend:'javascript',scene})).toThrow('Unknown backend: javascript');
   const result=runBackend({backend:'python',scene});
   expect(result.program.some(ins=>ins.op==='TEXT')).toBe(true);
   expect(result.scanlines[225].edges.some(e=>e.op==='START_MASK'&&e.buffer_ptr===8192)).toBe(true);

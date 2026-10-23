@@ -11,10 +11,9 @@ bun run dev
 Open http://localhost:3000.
 
 Run tests with `bun test` and `python3 -m unittest discover -p "test_*.py"`.
-The browser backend selector includes both JavaScript and pure Python. The Python
-backend uses the system `python3` (or `RASTER_PYTHON=/path/to/python`), with no
+The simulator uses the Python reference backend. It uses the system `python3` (or `RASTER_PYTHON=/path/to/python`), with no
 third-party packages. `python_backend.py` accepts `{ "scene": ... }` on stdin
-and returns the same JSON result as the JavaScript backend. `engine.py` provides
+and returns JSON pixels and execution traces. `engine.py` provides
 `compile_y(scene)`, `run_y_program(scene, program)`, `rasterize(scene)`,
 `advance_y(machine, y)`, and the memory-efficient `iter_scanlines(scene)` generator.
 Each scanline contains a mutable `bytearray` of 64-layer palette indices and a
@@ -27,12 +26,12 @@ the entire 1280 × 720 frame. All geometry uses square pixels.
 
 ## Browser/server boundary
 
-The browser imports **only `scene.js`** for viewport constants and the editable
-sample scene. The Bun server imports `engine.js` and runs both reference
-interpreters. The browser does not execute either interpreter.
+The browser edits scenes and displays pixels and traces returned by the
+Python reference simulator through the Bun server. Simulation runs
+automatically when opening the Simulate workspace after editing a scene.
 
-- `GET /api/backends` lists available execution implementations.
-- `POST /api/run` accepts `{ "backend": "javascript" | "python", "scene": { ... } }`.
+- `GET /api/backends` lists the Python execution implementation.
+- `POST /api/run` accepts `{ "scene": { ... } }`; `backend` defaults to `python`.
   The response contains `width`, `height`, `backend`, the compiled Y `program`,
   `scanlines` (one entry per Y coordinate: indexed pixel arrays, X linked-list snapshots, palette,
   program counter and instruction/mutation trace), and aggregate statistics.
@@ -52,7 +51,7 @@ The engine represents a scene as two cooperating raster programs:
 - **X-program:** An X-sorted linked list of START_PAINT and STOP_PAINT instructions. Each instruction references one of 64 ordered palette layers. Reference counts allow overlapping shapes to share a layer; the highest active layer determines the pixel color.
 - **Y-program:** A stream of transformations that changes the X-program between scanlines. Geometry may insert, delete, or move X instructions. Y events can also update palette entries.
 
-The original shape primitive is a rectangle with a `radius` parameter; the Python reference backend also supports masked `TEXT` objects. A radius of zero produces square corners; positive radii produce quarter-circle corners. The radius supports CSS-style one-to-four-value shorthand in top-left, top-right, bottom-right, bottom-left order. Adjacent radii are proportionally scaled down if they would overlap. Rounded edges are sampled per scanline in JavaScript and represented as moving X instructions. The renderer produces an indexed pixel buffer for Canvas visualization.
+The original shape primitive is a rectangle with a `radius` parameter; the Python reference backend also supports masked `TEXT` objects. A radius of zero produces square corners; positive radii produce quarter-circle corners. The radius supports CSS-style one-to-four-value shorthand in top-left, top-right, bottom-right, bottom-left order. Adjacent radii are proportionally scaled down if they would overlap. Rounded edges are sampled per scanline in Python and represented as moving X instructions. The renderer produces an indexed pixel buffer for Canvas visualization.
 
 ## Browser workspaces
 
@@ -236,9 +235,8 @@ Rendering requires no Aseprite/Pillow dependency.
 `test_binary_text.py` compares glyph rows, every supported kerning pair,
 whole multiline/wrapped images, and clipped oversized glyphs with
 `fpgatool`'s independently generated column-major font and reference renderer
-when that checkout is available. The Python backend is selectable from the
-browser, and its API accepts `texts` and `textBuffers`; **JavaScript currently
-rejects scenes containing text** rather than silently omitting them. The
+when that checkout is available. Simulation runs automatically through the
+Python server backend, whose API accepts `texts` and `textBuffers`. The
 browser scene editor supports editing text objects.
 
 This is a functional **scanline reference model**, not a cycle-accurate FPGA

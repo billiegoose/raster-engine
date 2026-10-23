@@ -16,7 +16,7 @@ let savedSnapshot=snapshot(),sceneDirty=false;
 let availableScenes=[];
 const picker=$('saved-scenes');
 const newButton=$('scene-new'),saveButton=$('scene-save');
-const saveAsButton=$('scene-save-as'),refreshButton=$('scene-refresh');
+const saveAsButton=$('scene-save-as');
 const saveAsDialog=$('scene-save-as-dialog'),saveAsName=$('scene-save-as-name');
 const saveAsConfirm=$('scene-save-as-confirm');
 const resolutionPicker=$('scene-resolution');
@@ -30,16 +30,20 @@ function syncResolutionUI(){
     resolutionPicker.add(custom);
   }
   resolutionPicker.value=value;
-  $('scene-size-heading').textContent=`RASTER ENGINE / ${width} × ${height}`;
 }
 
 function sceneStatus(message,kind='info'){
   $('scene-file-status').textContent=message;
   $('scene-file-status').dataset.kind=kind;
+  $('scene-file-status').hidden=kind!=='error'&&kind!=='warning';
 }
 function syncFileUI(){
   picker.value=savedName&&availableScenes.includes(savedName)?savedName:'';
-  for(const control of [picker,newButton,saveButton,saveAsButton,refreshButton,saveAsConfirm]){
+  for(const option of picker.options){
+    const filename=option.value?option.value+'.json':'Untitled';
+    option.textContent=filename+(option.selected&&sceneDirty?' (Unsaved changes)':'');
+  }
+  for(const control of [picker,newButton,saveButton,saveAsButton,saveAsConfirm]){
     control.disabled=sceneFileBusy;
   }
 }
@@ -49,8 +53,8 @@ function sceneChanged(){
   sceneDirty=snapshot()!==savedSnapshot;
   simulator.markDirty();
   syncResolutionUI();
-  sceneStatus(sceneDirty?`Unsaved changes · ${savedName?savedName+'.json':'Untitled'}`:
-    (savedName?`${savedName}.json · saved`:'Untitled · not saved'),sceneDirty?'dirty':'info');
+  syncFileUI();
+  sceneStatus('');
 }
 async function sceneRequest(path,options){
   const response=await fetch(path,options);
@@ -94,7 +98,7 @@ async function loadScene(name){
   try{
     const result=await sceneRequest('/api/scenes/'+encodeURIComponent(name));
     if(sceneRevision!==revision){
-      sceneStatus('Scene changed during loading; open it again to avoid losing edits','dirty');
+      sceneStatus('Scene changed during loading; open it again to avoid losing edits','warning');
       return;
     }
     scene=prepareObjectEditorScene(result.scene);
@@ -149,12 +153,13 @@ function saveScene(){
   else openSaveAs();
 }
 function setMode(target){
+  $('editor-controls').hidden=target!=='editor';
+  $('simulator-controls').hidden=target!=='simulator';
   $('editor-view').hidden=target!=='editor';
   $('simulator-view').hidden=target!=='simulator';
-  for(const key of ['editor','simulator']){
-    const button=$(`mode-${key}`);
-    button.classList.toggle('active',key===target);
-    button.setAttribute('aria-pressed',String(key===target));
+  for(const [id,mode] of [['back-to-editor','editor'],['run-simulator','simulator']]){
+    $(id).classList.toggle('active',target===mode);
+    $(id).setAttribute('aria-pressed',String(target===mode));
   }
   if(target==='simulator')void simulator.open();
   else simulator.pause();
@@ -202,13 +207,6 @@ picker.addEventListener('change',()=>{
   if(name)void loadScene(name);
   else syncFileUI();
 });
-refreshButton.addEventListener('click',async()=>{
-  if(sceneFileBusy)return;
-  setSceneFileBusy(true);
-  try{await refreshScenes();sceneStatus('Scene list refreshed');}
-  catch(error){sceneStatus('Refresh failed: '+error.message,'error');}
-  finally{setSceneFileBusy(false);}
-});
 // Restore the named scene on reload, once the selector is populated. Do not
 // overwrite a scene the user opened or started editing during startup.
 const startupScene=requestedSceneName(window.location.search);
@@ -221,7 +219,5 @@ void refreshScenes().then(()=>{
   if(startupScene&&sceneRevision===0&&!sceneFileBusy&&!savedName&&!sceneDirty)
     void loadScene(startupScene);
 }).catch(error=>sceneStatus('Unable to list scenes: '+error.message,'error'));
-$('mode-editor').addEventListener('click',()=>setMode('editor'));
-$('mode-simulator').addEventListener('click',()=>setMode('simulator'));
 syncResolutionUI();
 setMode('editor');

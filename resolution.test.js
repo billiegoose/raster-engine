@@ -69,9 +69,9 @@ test('1080p JavaScript scanlines extend through lower-right pixel and palette ev
   expect(compileY(scene).some(ins=>ins.op==='SET_PALETTE'&&ins.layer===1)).toBe(true);
 });
 
-test('API returns actual 1080p dimensions from both backends',()=>{
+test('Python API returns actual 1080p dimensions',()=>{
   const scene=fullHdScene();
-  for(const backend of ['javascript','python']){
+  for(const backend of ['python']){
     const result=runBackend({backend,scene});
     expect([result.width,result.height]).toEqual([1920,1080]);
     expect(result.scanlines).toHaveLength(1080);

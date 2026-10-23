@@ -1,4 +1,3 @@
-import {rasterize} from './engine.js';
 import {canvasSize} from './scene.js';
 import {createSceneStore, SceneStoreError, MAX_SCENE_BYTES} from './scene-store.js';
 import {compileScene} from './scene-model.js';
@@ -6,15 +5,6 @@ import {handleFpgaRequest} from './fpga/api.js';
 
 // Register future Pypeline or FPGA adapters here. The browser never imports a VM.
 const backends = new Map([
-  ['javascript', {
-    label: 'JavaScript reference',
-    run(scene) {
-      if (scene.texts?.length) {
-        throw new Error('TEXT requires the Python backend; JavaScript does not implement masked paint sources yet');
-      }
-      return rasterize(scene);
-    }
-  }],
   ['python', {
     label: 'Python reference',
     run(scene) {
@@ -38,7 +28,7 @@ export function listBackends() {
   return [...backends].map(([id, {label}]) => ({id, label}));
 }
 
-export function runBackend({backend = 'javascript', scene} = {}) {
+export function runBackend({backend = 'python', scene} = {}) {
   const implementation = backends.get(backend);
   if (!implementation) throw new Error(`Unknown backend: ${backend}`);
   if (!scene || !Array.isArray(scene.shapes) || !Array.isArray(scene.paletteEvents) || (!Array.isArray(scene.palette) && !Array.isArray(scene.layers))) {

@@ -274,7 +274,7 @@ test('group members display highest paint layers first without object ID labels'
     expect(rows()[1].querySelector('.object-name')).toBeNull();
     expect(rows()[0].textContent).not.toContain(`Rectangle ${h.rect.id}`);
     expect(rows()[1].textContent).not.toContain(`Text ${h.label.id}`);
-    expect(h.$('object-count').textContent).toContain('groups');
+    expect(h.$('object-count')).toBeNull();
     expect(h.$('add-folder').textContent).toContain('Group');
   }finally{h.cleanup();}
 });

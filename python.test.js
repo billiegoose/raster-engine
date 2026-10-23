@@ -24,7 +24,7 @@ function comparePythonAndJS(scene) {
   }
 }
 
-test('Python backend is selectable alongside JavaScript',()=>{
+test('Python backend is available for simulation',()=>{
   expect(listBackends()).toContainEqual({id:'python',label:'Python reference'});
 });
 

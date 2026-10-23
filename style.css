@@ -50,26 +50,10 @@ p { line-height: 1.65; color: #a7bad0; }
 .muted { font-size: 11px; color: var(--muted); }
 .empty { color: #839ab2; padding: 16px 4px; line-height: 1.6; }
 
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 26px;
-  padding: 22px max(24px, calc((100vw - 1580px)/2));
-  border-bottom: 1px solid #2a384a;
-  background: linear-gradient(110deg, #111e2d, #142030 67%, #101a27);
-}
-.eyebrow { color: var(--accent); font-size: 10px; letter-spacing: .16em; }
-.brand h1 { margin: 8px 0 4px; font-size: 26px; letter-spacing: -.055em; }
-.brand p { margin: 0; font-size: 11px; }
-.mode-switch { display: inline-flex; gap: 4px; padding: 4px; background: #0c1724; border: 1px solid #33475b; border-radius: 9px; white-space: nowrap; }
-.mode-button { background: none; border-color: transparent; padding: 11px 17px; color: #a1b4c8; font-weight: 650; }
-.mode-button.active, .mode-button[aria-pressed=true] { color: #0c1922; background: var(--accent); border-color: var(--accent); }
-.mode-button.active:hover { background: #a1e9d8; }
-.dirty-dot { color: #f3bb73; font-size: 10px; }
-
-main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; }
+main { width: 100%; max-width: 2480px; margin: 0; padding: 20px 24px 48px; }
 .workspace { min-width: 0; }
+.workspace-header { display: flex; align-items: end; flex-wrap: wrap; gap: 14px; margin-bottom: 17px; }
+.workspace-header > .scene-file-toolbar, .workspace-header > .workspace-toolbar { flex: 1 1 600px; min-width: 0; padding: 0; }
 .workspace-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 2px 0 17px; flex-wrap: wrap; }
 .workspace-toolbar-right, .header-actions, .transport { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
 /* Local JSON scene library: keep file operations independent of simulation. */
@@ -86,7 +70,7 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
 .scene-file-status { flex: 1 1 170px; color: var(--muted); font-size: 11px;
   align-self: center; text-align: right; }
 .scene-file-status[data-kind="error"] { color: #ffb6aa; }
-.scene-file-status[data-kind="dirty"] { color: var(--gold); }
+.scene-file-status[data-kind="warning"] { color: var(--gold); }
 .scene-save-as-dialog { width: min(440px, calc(100vw - 28px));
   padding: 23px; border: 1px solid #4a6178; border-radius: 10px;
   background: var(--panel); color: #e7edf5; box-shadow: 0 22px 65px #0009; }
@@ -104,7 +88,7 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
 
 /* Editor and simulator use native scene-resolution CSS pixels. Narrow viewports
    scroll horizontally instead of scaling glyphs or rounding pixel positions. */
-.editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 348px; align-items: start; gap: 17px; }
+.editor-layout { display: grid; grid-template-columns: minmax(0, var(--canvas-width, 1280px)) 348px; justify-content: start; align-items: start; gap: 17px; }
 /* Keep a native-width canvas beside its sidebar whenever both fit.
    The 1080p scene needs more horizontal room than a legacy 720p scene. */
 @media (max-width: 1780px) {
@@ -122,12 +106,9 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
 .editor-canvas-panel { min-width: 0; }
 .editor-canvas-scroll {
   width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden;
-  padding: 2px;
 }
 .editor-canvas-shell {
   width: 1280px; height: 720px; overflow: hidden; position: relative;
-  margin-inline: auto;
-  outline: 1px solid #506179; border-radius: 0;
   background: #0c1725;
 }
 .editor-stage {
@@ -301,11 +282,10 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
 /* Simulation deliberately preserves the physical scene-width pixel canvas and
    scrolls on narrower screens, rather than resampling the inspected pixels. */
 #simulator-view { display: grid; gap: 17px; }
-.backend-picker { display: inline-flex; gap: 10px; align-items: center; font-size: 11px; color: #9db3cc; }
-.backend-picker select { width: auto; min-width: 160px; }
+.header-actions > select { width: auto; max-width: 100%; }
 .preview { min-width: 0; }
-.sim-canvas-scroll { max-width: 100%; overflow-x: auto; padding: 2px; }
-#screen { display: block; width: auto; height: auto; image-rendering: pixelated; background: #101827; outline: 1px solid #3b5065; }
+.sim-canvas-scroll { max-width: 100%; overflow-x: auto; }
+#screen { display: block; width: auto; height: auto; image-rendering: pixelated; background: #101827; }
 .transport { margin: 14px 0; }
 .transport label { display: flex; align-items: center; gap: 9px; min-width: 200px; flex: 1; }
 .transport input { flex: 1; }
@@ -334,7 +314,6 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
 .palette-index { font-variant-numeric: tabular-nums; font-weight: 700; }
 .palette-color { margin-left: auto; font-size: 10px; }
 .palette-change { color: var(--gold); }
-.notes p { margin: 8px 0 0; font-size: 12px; }
 
 @media(max-width: 1100px) {
   .editor-layout { grid-template-columns: minmax(0, 1fr); }
@@ -343,9 +322,6 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
   .program-columns > .program-pane:first-child { grid-column: 1 / -1; }
 }
 @media(max-width: 700px) {
-  .app-header { padding: 18px; flex-direction: column; align-items: stretch; }
-  .mode-switch { align-self: stretch; }
-  .mode-button { flex: 1; padding: 10px 7px; }
   main { padding: 15px 12px 35px; }
   .panel { padding: 12px; }
   .program-columns { grid-template-columns: minmax(0, 1fr); }
@@ -365,7 +341,6 @@ main { width: 100%; max-width: 2480px; margin: 0 auto; padding: 20px 24px 48px; 
 .tool-cluster:last-child { border-right: 0; padding-right: 0; }
 .tool-cluster button { padding: 7px 9px; white-space: nowrap; }
 .tool-cluster select { width: auto; min-width: 104px; padding: 7px; }
-.editor-tool-end { margin-left: auto; }
 button:disabled, select:disabled { opacity: .42; cursor: not-allowed; }
 button:disabled:hover { background: #22354a; border-color: #3c526d; }
 .group-marker { font-size: 10px; color: #9cdebc; font-weight: normal; }
@@ -391,7 +366,9 @@ button:disabled:hover { background: #22354a; border-color: #3c526d; }
    determines the other; only the paint palette has hardware ordering. */
 .editor-inspector-tabs { display: flex; gap: 5px; flex: 0 0 auto; }
 .editor-inspector-tabs button { flex: 1; font-size: 12px; padding: 9px 5px; }
-.editor-inspector-tabs button.active { color: #0c1922; border-color: var(--accent); background: var(--accent); }
+.workspace-tabs { display: flex; justify-content: flex-end; flex: 0 0 auto; gap: 5px; margin-left: auto; }
+.workspace-tabs button { min-width: 90px; font-size: 12px; padding: 9px 12px; }
+.editor-inspector-tabs button.active, .workspace-tabs button.active { color: #0c1922; border-color: var(--accent); background: var(--accent); }
 .editor-inspector-pane { display: flex; flex: 1 1 0; flex-direction: column; gap: 14px; min-height: 0; }
 .editor-inspector-pane[hidden] { display: none; }
 #add-folder { font-size: 11px; padding: 5px 9px; }

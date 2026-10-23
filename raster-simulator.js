@@ -1,4 +1,4 @@
-/* Raster simulator. Runs a selected reference backend and inspects the exact
+/* Raster simulator. Runs the Python reference backend and inspects the exact
    Y/X execution trace. Does not mutate scene objects or implement editing. */
 import {LAYERS,canvasSize} from './scene.js';
 import {paletteView} from './palette-view.js';
@@ -24,36 +24,20 @@ export function createRasterSimulator({getScene,onEditor}){
   const fpga=createFpgaControls({getScene});
   const screen=$('screen'),ctx=screen.getContext('2d');
   const timeline=$('timeline'),timelineCtx=timeline.getContext('2d');
-  let result=null,selectedY=330,runGeneration=0,revision=0,renderedRevision=-1;
-  let playing=false,timer=null,imageData=null,timelineImage=null,loaded=false;
-  const backend=$('backend');
+  let result=null,selectedY=0,runGeneration=0,revision=0,renderedRevision=-1;
+  let playing=false,timer=null,imageData=null,timelineImage=null;
   const width=()=>result?.width??canvasSize(getScene()).width;
   const height=()=>result?.height??canvasSize(getScene()).height;
 
-  async function loadBackends(){
-    if(loaded)return;
-    try{
-      const response=await fetch('/api/backends');
-      if(!response.ok)throw Error(`HTTP ${response.status}`);
-      const {backends}=await response.json();
-      const selected=backend.value;
-      backend.replaceChildren();
-      for(const {id,label} of backends){
-        const option=document.createElement('option');
-        option.value=id;option.textContent=label;
-        backend.append(option);
-      }
-      if(backends.some(item=>item.id===selected))backend.value=selected;
-      loaded=true;
-    }catch(error){console.warn('Backend discovery failed:',error);}
+  function simulationStatus(message=''){
+    $('stats').textContent=message;
+    $('stats').hidden=!message;
   }
 
   function markDirty(){
     fpga.markDirty();
     revision++;
-    const stale=renderedRevision!==revision;
-    $('simulation-dirty').hidden=!stale;
-    if(stale&&result)$('stats').textContent='Scene edited · rerun to update the raster output';
+    simulationStatus();
   }
 
   function drawRaster(){
@@ -133,8 +117,6 @@ export function createRasterSimulator({getScene,onEditor}){
       `<div class="event y-instruction ${pc===scanline.pc?'current':''} ${pc<scanline.pc?'executed':''}" data-program-pc="${pc}">
         <code>${String(pc).padStart(3,'0')} ${ins.op}</code><div>${escape(formatY(ins))}${pc===scanline.pc?'<small>← next instruction</small>':''}</div>
        </div>`).join('');
-    const current=$('y-program').querySelector('.current');
-    if(current&&current.scrollIntoView)current.scrollIntoView({block:'nearest'});
   }
 
   function changeY(y){
@@ -148,21 +130,16 @@ export function createRasterSimulator({getScene,onEditor}){
     $('play').textContent='▶ Play';
   }
 
-  async function run({autoSelectPython=false}={}){
+  async function run(){
     pause();
-    await loadBackends();
     const source=getScene();
-    if(autoSelectPython&&source.texts?.length&&[...backend.options].some(o=>o.value==='python')){
-      if(backend.value==='javascript')backend.value='python';
-    }
     const generation=++runGeneration;
     const thisRevision=revision;
-    const requestedBackend=backend.value;
-    $('stats').textContent=`Running ${requestedBackend} backend…`;
+    simulationStatus('Running simulation…');
     try{
       const response=await fetch('/api/run',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({backend:requestedBackend,scene:source})
+        body:JSON.stringify({backend:'python',scene:source})
       });
       const data=await response.json();
       if(!response.ok)throw Error(data.error||`HTTP ${response.status}`);
@@ -174,15 +151,14 @@ export function createRasterSimulator({getScene,onEditor}){
       selectedY=clamp(selectedY,0,data.height-1);
       $('scanline').max=String(data.height-1);
       renderedRevision=thisRevision;
-      $('simulation-dirty').hidden=true;
       buildPixels();drawRaster();inspect();
-      $('stats').textContent=`${data.backend} · ${source.shapes.length} rectangles · ${(source.texts||[]).length} text objects · ${data.totalEvents} X events · ${data.totalEdits} Y edits`;
+      simulationStatus();
     }catch(error){
       if(generation!==runGeneration||thisRevision!==revision)return;
       result=null;imageData=null;timelineImage=null;
       ctx.clearRect(0,0,width(),height());
       timelineCtx.clearRect(0,0,timeline.width,timeline.height);
-      $('stats').textContent=`ERROR: ${error.message}`;
+      simulationStatus(`Simulation failed: ${error.message}`);
       $('rowstats').textContent='No simulation result';
       $('y-program').replaceChildren();
       $('x-program').replaceChildren();
@@ -192,13 +168,10 @@ export function createRasterSimulator({getScene,onEditor}){
   }
 
   async function open(){
-    await loadBackends();
-    if(renderedRevision!==revision || !result)await run({autoSelectPython:true});
+    if(renderedRevision!==revision || !result)await run();
     else {drawRaster();inspect();}
   }
 
-  backend.addEventListener('change',()=>void run());
-  $('rerun').addEventListener('click',()=>void run());
   $('scanline').addEventListener('input',event=>changeY(event.target.value));
   $('prev').addEventListener('click',()=>changeY(selectedY-1));
   $('next').addEventListener('click',()=>changeY(selectedY+1));
@@ -215,6 +188,5 @@ export function createRasterSimulator({getScene,onEditor}){
     const instruction=result.program[Number(el.dataset.programPc)];
     if(instruction?.op==='WAIT_Y')changeY(Math.min(height()-1,instruction.y));
   });
-  void loadBackends();
   return {open,markDirty,pause,run,hasResult:()=>!!result};
 }

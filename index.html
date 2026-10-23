@@ -22,24 +22,11 @@
 
     <symbol id="tool-icon-align" viewBox="0 0 24 24"><path d="M4 4v16M8 7h13M8 12h8M8 17h11"/></symbol>
     <symbol id="tool-icon-distribute" viewBox="0 0 24 24"><path d="M4 4v16M20 4v16M8 8h8M8 12h8M8 16h8"/></symbol>
-    <symbol id="tool-icon-simulate" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></symbol>
   </defs></svg>
 
-  <header class="app-header">
-    <div class="brand">
-      <span id="scene-size-heading" class="eyebrow">RASTER ENGINE / 1280 × 720</span>
-      <h1>Scene studio</h1>
-      <p>Compose with DOM elements. Inspect the actual X/Y raster machine.</p>
-    </div>
-    <nav class="mode-switch" aria-label="Workspace">
-      <button id="mode-editor" class="mode-button active" type="button" aria-pressed="true">Scene editor</button>
-      <button id="mode-simulator" class="mode-button" type="button" aria-pressed="false">Raster simulator <span id="simulation-dirty" class="dirty-dot" hidden aria-label="Scene has changed">●</span></button>
-    </nav>
-  </header>
-
   <main>
-    <section id="editor-view" class="workspace" aria-label="Scene editor">
-      <div class="scene-file-toolbar" aria-label="Scene files">
+    <header class="workspace-header">
+      <div id="editor-controls" class="scene-file-toolbar" aria-label="Scene files">
         <label class="scene-file-select">Scene
           <select id="saved-scenes" aria-label="Scene selector"><option value="">Untitled</option></select>
         </label>
@@ -52,9 +39,22 @@
         <button id="scene-new" type="button">New</button>
         <button id="scene-save" type="button" class="primary">Save</button>
         <button id="scene-save-as" type="button">Save As…</button>
-        <button id="scene-refresh" type="button" class="secondary" title="Refresh scene list" aria-label="Refresh scene list">↻</button>
-        <span id="scene-file-status" class="scene-file-status" role="status" aria-live="polite">Untitled · not saved</span>
+        <span id="scene-file-status" class="scene-file-status" role="status" aria-live="polite" hidden></span>
       </div>
+      <div id="simulator-controls" class="workspace-toolbar" hidden>
+        <div class="header-actions">
+          <button id="fpga-program" type="button">Export .bin &amp; upload FPGA</button>
+          <a id="fpga-download" class="muted" hidden download style="color:var(--accent)">Download .bin</a>
+        </div>
+        <span id="stats" class="muted" role="status" aria-live="polite" hidden></span>
+        <span id="fpga-status" class="muted" role="status" aria-live="polite"></span>
+      </div>
+      <nav class="workspace-tabs" aria-label="Workspace">
+        <button id="back-to-editor" type="button" class="active" aria-pressed="true">Edit</button>
+        <button id="run-simulator" type="button" aria-pressed="false">Simulate</button>
+      </nav>
+    </header>
+    <section id="editor-view" class="workspace" aria-label="Scene editor">
       <dialog id="scene-save-as-dialog" class="scene-save-as-dialog" aria-labelledby="scene-save-as-title">
         <form id="scene-save-as-form">
           <h2 id="scene-save-as-title">Save scene as</h2>
@@ -95,17 +95,9 @@
             <option value="vertical">Vertically</option>
           </select></label>
         </div>
-        <div class="tool-cluster editor-tool-end">
-          <span id="editor-stats" class="muted"></span>
-          <button id="run-simulator" type="button" class="primary"><svg class="tool-icon" aria-hidden="true" focusable="false"><use href="#tool-icon-simulate"></use></svg> Simulate →</button>
-        </div>
       </div>
       <div class="editor-layout">
-        <section class="panel editor-canvas-panel" aria-label="Visual scene">
-          <div class="panel-heading">
-            <h2>Scene canvas</h2>
-            <span>Shift-click: multi-select · Drag: move · Alt-drag: marquee · Arrow keys: nudge</span>
-          </div>
+        <section class="editor-canvas-panel" aria-label="Visual scene">
           <div class="editor-canvas-scroll">
             <div id="editor-canvas-shell" class="editor-canvas-shell">
               <div id="editor-stage" class="editor-stage" role="group" aria-label="Editable 1280 by 720 scene"></div>
@@ -119,7 +111,7 @@
           </div>
           <div id="objects-pane" class="editor-inspector-pane" role="tabpanel" aria-labelledby="show-objects">
             <section class="panel object-list-panel" aria-label="Scene objects">
-              <div class="panel-heading"><h2>Objects</h2><button id="add-folder" type="button" class="secondary">+ Group</button><button id="remove-folder" type="button" class="secondary" disabled title="Remove selected group and keep its contents">− Group</button><span id="object-count"></span></div>
+              <div class="panel-heading"><h2>Objects</h2><button id="add-folder" type="button" class="secondary">+ Group</button><button id="remove-folder" type="button" class="secondary" disabled title="Remove selected group and keep its contents">− Group</button></div>
               <div class="object-filter-row"><input id="object-filter" type="search" placeholder="Find objects or groups…" aria-label="Filter scene objects"></div>
               <div id="object-list" class="object-list" role="tree" aria-label="Object and group hierarchy"></div>
             </section>
@@ -148,27 +140,13 @@
     </section>
 
     <section id="simulator-view" class="workspace" hidden aria-label="Raster simulator">
-      <div class="workspace-toolbar">
-        <div class="header-actions">
-          <button id="back-to-editor" class="secondary" type="button">← Edit scene</button>
-          <label class="backend-picker">Backend
-            <select id="backend"><option value="javascript">JavaScript reference</option><option value="python">Python reference</option></select>
-          </label>
-          <button id="rerun" type="button">Run simulation</button>
-          <button id="fpga-program" type="button">Export .bin &amp; upload FPGA</button>
-          <a id="fpga-download" class="muted" hidden download style="color:var(--accent)">Download .bin</a>
-        </div>
-        <span id="stats" class="muted" role="status" aria-live="polite">Select Raster simulator to execute the scene.</span>
-        <span id="fpga-status" class="muted" role="status" aria-live="polite"></span>
-      </div>
-      <section class="panel preview">
-        <div class="panel-heading"><h2>Simulated raster output</h2><span>Pixels and palette indices from the selected backend</span></div>
+      <section class="preview" aria-label="Simulated output">
         <div class="sim-canvas-scroll"><canvas id="screen" width="1280" height="720" aria-label="Rasterized output"></canvas></div>
         <div class="transport">
           <button id="play" type="button">▶ Play</button>
           <button id="prev" type="button">← Row</button>
           <button id="next" type="button">Row →</button>
-          <label>Scanline <input id="scanline" type="range" min="0" max="719" value="330"><output id="yvalue">330</output></label>
+          <label>Scanline <input id="scanline" type="range" min="0" max="719" value="0"><output id="yvalue">0</output></label>
         </div>
         <div class="timeline"><canvas id="timeline" width="1280" height="180"></canvas><span>Horizontal: X · Vertical: Y · Gold: Y edits · Cyan: X instructions</span></div>
       </section>
@@ -180,18 +158,14 @@
             <div id="y-program" class="program-list"></div>
           </section>
           <section class="program-pane">
-            <div class="program-heading"><h3>X-program <small>(<output id="x-count">0</output> instructions)</small></h3><span>Row <output id="xrow">330</output></span></div>
+            <div class="program-heading"><h3>X-program <small>(<output id="x-count">0</output> instructions)</small></h3><span>Row <output id="xrow">0</output></span></div>
             <div id="x-program" class="program-list"></div>
           </section>
           <section class="program-pane palette-inspector">
-            <div class="program-heading"><h3>Palette layers <small>(<output id="palette-count">0</output>)</small></h3><span>Row <output id="palette-row">330</output></span></div>
+            <div class="program-heading"><h3>Palette layers <small>(<output id="palette-count">0</output>)</small></h3><span>Row <output id="palette-row">0</output></span></div>
             <div id="palette-grid" class="palette-grid"></div>
           </section>
         </div>
-      </section>
-      <section class="panel notes">
-        <h2>Execution model</h2>
-        <p>Y-program instructions manage rounded rectangles, text generators and palette updates. X-program instructions resolve paint spans and one-bit text masks into 64 palette layers. This reference simulator is scanline-based; hardware scheduling and ownership-frontier timing are not yet cycle-accurate.</p>
       </section>
     </section>
   </main>

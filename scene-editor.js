@@ -61,6 +61,7 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const shell=$('editor-canvas-shell');
     const layout=stage.closest('.editor-layout');
     layout.dataset.canvasWidth=String(width);
+    layout.style.setProperty('--canvas-width',`${width}px`);
     layout.style.setProperty('--canvas-height',`${height}px`);
     shell.style.width=`${width}px`;
     shell.style.height=`${height}px`;
@@ -102,8 +103,6 @@ export function createSceneEditor({getScene,history,onSimulate}){
     const filter=$('object-filter').value.trim().toLowerCase();
     const objects=sceneObjects(data).sort((a,b)=>
       layerIndex(data,b.object.layerId)-layerIndex(data,a.object.layerId)||b.object.id-a.object.id);
-    $('object-count').textContent=`${objects.length} objects · ${folders.length} groups`;
-    $('editor-stats').textContent=`${data.shapes.length} rectangles · ${data.texts.length} text`;
     $('add-folder').disabled=folders.length>=256;
     const byParent=new Map(),children=new Map();
     for(const item of objects){

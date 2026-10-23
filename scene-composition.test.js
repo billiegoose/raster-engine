@@ -275,7 +275,7 @@ test('amber-components file tree uses native RED2 box drawing and an inverse sel
     expect(row).toBeDefined();
     expect(row.obj.x).toBe(1198);
     expect(row.obj.y).toBe(rowY[index]);
-    expect(row.obj.layerId).toBe(group==='Selected Scene File'?'layer-7':group==='TESTS Directory'?'layer-3':'layer-6');
+    expect(row.obj.layerId).toBe(group==='Selected Scene File'?'layer-7':'layer-6');
   }
   const selected=scene.shapes.find(shape=>shape.id===150);
   expect(selected.parentId).toBe(groups.get('Selected Scene File').id);
